@@ -75,6 +75,26 @@ services:
       - worker
     restart: unless-stopped
 
+  proctoring:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.proctoring
+    container_name: cheating_ai_proctoring
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/proctoring.db
+      - DEBUG=false
+    volumes:
+      - proctoring_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
 volumes:
   redis_data:
   db_data:
+  proctoring_data:

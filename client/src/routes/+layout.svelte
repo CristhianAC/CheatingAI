@@ -6,6 +6,7 @@
     { href: '/submissions', label: '📄 Submissions' },
     { href: '/analysis',    label: '🔍 Analysis' },
     { href: '/jobs',        label: '📊 Jobs' },
+    { href: '/proctoring',  label: '📷 Supervisión' },
   ];
 </script>
 

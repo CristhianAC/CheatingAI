@@ -1,0 +1,28 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# System libraries required by OpenCV headless and MediaPipe
+RUN apt-get update && apt-get install -y \
+    curl \
+    libglib2.0-0 \
+    libgl1 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY proctoring_service/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY proctoring_service/ .
+
+RUN mkdir -p /app/data /app/models
+
+# Download EfficientDet-Lite0 INT8 model for cell phone detection (COCO, ~4MB)
+RUN curl -fsSL \
+    "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/latest/efficientdet_lite0.tflite" \
+    -o /app/models/efficientdet_lite0.tflite
+
+EXPOSE 8001
+
+# Single worker: MediaPipe C++ state is not fork-safe
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]

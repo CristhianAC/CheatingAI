@@ -6,6 +6,16 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // Specific proctoring service routes (must come before catch-all /api rule)
+      '/api/v1/proctoring': {
+        target: 'http://localhost:8001',
+        changeOrigin: true
+      },
+      '/api/v1/sessions': {
+        target: 'http://localhost:8001',
+        changeOrigin: true
+      },
+      // Catch-all for main API (plagiarism detection)
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true
