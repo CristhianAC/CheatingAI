@@ -1,0 +1,199 @@
+<script>
+  import { createEventDispatcher } from 'svelte';
+  import { listSubmissions, getSubmission, deleteSubmission } from '$lib/api.js';
+  import { showToast, showError } from '$lib/stores.js';
+
+  const dispatch = createEventDispatcher();
+
+  let filters = { problem_id: '', exam_id: '', language: '' };
+  let items = [];
+  let total = 0;
+  let loading = false;
+
+  // Modal de código fuente
+  let modalSub = null;
+  let modalLoading = false;
+
+  export async function reload() {
+    loading = true;
+    try {
+      const res = await listSubmissions(filters);
+      items = res.items;
+      total = res.total;
+      dispatch('loaded', items);
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('¿Eliminar esta submission?')) return;
+    try {
+      await deleteSubmission(id);
+      showToast('Submission eliminada');
+      reload();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  async function openModal(sub) {
+    modalSub = null;
+    modalLoading = true;
+    try {
+      const full = await getSubmission(sub.id);
+      modalSub = full;
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      modalLoading = false;
+    }
+  }
+
+  function closeModal() { modalSub = null; }
+
+  // Cargar al montar
+  import { onMount } from 'svelte';
+  onMount(reload);
+</script>
+
+<!-- Filtros -->
+<div class="card">
+  <div class="filters">
+    <input bind:value={filters.problem_id} placeholder="Filtrar por problem_id" />
+    <input bind:value={filters.exam_id} placeholder="Filtrar por exam_id" />
+    <select bind:value={filters.language}>
+      <option value="">Todos los lenguajes</option>
+      <option value="python">Python</option>
+      <option value="java">Java</option>
+    </select>
+    <button class="btn btn--secondary" on:click={reload} disabled={loading}>
+      {loading ? '⏳' : '🔍 Buscar'}
+    </button>
+  </div>
+
+  <div class="table-meta">
+    <span>{total} submission{total !== 1 ? 's' : ''} encontrada{total !== 1 ? 's' : ''}</span>
+  </div>
+
+  {#if items.length === 0 && !loading}
+    <div class="empty">No hay submissions aún. ¡Crea una arriba!</div>
+  {:else}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Estudiante</th>
+            <th>Problema</th>
+            <th>Examen</th>
+            <th>Lenguaje</th>
+            <th>Creado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each items as sub (sub.id)}
+            <tr class="row-hover" on:click={() => openModal(sub)}>
+              <td class="mono">{sub.id.slice(0, 8)}…</td>
+              <td>{sub.student_id}</td>
+              <td>{sub.problem_id}</td>
+              <td>{sub.exam_id ?? '—'}</td>
+              <td><span class="badge badge--{sub.language}">{sub.language}</span></td>
+              <td class="date">{new Date(sub.created_at).toLocaleString('es-CO')}</td>
+              <td>
+                <button
+                  class="btn btn--danger btn--sm"
+                  on:click|stopPropagation={() => handleDelete(sub.id)}
+                >
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {/if}
+</div>
+
+<!-- Modal código fuente -->
+{#if modalLoading}
+  <div class="overlay"><div class="modal"><p>Cargando código…</p></div></div>
+{/if}
+
+{#if modalSub}
+  <div class="overlay" on:click={closeModal} role="button" tabindex="-1" on:keydown={(e) => e.key === 'Escape' && closeModal()}>
+    <div class="modal" on:click|stopPropagation role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div>
+          <h3>Código fuente</h3>
+          <p class="modal-meta">
+            {modalSub.student_id} · {modalSub.problem_id} · {modalSub.language}
+          </p>
+        </div>
+        <button class="btn btn--ghost btn--sm" on:click={closeModal}>✕</button>
+      </div>
+      <pre class="code-block">{modalSub.source_code}</pre>
+      <p class="hash-line">SHA256: <code>{modalSub.code_hash}</code></p>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .filters {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .filters input, .filters select { flex: 1; min-width: 150px; }
+
+  .table-meta { font-size: 0.82rem; color: #6b7280; margin-bottom: 0.5rem; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: #f3f4f6; text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; color: #374151; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+  .row-hover:hover { background: #f9fafb; cursor: pointer; }
+  .mono { font-family: monospace; font-size: 0.8rem; }
+  .date { font-size: 0.78rem; color: #6b7280; }
+
+  .badge { padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge--python { background: #dbeafe; color: #1e40af; }
+  .badge--java   { background: #fef9c3; color: #713f12; }
+
+  .empty { text-align: center; color: #9ca3af; padding: 2rem; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+  .modal {
+    background: #fff; border-radius: 12px;
+    padding: 1.5rem; max-width: 700px; width: 100%;
+    max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 1rem;
+  }
+  .modal-header h3 { margin: 0 0 0.2rem; font-size: 1rem; }
+  .modal-meta { font-size: 0.8rem; color: #6b7280; margin: 0; }
+  .code-block {
+    background: #1e1e2e; color: #cdd6f4;
+    padding: 1rem; border-radius: 8px;
+    font-size: 0.82rem; line-height: 1.5;
+    overflow-x: auto; white-space: pre;
+    margin: 0;
+  }
+  .hash-line { font-size: 0.75rem; color: #9ca3af; margin-top: 0.75rem; word-break: break-all; }
+  .hash-line code { font-family: monospace; }
+</style>
