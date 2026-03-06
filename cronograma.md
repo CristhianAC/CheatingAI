@@ -1,10 +1,5 @@
 ## Cronograma del Proyecto
 
-Este cronograma muestra todo lo que se planificó hacer, lo que ya está hecho y lo que falta.
-Cada tarea tiene una casilla: **[x]** significa completado, **[ ]** significa pendiente.
-
----
-
 ### Fase 1 — Investigación y definición del proyecto
 
 Objetivo: entender el problema, elegir las tecnologías y dejar por escrito qué se va a construir.
