@@ -9,6 +9,12 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./data/cheating_ai.db"
 
+    # Opcionales: útiles para migraciones y para compartir .env con otros servicios
+    DIRECT_URL: str | None = None
+    SUPABASE_URL: str | None = None
+    SUPABASE_SERVICE_KEY: str | None = None
+    SUPABASE_BUCKET: str | None = None
+
     REDIS_URL: str = "redis://redis:6379/0"
 
     WINNOWING_K: int = 5

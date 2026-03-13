@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.dependencies import get_db
 from app.schemas.frame import DetectedViolation, FrameAnalysisRequest, FrameAnalysisResponse
 from app.services.session_service import SessionService
+from app.services.storage import upload_violation_frame
 from app.services.violation_service import ViolationService
 
 router = APIRouter(prefix="/proctoring", tags=["Proctoring"])
@@ -49,12 +50,18 @@ def analyze_frame(
     if payload.session_id and result.violations:
         session = SessionService(db).get_by_id(payload.session_id)
         if session and session.status.value == "active":
+            frame_snapshot_url = upload_violation_frame(
+                payload.session_id,
+                frame_bytes,
+                content_type="image/jpeg",
+            )
             violation_svc = ViolationService(db)
             for v in result.violations:
                 violation_svc.record(
                     session_id=payload.session_id,
                     violation_type=v.violation_type,
                     confidence=v.confidence,
+                    frame_snapshot=frame_snapshot_url,
                 )
             violations_persisted = True
 

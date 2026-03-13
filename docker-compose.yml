@@ -23,8 +23,9 @@ services:
     container_name: cheating_ai_api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=sqlite:////app/data/cheating_ai.db
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=false
     volumes:
@@ -49,8 +50,9 @@ services:
       --loglevel=info
       --queues=plagiarism
       --concurrency=2
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=sqlite:////app/data/cheating_ai.db
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - db_data:/app/data
@@ -82,8 +84,9 @@ services:
     container_name: cheating_ai_proctoring
     ports:
       - "8001:8001"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=sqlite:////app/data/proctoring.db
       - DEBUG=false
     volumes:
       - proctoring_data:/app/data

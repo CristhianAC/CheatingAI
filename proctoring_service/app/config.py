@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./data/proctoring.db"
 
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    SUPABASE_BUCKET: str = "proctoring-violations"
+
     # Gaze thresholds — fractions of face size (not degrees).
     # Calibrated for the ratio-based GazeEstimator.
     # YAW:   how far nose deviates horizontally from face center / face_width
