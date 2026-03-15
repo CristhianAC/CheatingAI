@@ -22,7 +22,7 @@ Objetivo: entender el problema, elegir las tecnologías y dejar por escrito qué
 ---
 
 ### Fase 2 — Backend: API de detección de plagio
-**Duración estimada: 3 semanas | Estado: Completada**
+**Duración estimada: 3 semanas | Estado: Parcialmente Completa**
 
 Objetivo: construir el servicio que recibe códigos de estudiantes y detecta si son demasiado similares.
 
@@ -79,12 +79,15 @@ Objetivo: construir el servicio que analiza los fotogramas de la cámara del est
 - [x] Crear el endpoint para ver el resumen de violaciones de una sesión (`GET /api/v1/sessions/{id}`).
 - [x] Implementar el guardado automático de violaciones en base de datos durante el análisis.
 - [x] Configurar los parámetros de mirada ajustables por variable de entorno (YAW_THRESHOLD, PITCH_THRESHOLD).
+- [ ] Registrar cambios de pestaña/ventana durante el examen con timestamp y contexto (modelo y endpoint de eventos de pestaña en el backend). *(3–5 días)*
+- [ ] Definir y refinar indicadores de trampa combinados (cambio de pestaña, miradas laterales, audio, ausencia/presencia de rostro, dispositivos externos) y asociarlos a un score de riesgo. *(2–3 días)*
+- [ ] Diseñar e implementar estrategia para reducir falsos positivos (calibración de modelos y umbrales, registro de metadatos como iluminación/fps, revisión humana antes de sanción). *(repartido entre Fase 3 y 6)*
 - [ ] Integrar la estimación de pose corporal (MediaPipe Pose) al servicio de proctoring. *(1 semana)*
 - [ ] Detectar manos fuera del encuadre o por debajo del nivel del escritorio. *(3 días)*
 - [ ] Detectar auriculares o audífonos visibles en cámara. *(2 días)*
 - [ ] Detectar cierre prolongado de ojos (posible lectura de apuntes en otro soporte). *(3 días)*
 - [ ] Agregar umbral de tiempo: generar alerta solo si el comportamiento persiste más de N segundos. *(2 días)*
-- [ ] **Guardar capturas de pantalla (fotogramas) en el momento en que se detecta una violación.** *(ver Fase 3b)*
+- [x] **Guardar capturas de pantalla (fotogramas) en el momento en que se detecta una violación.** *(implementado con Supabase Storage, ver Fase 3b)*
 - [ ] Escribir tests unitarios para el detector de rostros. *(1 día)*
 - [ ] Escribir tests unitarios para el estimador de mirada. *(1 día)*
 - [ ] Escribir tests unitarios para el detector de teléfono. *(1 día)*
@@ -93,46 +96,41 @@ Objetivo: construir el servicio que analiza los fotogramas de la cámara del est
 ---
 
 ### Fase 3b — Almacenamiento de capturas de momentos sospechosos (Blob Storage)
-**Duración estimada: 1 semana | Estado: No iniciada**
+**Duración estimada: 1 semana | Estado: Completada**
 
 Objetivo: cuando el sistema detecta una violación, guardar la imagen del fotograma en ese instante
-para que el profesor pueda verla después como evidencia.
+para que el profesor pueda verla después como evidencia. Implementado usando **Supabase Storage** como servicio de Blob storage gestionado.
 
-> Actualmente el sistema guarda el tipo de violación y la hora, pero descarta
-> la imagen. Con esta fase, el profesor puede ver exactamente qué había en cámara cuando se disparó la alerta.
+> El sistema ahora guarda el tipo de violación, la hora y una captura de la cámara como evidencia visual, almacenada en Supabase Storage.
 
-- [ ] Elegir el servicio de almacenamiento de archivos: **MinIO** (auto-hosteable, gratuito) como primera opción. *(medio día)*
-- [ ] Agregar el contenedor de MinIO al `docker-compose.yml` con su volumen de datos. *(medio día)*
-- [ ] Configurar las credenciales de MinIO en el `.env` y en la configuración del servicio de proctoring. *(medio día)*
-- [ ] Crear el bucket (carpeta) en MinIO donde se guardarán las capturas. *(medio día)*
-- [ ] Instalar el cliente de MinIO/S3 en el servicio de proctoring (`boto3` o `miniopy-async`). *(medio día)*
-- [ ] Implementar la función `save_frame_to_storage(frame_bytes) → url` en el backend. *(1 día)*
-- [ ] Modificar el endpoint `analyze-frame`: cuando hay violación, guardar el fotograma y almacenar la URL en la base de datos junto al evento. *(1 día)*
-- [ ] Agregar el campo `snapshot_url` al modelo de violación en la base de datos. *(medio día)*
-- [ ] Crear un endpoint para obtener las capturas de una sesión (`GET /api/v1/sessions/{id}/snapshots`). *(1 día)*
-- [ ] Mostrar las capturas en el frontend: en el log de violaciones, agregar un link o miniatura que abra la imagen. *(1 día)*
-- [ ] Verificar que las imágenes se guardan y se pueden recuperar correctamente. *(medio día)*
+- [x] Elegir el servicio de almacenamiento de archivos: **Supabase Storage** como backend de Blob storage. *(medio día)*
+- [x] Configurar las credenciales de Supabase (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_BUCKET`) en el `.env` y en la configuración del servicio de proctoring. *(medio día)*
+- [x] Crear el bucket en Supabase donde se guardan las capturas de violaciones. *(medio día)*
+- [x] Instalar y configurar el cliente oficial de Supabase en el servicio de proctoring. *(medio día)*
+- [x] Implementar la función `upload_violation_frame(session_id, frame_bytes) → url` en el backend. *(1 día)*
+- [x] Modificar el endpoint `analyze-frame`: cuando hay violación, subir el fotograma a Supabase Storage y almacenar la URL en el campo `frame_snapshot` de la base de datos. *(1 día)*
+- [x] Verificar que las imágenes se guardan correctamente en Supabase y se pueden recuperar desde el frontend (reporte de sesión). *(medio día)*
 
 ---
 
 ### Fase 3c — Migración a PostgreSQL
-**Duración estimada: 4 días | Estado: No iniciada**
+**Duración estimada: 4 días | Estado: Parcialmente completada**
 
-Objetivo: reemplazar SQLite por PostgreSQL para que el sistema soporte múltiples usuarios
+Objetivo: reemplazar SQLite por PostgreSQL (gestionado en **Supabase**) para que el sistema soporte múltiples usuarios
 al mismo tiempo sin conflictos de escritura en la base de datos.
 
 > SQLite solo permite una escritura a la vez. Cuando varios estudiantes
 > están siendo supervisados simultáneamente, SQLite puede generar errores de bloqueo.
-> PostgreSQL no tiene esa limitación y es el motor estándar para producción.
+> PostgreSQL (en este caso, la instancia gestionada por Supabase) no tiene esa limitación y es el motor estándar para producción.
 
-- [ ] Agregar el contenedor de PostgreSQL al `docker-compose.yml` (dos instancias: una para plagio, otra para proctoring). *(1 día)*
-- [ ] Configurar las credenciales de PostgreSQL (usuario, contraseña, nombre de la base de datos) en el `.env`. *(medio día)*
-- [ ] Cambiar la variable `DATABASE_URL` en ambos servicios para que apunten a PostgreSQL en lugar de SQLite. *(medio día)*
-- [ ] Instalar el driver de PostgreSQL para Python (`psycopg2-binary`) en los Dockerfiles correspondientes. *(medio día)*
-- [ ] Verificar que las tablas se crean correctamente en PostgreSQL al arrancar (SQLAlchemy lo hace automático). *(medio día)*
+- [x] Configurar las credenciales de PostgreSQL gestionado en Supabase (usuario, contraseña, nombre de la base de datos) en el `.env`. *(medio día)*
+- [x] Cambiar la variable `DATABASE_URL` en ambos servicios para que apunten a PostgreSQL de Supabase en lugar de SQLite. *(medio día)*
+- [x] Instalar el driver de PostgreSQL para Python (`psycopg2-binary`) en los servicios correspondientes. *(medio día)*
+- [x] Ajustar la creación del motor SQLAlchemy para soportar `postgresql+psycopg2` y mantener compatibilidad con SQLite en desarrollo. *(medio día)*
+- [x] Verificar que las tablas se crean correctamente en PostgreSQL al arrancar para la API de plagio y el servicio de proctoring. *(medio día)*
+- [x] Probar que el sistema de plagio funciona correctamente con PostgreSQL (inserts, queries, batch básicos). *(medio día)*
+- [x] Probar que el sistema de proctoring funciona correctamente con PostgreSQL (sesiones, violaciones y reportes). *(medio día)*
 - [ ] Agregar Alembic para manejo de migraciones de base de datos (cuando se cambia la estructura de las tablas). *(1 día)*
-- [ ] Probar que el sistema de plagio funciona correctamente con PostgreSQL (inserts, queries, batch). *(medio día)*
-- [ ] Probar que el sistema de proctoring funciona correctamente con PostgreSQL (sesiones, violaciones). *(medio día)*
 
 ---
 
@@ -151,7 +149,13 @@ Objetivo: construir las pantallas que usan los profesores y estudiantes para int
 - [x] Conectar la cámara al endpoint `analyze-frame` del servicio de proctoring.
 - [x] Mostrar las alertas de violación en tiempo real en la pantalla de supervisión.
 - [x] Implementar sistema de notificaciones (Toast) para errores y confirmaciones.
-- [ ] Mostrar las capturas de pantalla de violaciones en el log de alertas (thumbnail + link). *(1 día — depende de Fase 3b)*
+- [x] Mostrar las capturas de pantalla de violaciones en la vista de reporte de sesión con miniatura e imagen ampliable. *(1 día — depende de Fase 3b)*
+- [x] Añadir subpestañas en la vista de Supervisión para separar **Monitor en vivo** y **Actividades** (vista de profesor). *(1 día)*
+- [x] Mostrar una tabla de exámenes en Actividades con columnas "ID Examen" y "# Estudiantes" basada en el endpoint `exams-summary`. *(1 día)*
+- [x] Mostrar una tabla de sesiones por examen con columnas "ID estudiante", "Inicio", "Fin" y "Status", con actualización casi en tiempo real mediante polling. *(2 días)*
+- [x] Crear la vista de reporte detallado de sesión (`/proctoring/report/[sessionId]`) con resumen de la sesión y lista de violaciones con imágenes. *(2 días)*
+- [ ] Integrar en el frontend la detección de cambio de pestaña/ventana (listeners `visibilitychange`/focus) y envío de eventos al backend para el informe del profesor. *(2 días)*
+- [ ] Mejorar el informe para el profesor en la UI: resumen ejecutivo (Normal/Revisar/Alto riesgo), score de riesgo, timeline visual de eventos y filtros por riesgo/estudiante/franja horaria. *(6 días)*
 - [ ] Mostrar los marcadores visuales de MediaPipe sobre la imagen de la cámara en tiempo real (puntos de rostro, mirada). *(1 semana)*
 - [ ] Mostrar un resumen al final de la sesión: total de alertas por tipo con gráfico de barras. *(2 días)*
 - [ ] Agregar filtros en la tabla de resultados: ordenar por puntaje, filtrar solo los marcados como plagio. *(1 día)*
@@ -178,11 +182,40 @@ Objetivo: empaquetar todo el sistema para que cualquiera pueda levantarlo con po
 - [x] Crear el script `docker_logs.sh` para ver los logs de cualquier servicio.
 - [x] Crear el script `dev_worker.sh` para correr el worker Celery en modo desarrollo sin Docker.
 - [ ] Agregar el Dockerfile para el frontend e incluirlo en el Docker Compose. *(1 día)*
-- [ ] Agregar MinIO al Docker Compose para el almacenamiento de capturas (Fase 3b). *(medio día)*
-- [ ] Agregar PostgreSQL al Docker Compose (Fase 3c). *(1 día)*
+- [ ] Agregar MinIO al Docker Compose para el almacenamiento de capturas (Fase 3b), en caso de querer una alternativa auto-hosteada a Supabase Storage. *(medio día, opcional)*
+- [ ] Agregar PostgreSQL al Docker Compose (Fase 3c), en caso de migrar desde la base de datos gestionada de Supabase a una instancia propia. *(1 día, opcional)*
 - [ ] Configurar Nginx como servidor web: sirve el frontend y redirige las peticiones a las APIs. *(1 día)*
 - [ ] Escribir instrucciones de despliegue en un servidor real (VPS o nube). *(1 día)*
 - [ ] Agregar HTTPS con certificado SSL para producción. *(1 día)*
+
+---
+
+### Fase 5b — Seguridad y endurecimiento para producción
+**Duración estimada: 1–2 semanas | Estado: No iniciada**
+
+Objetivo: reforzar la seguridad y robustez del sistema cuando se ejecute en entornos cercanos a producción (especialmente usando servicios gestionados como Supabase).
+
+Base de datos (PostgreSQL/Supabase):
+- [ ] Configurar Row Level Security (RLS) en Supabase para limitar el acceso a filas de la base de datos según rol/usuario. *(1 día)*
+- [ ] Asegurar que la conexión a PostgreSQL en producción use SSL (`sslmode=require` u opción equivalente). *(medio día)*
+- [ ] Definir una política de backups y prueba de restauración periódica para la base de datos. *(medio día)*
+- [ ] Documentar la rotación de credenciales (passwords, claves de servicio) y reforzar que el archivo `.env` nunca se sube al repositorio. *(medio día, coordinado con Fase 7)*
+
+Blob Storage (Supabase Storage):
+- [ ] Pasar el bucket de capturas a modo privado y servir las imágenes únicamente mediante URLs firmadas con expiración generadas en el backend. *(1 día)*
+- [ ] Definir políticas de acceso al bucket y de retención/borrado de capturas antiguas (por ejemplo, borrar después de N días o al cerrar el curso). *(medio día)*
+
+Backend (APIs):
+- [ ] Añadir autenticación y autorización a los endpoints de supervisión para profesores (`exams-summary`, `by-exam`, `report`), de forma que solo roles autorizados puedan acceder a estos datos. *(2–3 días)*
+- [ ] Añadir rate limiting a las APIs de proctoring para evitar abuso o scraping masivo. *(1 día)*
+- [ ] Revisar y ajustar los logs para no registrar información personal identificable (PII) en claro más allá de lo estrictamente necesario para depurar. *(medio día)*
+
+Frontend:
+- [ ] Alinear la vista de Supervisión/Actividades con el modelo de roles cuando exista autenticación (por ejemplo, solo rol profesor puede ver la pestaña Actividades). *(2 días, depende de auth backend)*
+
+Rendimiento y UX:
+- [ ] Añadir índices y/o paginación en endpoints que listan muchas sesiones o violaciones para evitar respuestas lentas. *(1 día)*
+- [ ] Mantener o mejorar los mensajes de carga y error, y la accesibilidad de botones y enlaces (por ejemplo, etiquetas claras como “Ver reporte”). *(1 día, coordinado con Fase 4 y 6)*
 
 ---
 
@@ -204,11 +237,13 @@ Objetivo: verificar que todo funciona correctamente junto, medir el rendimiento 
 - [ ] Probar el sistema con múltiples usuarios supervisados al mismo tiempo (con PostgreSQL). *(1 día)*
 - [ ] Verificar que las capturas de violaciones se guardan y se pueden recuperar desde el frontend. *(medio día)*
 - [ ] Revisar y corregir posibles fugas de memoria en los modelos de MediaPipe durante sesiones largas. *(1-2 días)*
+- [ ] Evaluar y ajustar los umbrales de los indicadores de trampa (cambio de pestaña, miradas laterales, ausencia/presencia de rostro, audio, etc.) para reducir falsos positivos, con ciclos de prueba y feedback humano. *(3–5 días)*
+- [ ] Probar y validar el registro de cambios de pestaña/ventana y eventos de dispositivos externos en el informe de supervisión. *(2 días)*
 
 ---
 
 ### Fase 7 — Documentación final
-**Duración estimada: 1 semana | Estado: Parcialmente completada**
+**Duración estimada: 1–2 semanas | Estado: Parcialmente completada**
 
 Objetivo: dejar todo documentado para que otra persona pueda entender, usar y continuar el proyecto.
 
@@ -220,12 +255,14 @@ Objetivo: dejar todo documentado para que otra persona pueda entender, usar y co
 - [ ] Completar el README principal con instrucciones de instalación y uso paso a paso. *(1 día)*
 - [ ] Agregar el cronograma completo al README principal. *(medio día)*
 - [ ] Documentar cómo funciona el almacenamiento de capturas y cómo configurar MinIO. *(1 día)*
-- [ ] Documentar cómo migrar de SQLite a PostgreSQL y cómo hacer backups de la base de datos. *(1 día)*
+- [ ] Documentar cómo funciona el almacenamiento de capturas y cómo configurar Supabase Storage (y opcionalmente MinIO). *(1 día)*
+- [ ] Documentar cómo migrar de SQLite a PostgreSQL (incluyendo el uso de Supabase) y cómo hacer backups de la base de datos. *(1 día)*
 - [ ] Documentar cómo ajustar los umbrales de detección de mirada y confianza. *(medio día)*
 - [ ] Escribir una guía de uso para el profesor: cómo crear una sesión, ver alertas, ver capturas y ver resultados. *(1 día)*
 - [ ] Escribir una guía de uso para el desarrollador: cómo correr el proyecto localmente. *(1 día)*
 - [ ] Agregar capturas de pantalla del sistema funcionando al README. *(medio día)*
 - [ ] Escribir el informe final del proyecto de grado. *(1-2 semanas dependiendo del formato)*
+- [ ] Documentar la arquitectura del sistema usando diagramas C4 (contexto, contenedores, componentes) y describir el flujo de datos, puntos críticos (biometría, cifrado) y mecanismos de escalabilidad, tolerancia a fallos y privacidad. *(2–3 días)*
 
 ---
 
