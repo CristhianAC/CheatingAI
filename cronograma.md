@@ -22,7 +22,7 @@ Objetivo: entender el problema, elegir las tecnologías y dejar por escrito qué
 ---
 
 ### Fase 2 — Backend: API de detección de plagio
-**Duración estimada: 3 semanas | Estado: Parcialmente Completa**
+**Duración estimada: 3 semanas | Estado: Parcialmente completada**
 
 Objetivo: construir el servicio que recibe códigos de estudiantes y detecta si son demasiado similares.
 
