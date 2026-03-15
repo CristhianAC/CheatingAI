@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from app.models.session import SessionStatus
+from app.schemas.violation import ViolationWithSnapshot
 
 
 class SessionCreate(BaseModel):
@@ -35,3 +36,33 @@ class SessionSummaryResponse(BaseModel):
     violations_by_type: dict[str, int]
 
     model_config = {"from_attributes": True}
+
+
+class ExamSummary(BaseModel):
+    exam_id: str
+    students_count: int
+    last_activity: Optional[datetime]
+
+
+class ExamSessionListItem(BaseModel):
+    id: str
+    exam_id: str
+    student_id: str
+    status: SessionStatus
+    started_at: datetime
+    ended_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+
+class SessionReport(BaseModel):
+    id: str
+    exam_id: str
+    student_id: str
+    status: SessionStatus
+    started_at: datetime
+    ended_at: Optional[datetime]
+    duration_seconds: float
+    total_violations: int
+    violations_by_type: dict[str, int]
+    violations: list[ViolationWithSnapshot]

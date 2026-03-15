@@ -31,6 +31,23 @@ export function endSession(sessionId) {
   return request('PUT', `${SESSION_BASE}/${sessionId}/end`);
 }
 
+// ── Teacher / reporting views ──────────────────────────────────────────────────
+
+// Summary of exams with number of students and last activity
+export function getExamsSummary() {
+  return request('GET', `${SESSION_BASE}/exams-summary`);
+}
+
+// List of sessions for a given exam
+export function getSessionsByExam(examId) {
+  return request('GET', `${SESSION_BASE}/by-exam/${encodeURIComponent(examId)}`);
+}
+
+// Detailed report for a finished session (used in next step)
+export function getSessionReport(sessionId) {
+  return request('GET', `${SESSION_BASE}/${sessionId}/report`);
+}
+
 // ── Frame Analysis ────────────────────────────────────────────────────────────
 
 /**
