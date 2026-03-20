@@ -13,11 +13,15 @@ from app.models.violation import ViolationEvent
 from app.schemas.session import (
     ExamSessionListItem,
     ExamSummary,
+    RiskAlertSchema,
+    RiskAssessmentSchema,
     SessionCreate,
     SessionReport,
     SessionSummaryResponse,
+    SuspiciousClusterSchema,
 )
 from app.schemas.violation import ViolationWithSnapshot
+from app.services.risk_scorer import RiskScorer
 
 
 class SessionService:
@@ -152,6 +156,37 @@ class SessionService:
         else:
             duration = (datetime.now(timezone.utc) - session.started_at).total_seconds()
 
+        assessment = RiskScorer(violations, duration).compute()
+        risk_schema = RiskAssessmentSchema(
+            score=assessment.score,
+            level=assessment.level.value,
+            level_label=assessment.level_label,
+            level_color=assessment.level_color,
+            summary=assessment.summary,
+            alerts=[
+                RiskAlertSchema(
+                    severity=a.severity,
+                    title=a.title,
+                    description=a.description,
+                    evidence_count=a.evidence_count,
+                    first_at=a.first_at,
+                    last_at=a.last_at,
+                )
+                for a in assessment.alerts
+            ],
+            suspicious_clusters=[
+                SuspiciousClusterSchema(
+                    window_start=c.window_start,
+                    window_end=c.window_end,
+                    violation_count=c.violation_count,
+                    violation_types=c.violation_types,
+                )
+                for c in assessment.suspicious_clusters
+            ],
+            critical_findings=assessment.critical_findings,
+            behavioral_notes=assessment.behavioral_notes,
+        )
+
         return SessionReport(
             id=session.id,
             exam_id=session.exam_id,
@@ -163,4 +198,5 @@ class SessionService:
             total_violations=total,
             violations_by_type=by_type,
             violations=[ViolationWithSnapshot.model_validate(v) for v in violations],
+            risk_assessment=risk_schema,
         )
