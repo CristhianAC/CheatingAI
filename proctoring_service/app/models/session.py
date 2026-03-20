@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum as SAEnum, String
+from sqlalchemy import Column, DateTime, Enum as SAEnum, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -37,6 +37,8 @@ class ProctoringSession(Base):
         nullable=False,
     )
     ended_at = Column(DateTime(timezone=True), nullable=True)
+    # JSON-encoded list[float] — face embedding captured at session start
+    reference_embedding = Column(Text, nullable=True)
 
     violations = relationship(
         "ViolationEvent",

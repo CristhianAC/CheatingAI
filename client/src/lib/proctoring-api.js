@@ -48,6 +48,55 @@ export function getSessionReport(sessionId) {
   return request('GET', `${SESSION_BASE}/${sessionId}/report`);
 }
 
+// ── Browser events ────────────────────────────────────────────────────────────
+
+/**
+ * Report a browser focus/visibility event as a proctoring violation.
+ * @param {string} sessionId - Active session ID
+ * @param {'tab_switch'|'window_blur'} eventType
+ */
+export function reportBrowserEvent(sessionId, eventType) {
+  return request('POST', `${PROCTOR_BASE}/browser-event`, {
+    session_id: sessionId,
+    event_type: eventType,
+  });
+}
+
+// ── Identity verification ─────────────────────────────────────────────────────
+
+function _captureBase64(videoEl, quality = 0.85) {
+  const canvas = document.createElement('canvas');
+  canvas.width = videoEl.videoWidth || 640;
+  canvas.height = videoEl.videoHeight || 480;
+  canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', quality).split(',')[1];
+}
+
+/**
+ * Capture a reference face embedding at session start.
+ * @param {HTMLVideoElement} videoEl
+ * @param {string} sessionId
+ */
+export function registerIdentity(videoEl, sessionId) {
+  return request('POST', `${PROCTOR_BASE}/register-identity`, {
+    session_id: sessionId,
+    frame_base64: _captureBase64(videoEl),
+  });
+}
+
+/**
+ * Compare the current face against the registered identity.
+ * Records a violation automatically if mismatch is detected.
+ * @param {HTMLVideoElement} videoEl
+ * @param {string} sessionId
+ */
+export function checkIdentity(videoEl, sessionId) {
+  return request('POST', `${PROCTOR_BASE}/check-identity`, {
+    session_id: sessionId,
+    frame_base64: _captureBase64(videoEl),
+  });
+}
+
 // ── Frame Analysis ────────────────────────────────────────────────────────────
 
 /**

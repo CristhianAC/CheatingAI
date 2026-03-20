@@ -13,6 +13,9 @@ class ViolationType(str, enum.Enum):
     NO_PERSON = "no_person"
     LOOKING_AWAY = "looking_away"
     PHONE_DETECTED = "phone_detected"
+    TAB_SWITCH = "tab_switch"
+    WINDOW_BLUR = "window_blur"
+    IDENTITY_MISMATCH = "identity_mismatch"
 
 
 class ViolationEvent(Base):

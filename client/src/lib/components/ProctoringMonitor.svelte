@@ -1,6 +1,6 @@
 <script>
   import { onDestroy, createEventDispatcher } from 'svelte';
-  import { startSession, endSession, analyzeFrame, getSessionStats, calibrateFrame } from '$lib/proctoring-api.js';
+  import { startSession, endSession, analyzeFrame, getSessionStats, calibrateFrame, reportBrowserEvent, registerIdentity, checkIdentity } from '$lib/proctoring-api.js';
   import { showToast, showError } from '$lib/stores.js';
 
   export let examId = '';
@@ -17,7 +17,42 @@
   let intervalHandle = null;
   let calibMode = false;     // toggle: show raw calibration view
 
+  // ── Identity state ─────────────────────────────────────────────────────────
+  // 'none' | 'pending' | 'registered' | 'failed'
+  let identityStatus = 'none';
+  let identityError = '';
+  let identityRegistering = false;
+  let lastIdentityCheck = 0;
+  const IDENTITY_CHECK_INTERVAL_MS = 30_000;
+
   const FRAME_INTERVAL_MS = 2000;
+
+  // ── Browser focus / visibility detection ──────────────────────────────────
+  // Tracks whether a blur was caused by a tab switch (so we don't double-report)
+  let _tabSwitchPending = false;
+
+  function onVisibilityChange() {
+    if (!isActive || !sessionId) return;
+    if (document.hidden) {
+      _tabSwitchPending = true;
+      const violation = { violation_type: 'tab_switch', confidence: 1.0, description: 'El estudiante cambió de pestaña' };
+      recentViolations = [violation, ...recentViolations].slice(0, 20);
+      dispatch('violation', { violations: [violation] });
+      reportBrowserEvent(sessionId, 'tab_switch').catch(() => {});
+    } else {
+      _tabSwitchPending = false;
+    }
+  }
+
+  function onWindowBlur() {
+    if (!isActive || !sessionId) return;
+    // If visibility also changed, it's a tab switch — already reported above
+    if (_tabSwitchPending) return;
+    const violation = { violation_type: 'window_blur', confidence: 1.0, description: 'El estudiante cambió de ventana o aplicación' };
+    recentViolations = [violation, ...recentViolations].slice(0, 20);
+    dispatch('violation', { violations: [violation] });
+    reportBrowserEvent(sessionId, 'window_blur').catch(() => {});
+  }
 
   async function startProctoring() {
     try {
@@ -30,6 +65,11 @@
       isActive = true;
 
       intervalHandle = setInterval(sendFrame, FRAME_INTERVAL_MS);
+
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      window.addEventListener('blur', onWindowBlur);
+
+      identityStatus = 'pending';
       showToast('Supervisión iniciada');
       dispatch('started', { sessionId });
     } catch (e) {
@@ -49,15 +89,55 @@
           recentViolations = [...result.violations, ...recentViolations].slice(0, 20);
           dispatch('violation', { violations: result.violations });
         }
+
+        // Periodic identity check (every 30s, only when identity is registered)
+        if (identityStatus === 'registered' && Date.now() - lastIdentityCheck >= IDENTITY_CHECK_INTERVAL_MS) {
+          lastIdentityCheck = Date.now();
+          checkIdentity(videoEl, sessionId).then(res => {
+            if (!res.identity_verified) {
+              const violation = {
+                violation_type: 'identity_mismatch',
+                confidence: res.similarity != null ? 1 - res.similarity : 1,
+                description: res.message,
+              };
+              recentViolations = [violation, ...recentViolations].slice(0, 20);
+              dispatch('violation', { violations: [violation] });
+            }
+          }).catch(() => {});
+        }
       }
     } catch (e) {
       console.warn('Frame analysis failed:', e.message);
     }
   }
 
+  async function captureIdentity() {
+    if (!videoEl || !sessionId) return;
+    identityRegistering = true;
+    identityError = '';
+    try {
+      const res = await registerIdentity(videoEl, sessionId);
+      if (res.registered) {
+        identityStatus = 'registered';
+      } else {
+        identityStatus = 'failed';
+        identityError = res.message;
+      }
+    } catch (e) {
+      identityStatus = 'failed';
+      identityError = e.message;
+    } finally {
+      identityRegistering = false;
+    }
+  }
+
   async function stopProctoring() {
     clearInterval(intervalHandle);
     isActive = false;
+    identityStatus = 'none';
+
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('blur', onWindowBlur);
 
     if (videoEl?.srcObject) {
       videoEl.srcObject.getTracks().forEach(t => t.stop());
@@ -85,6 +165,9 @@
       no_person: 'Persona ausente',
       looking_away: 'Mirando a otro lado',
       phone_detected: 'Uso de teléfono',
+      tab_switch: 'Cambio de pestaña',
+      window_blur: 'Cambio de ventana/app',
+      identity_mismatch: 'Posible sustitución de persona',
     }[type] ?? type;
   }
 
@@ -134,6 +217,33 @@
 
   {#if isActive && sessionId}
     <p class="session-id">Sesión: <code>{sessionId}</code></p>
+  {/if}
+
+  <!-- ── Identity registration banner ── -->
+  {#if isActive && identityStatus === 'pending'}
+    <div class="identity-banner identity-banner--pending">
+      <span class="identity-banner__icon">🪪</span>
+      <span>Registra tu identidad para que el sistema verifique que eres tú durante todo el examen.</span>
+      <button class="btn btn--primary btn--sm" on:click={captureIdentity} disabled={identityRegistering}>
+        {identityRegistering ? 'Capturando…' : 'Capturar foto'}
+      </button>
+    </div>
+  {:else if isActive && identityStatus === 'registered'}
+    <div class="identity-banner identity-banner--ok">
+      <span class="identity-banner__icon">✓</span>
+      <span>Identidad registrada — verificando cada 30 s</span>
+    </div>
+  {:else if isActive && identityStatus === 'failed'}
+    <div class="identity-banner identity-banner--error">
+      <span class="identity-banner__icon">✗</span>
+      <span>
+        No se pudo registrar la identidad.
+        {#if identityError}<br><small>{identityError}</small>{/if}
+      </span>
+      <button class="btn btn--primary btn--sm" on:click={captureIdentity} disabled={identityRegistering}>
+        Reintentar
+      </button>
+    </div>
   {/if}
 
   <!-- ── Calibration view ── -->
@@ -374,6 +484,26 @@
   .violation--no_person        { background: #fee2e2; border-left: 3px solid #ef4444; }
   .violation--looking_away     { background: #fef9c3; border-left: 3px solid #eab308; }
   .violation--phone_detected   { background: #fce7f3; border-left: 3px solid #ec4899; }
+  .violation--tab_switch        { background: #ede9fe; border-left: 3px solid #7c3aed; }
+  .violation--window_blur       { background: #e0f2fe; border-left: 3px solid #0284c7; }
+  .violation--identity_mismatch { background: #fff1f2; border-left: 3px solid #e11d48; }
+
+  /* ── Identity banner ── */
+  .identity-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.83rem;
+  }
+  .identity-banner--pending { background: #fefce8; border: 1px solid #fde047; color: #713f12; }
+  .identity-banner--ok      { background: #f0fdf4; border: 1px solid #86efac; color: #14532d; }
+  .identity-banner--error   { background: #fff1f2; border: 1px solid #fda4af; color: #881337; }
+  .identity-banner__icon    { font-size: 1rem; flex-shrink: 0; }
+  .identity-banner span:nth-child(2) { flex: 1; }
+  .btn--sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; flex-shrink: 0; }
   .violation__type { font-weight: 700; color: #111827; }
   .violation__conf { font-size: 0.78rem; color: #6b7280; }
   .violation__desc { font-size: 0.78rem; color: #6b7280; font-style: italic; }

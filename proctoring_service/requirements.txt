@@ -8,3 +8,5 @@ opencv-python-headless==4.10.0.84
 numpy==1.26.4
 psycopg2-binary==2.9.10
 supabase==2.10.0
+deepface==0.0.93
+tf-keras>=2.16
