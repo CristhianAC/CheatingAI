@@ -64,14 +64,12 @@ declare module '$env/static/private' {
 	export const VSCODE_PROFILE_INITIALIZED: string;
 	export const __CF_USER_TEXT_ENCODING: string;
 	export const npm_execpath: string;
-	export const VIRTUAL_ENV: string;
 	export const PAGER: string;
 	export const PYDEVD_DISABLE_FILE_VALIDATION: string;
 	export const LSCOLORS: string;
 	export const npm_config_frozen_lockfile: string;
 	export const npm_config_verify_deps_before_run: string;
 	export const PATH: string;
-	export const LaunchInstanceID: string;
 	export const npm_package_json: string;
 	export const USER_ZDOTDIR: string;
 	export const __CFBundleIdentifier: string;
@@ -85,8 +83,8 @@ declare module '$env/static/private' {
 	export const P9K_TTY: string;
 	export const LANG: string;
 	export const npm_package_name: string;
-	export const BUNDLED_DEBUGPY_PATH: string;
 	export const PYTHONSTARTUP: string;
+	export const BUNDLED_DEBUGPY_PATH: string;
 	export const NODE_PATH: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const XPC_FLAGS: string;
@@ -112,12 +110,10 @@ declare module '$env/static/private' {
 	export const GIT_ASKPASS: string;
 	export const _P9K_SSH_TTY: string;
 	export const OSLogRateLimit: string;
-	export const SECURITYSESSIONID: string;
-	export const VIRTUAL_ENV_PROMPT: string;
 	export const COLORTERM: string;
 	export const npm_node_execpath: string;
-	export const NODE_ENV: string;
 	export const CONSOLE_NINJA_WELCOME_SHOWN: string;
+	export const NODE_ENV: string;
 	export const CONSOLE_NINJA_PREVIEW_ONLY_SHOWN: string;
 }
 
@@ -231,14 +227,12 @@ declare module '$env/dynamic/private' {
 		VSCODE_PROFILE_INITIALIZED: string;
 		__CF_USER_TEXT_ENCODING: string;
 		npm_execpath: string;
-		VIRTUAL_ENV: string;
 		PAGER: string;
 		PYDEVD_DISABLE_FILE_VALIDATION: string;
 		LSCOLORS: string;
 		npm_config_frozen_lockfile: string;
 		npm_config_verify_deps_before_run: string;
 		PATH: string;
-		LaunchInstanceID: string;
 		npm_package_json: string;
 		USER_ZDOTDIR: string;
 		__CFBundleIdentifier: string;
@@ -252,8 +246,8 @@ declare module '$env/dynamic/private' {
 		P9K_TTY: string;
 		LANG: string;
 		npm_package_name: string;
-		BUNDLED_DEBUGPY_PATH: string;
 		PYTHONSTARTUP: string;
+		BUNDLED_DEBUGPY_PATH: string;
 		NODE_PATH: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		XPC_FLAGS: string;
@@ -279,12 +273,10 @@ declare module '$env/dynamic/private' {
 		GIT_ASKPASS: string;
 		_P9K_SSH_TTY: string;
 		OSLogRateLimit: string;
-		SECURITYSESSIONID: string;
-		VIRTUAL_ENV_PROMPT: string;
 		COLORTERM: string;
 		npm_node_execpath: string;
-		NODE_ENV: string;
 		CONSOLE_NINJA_WELCOME_SHOWN: string;
+		NODE_ENV: string;
 		CONSOLE_NINJA_PREVIEW_ONLY_SHOWN: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
