@@ -79,7 +79,9 @@ Objetivo: construir el servicio que analiza los fotogramas de la cámara del est
 - [x] Crear el endpoint para ver el resumen de violaciones de una sesión (`GET /api/v1/sessions/{id}`).
 - [x] Implementar el guardado automático de violaciones en base de datos durante el análisis.
 - [x] Configurar los parámetros de mirada ajustables por variable de entorno (YAW_THRESHOLD, PITCH_THRESHOLD).
-- [ ] Registrar cambios de pestaña/ventana durante el examen con timestamp y contexto (modelo y endpoint de eventos de pestaña en el backend). *(3–5 días)*
+- [x] Registrar cambios de pestaña/ventana durante el examen con timestamp y contexto (endpoint `/api/v1/proctoring/browser-event` persistiendo como `ViolationEvent`). *(3–5 días)*
+- [x] Implementar verificación de identidad por cámara (captura de embedding de referencia y chequeos periódicos con registro de violación `identity_mismatch`). *(1–2 semanas)*
+- [x] Implementar motor de evaluación de riesgo por sesión (score 0–100, nivel Bajo/Medio/Alto/Crítico, alertas y clusters) para reportes del profesor. *(3–5 días)*
 - [ ] Definir y refinar indicadores de trampa combinados (cambio de pestaña, miradas laterales, audio, ausencia/presencia de rostro, dispositivos externos) y asociarlos a un score de riesgo. *(2–3 días)*
 - [ ] Diseñar e implementar estrategia para reducir falsos positivos (calibración de modelos y umbrales, registro de metadatos como iluminación/fps, revisión humana antes de sanción). *(repartido entre Fase 3 y 6)*
 - [ ] Integrar la estimación de pose corporal (MediaPipe Pose) al servicio de proctoring. *(1 semana)*
@@ -154,14 +156,30 @@ Objetivo: construir las pantallas que usan los profesores y estudiantes para int
 - [x] Mostrar una tabla de exámenes en Actividades con columnas "ID Examen" y "# Estudiantes" basada en el endpoint `exams-summary`. *(1 día)*
 - [x] Mostrar una tabla de sesiones por examen con columnas "ID estudiante", "Inicio", "Fin" y "Status", con actualización casi en tiempo real mediante polling. *(2 días)*
 - [x] Crear la vista de reporte detallado de sesión (`/proctoring/report/[sessionId]`) con resumen de la sesión y lista de violaciones con imágenes. *(2 días)*
-- [ ] Integrar en el frontend la detección de cambio de pestaña/ventana (listeners `visibilitychange`/focus) y envío de eventos al backend para el informe del profesor. *(2 días)*
-- [ ] Mejorar el informe para el profesor en la UI: resumen ejecutivo (Normal/Revisar/Alto riesgo), score de riesgo, timeline visual de eventos y filtros por riesgo/estudiante/franja horaria. *(6 días)*
+- [x] Integrar en el frontend la detección de cambio de pestaña/ventana (listeners `visibilitychange`/blur) y envío de eventos al backend para el informe del profesor. *(2 días)*
+- [x] Integrar verificación de identidad en la UI de Supervisión: captura de identidad (embedding) al inicio y chequeos periódicos durante la sesión. *(2–3 días)*
+- [ ] Mejorar el informe para el profesor en la UI (pendiente de pulido y expansión): *(6–10 días)*
+  - [x] Mostrar score de riesgo 0–100, nivel (bajo/medio/alto/crítico), resumen ejecutivo y alertas en lenguaje natural.
+  - [x] Mostrar evidencia y agrupación por “picos” (clusters) de comportamiento sospechoso.
+  - [ ] Agregar timeline visual completo (línea temporal con eventos y picos).
+  - [ ] Agregar filtros/búsqueda (por severidad, tipo de señal, franja horaria).
+  - [ ] Agregar trazabilidad: acciones del profesor (marcar falso positivo, nota, escalar).
 - [ ] Mostrar los marcadores visuales de MediaPipe sobre la imagen de la cámara en tiempo real (puntos de rostro, mirada). *(1 semana)*
 - [ ] Mostrar un resumen al final de la sesión: total de alertas por tipo con gráfico de barras. *(2 días)*
 - [ ] Agregar filtros en la tabla de resultados: ordenar por puntaje, filtrar solo los marcados como plagio. *(1 día)*
 - [ ] Agregar paginación en la lista de submissions y en los resultados de jobs. *(1 día)*
 - [ ] Hacer la interfaz responsiva para pantallas pequeñas (teléfonos y tablets). *(2 días)*
 - [ ] Agregar modo oscuro. *(1 día)*
+
+- [ ] Unificar la interfaz y documentación al español (si quedan secciones en inglés en UI/docs). *(1 día)*
+- [ ] Cambiar nombre visible del producto a “Procto” (navbar, títulos de páginas, README si aplica). *(medio día–1 día)*
+- [ ] Agregar logo de “La Norte” (roble amarillo) en navbar + favicon:
+  - [ ] Definir/crear asset final (diseño gráfico). *(1 día)*
+  - [ ] Integrarlo en la UI. *(medio día)*
+- [ ] Evaluar migración de Supabase → “Roble” (pendiente de decisión con el profesor): *(1–2 días)*
+  - [ ] Reunir requisitos de Roble y comparar (DB, Storage, Auth, costos, restricciones). *(1 día)*
+  - [ ] Decisión final con el profesor. *(pendiente)*
+  - [ ] Plan de migración (solo si se aprueba). *(2–3 días)*
 
 ---
 
@@ -216,6 +234,8 @@ Frontend:
 Rendimiento y UX:
 - [ ] Añadir índices y/o paginación en endpoints que listan muchas sesiones o violaciones para evitar respuestas lentas. *(1 día)*
 - [ ] Mantener o mejorar los mensajes de carga y error, y la accesibilidad de botones y enlaces (por ejemplo, etiquetas claras como “Ver reporte”). *(1 día, coordinado con Fase 4 y 6)*
+- [ ] Revisar privacidad y consentimiento para biometría (verificación de identidad): aviso al estudiante, retención de embeddings, cifrado/seguridad y cumplimiento de normativa aplicable. *(1–2 días)*
+- [ ] Endurecer el endpoint de eventos del navegador para evitar abuso (validación de frecuencia por sesión, firma/token de sesión, protección anti-spam). *(1 día)*
 
 ---
 
@@ -239,6 +259,8 @@ Objetivo: verificar que todo funciona correctamente junto, medir el rendimiento 
 - [ ] Revisar y corregir posibles fugas de memoria en los modelos de MediaPipe durante sesiones largas. *(1-2 días)*
 - [ ] Evaluar y ajustar los umbrales de los indicadores de trampa (cambio de pestaña, miradas laterales, ausencia/presencia de rostro, audio, etc.) para reducir falsos positivos, con ciclos de prueba y feedback humano. *(3–5 días)*
 - [ ] Probar y validar el registro de cambios de pestaña/ventana y eventos de dispositivos externos en el informe de supervisión. *(2 días)*
+- [ ] Validar la verificación de identidad en condiciones reales (iluminación baja, accesorios, ángulos) y definir protocolo ante fallos (re-intento, revisión humana). *(2–3 días)*
+- [ ] Probar mitigaciones para “múltiples monitores” (fullscreen obligatorio, pérdida de fullscreen, screen sharing opcional) y medir falsos positivos/impacto en UX. *(2–3 días)*
 
 ---
 
