@@ -1,5 +1,14 @@
 # INFORME 2 — CheatingAI / Procto
 
+## Documentación complementaria
+
+El presente archivo constituye el **informe principal** del entregable. En la raíz del repositorio se encuentran, como material de apoyo:
+
+- **`ARCHITECTURE.md`**: ampliación de la arquitectura según el modelo C4, con diagramas y niveles de detalle adicionales frente al resumen incluido en las secciones de diseño de este documento.
+- **`CRITERIOS_DE_RIESGO.md`**: criterios, reglas y parámetros vinculados al motor de evaluación de riesgo (scoring) de las sesiones de supervisión.
+
+Se recomienda leer primero el cuerpo de este informe; posteriormente pueden consultarse los archivos anteriores cuando se requiera mayor profundidad en arquitectura o en la definición operativa del riesgo.
+
 ## Introducción
 
 CheatingAI (nombre de trabajo; en el cronograma se contempla el rebranding a **Procto**) es un sistema orientado a apoyar la supervisión académica y la detección de irregularidades en **evaluaciones virtuales** mediante **supervisión por cámara y navegador (proctoring)**: análisis de fotogramas y eventos del navegador para registrar comportamientos sospechosos durante un examen, almacenarlos como evidencia y generar reportes comprensibles para la revisión académica.
