@@ -162,7 +162,7 @@
   }
   .toggle { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.88rem; }
   .score-filter { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; }
-  .score-filter .slider { width: 180px; accent-color: #6366f1; }
+  .score-filter .slider { width: 180px; accent-color: var(--procto-accent, #0071e3); }
 
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }

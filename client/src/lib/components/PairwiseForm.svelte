@@ -142,7 +142,7 @@
   }
   .card__desc { color: #6b7280; font-size: 0.88rem; margin-bottom: 1rem; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .slider { width: 100%; accent-color: #6366f1; }
+  .slider { width: 100%; accent-color: var(--procto-accent, #0071e3); }
   .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; }
   .hint { font-size: 0.8rem; color: #f59e0b; margin-top: 0.5rem; }
 

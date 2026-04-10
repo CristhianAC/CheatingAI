@@ -62,7 +62,7 @@
     border-radius: 999px;
     transition: width 0.4s ease;
   }
-  .progress-fill--running   { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+  .progress-fill--running   { background: linear-gradient(90deg, var(--procto-accent, #0071e3), #5ac8fa); }
   .progress-fill--completed { background: #10b981; }
   .progress-fill--failed    { background: #ef4444; }
   .progress-fill--pending   { background: #d1d5db; }

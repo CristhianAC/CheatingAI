@@ -1,0 +1,2 @@
+# Desarrollo y pruebas (opcional): pip install -r requirements.txt -r requirements-dev.txt
+pytest==8.3.4

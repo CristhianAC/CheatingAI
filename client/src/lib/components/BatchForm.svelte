@@ -159,9 +159,9 @@
     background: #f9fafb; border: none; color: #6b7280; font-weight: 500;
     transition: background 0.15s;
   }
-  .scope-tab.active { background: #6366f1; color: #fff; }
+  .scope-tab.active { background: var(--procto-accent, #0071e3); color: #fff; }
 
-  .slider { width: 100%; accent-color: #6366f1; }
+  .slider { width: 100%; accent-color: var(--procto-accent, #0071e3); }
   .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; }
 
   .job-progress { margin-top: 1.25rem; padding: 1rem; background: #f9fafb; border-radius: 10px; }

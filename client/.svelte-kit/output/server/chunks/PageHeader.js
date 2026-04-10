@@ -1,0 +1,17 @@
+import { c as create_ssr_component, e as escape, i as compute_slots } from "./ssr.js";
+const css = {
+  code: ".page-header.svelte-6s9d9{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.75rem;flex-wrap:wrap}.page-header__title.svelte-6s9d9{font-size:1.625rem;font-weight:600;letter-spacing:-0.03em;color:var(--procto-text, #1d1d1f);margin:0 0 0.35rem;line-height:1.15}.page-header__subtitle.svelte-6s9d9{margin:0;font-size:0.9375rem;line-height:1.45;color:var(--procto-text-secondary, #6e6e73);max-width:42rem}.page-header__actions.svelte-6s9d9{display:flex;align-items:center;gap:0.5rem;flex-shrink:0}",
+  map: `{"version":3,"file":"PageHeader.svelte","sources":["PageHeader.svelte"],"sourcesContent":["<script>\\n  /** Título de página alineado al sistema visual Procto */\\n  export let title = '';\\n  /** Subtítulo opcional */\\n  export let subtitle = '';\\n<\/script>\\n\\n<header class=\\"page-header\\">\\n  <div class=\\"page-header__text\\">\\n    <h1 class=\\"page-header__title\\">{title}</h1>\\n    {#if subtitle}\\n      <p class=\\"page-header__subtitle\\">{subtitle}</p>\\n    {/if}\\n  </div>\\n  {#if $$slots.actions}\\n    <div class=\\"page-header__actions\\">\\n      <slot name=\\"actions\\" />\\n    </div>\\n  {/if}\\n</header>\\n\\n<style>\\n  .page-header {\\n    display: flex;\\n    align-items: flex-start;\\n    justify-content: space-between;\\n    gap: 1rem;\\n    margin-bottom: 1.75rem;\\n    flex-wrap: wrap;\\n  }\\n  .page-header__title {\\n    font-size: 1.625rem;\\n    font-weight: 600;\\n    letter-spacing: -0.03em;\\n    color: var(--procto-text, #1d1d1f);\\n    margin: 0 0 0.35rem;\\n    line-height: 1.15;\\n  }\\n  .page-header__subtitle {\\n    margin: 0;\\n    font-size: 0.9375rem;\\n    line-height: 1.45;\\n    color: var(--procto-text-secondary, #6e6e73);\\n    max-width: 42rem;\\n  }\\n  .page-header__actions {\\n    display: flex;\\n    align-items: center;\\n    gap: 0.5rem;\\n    flex-shrink: 0;\\n  }\\n</style>\\n"],"names":[],"mappings":"AAsBE,yBAAa,CACX,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,UAAU,CACvB,eAAe,CAAE,aAAa,CAC9B,GAAG,CAAE,IAAI,CACT,aAAa,CAAE,OAAO,CACtB,SAAS,CAAE,IACb,CACA,gCAAoB,CAClB,SAAS,CAAE,QAAQ,CACnB,WAAW,CAAE,GAAG,CAChB,cAAc,CAAE,OAAO,CACvB,KAAK,CAAE,IAAI,aAAa,CAAC,QAAQ,CAAC,CAClC,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,OAAO,CACnB,WAAW,CAAE,IACf,CACA,mCAAuB,CACrB,MAAM,CAAE,CAAC,CACT,SAAS,CAAE,SAAS,CACpB,WAAW,CAAE,IAAI,CACjB,KAAK,CAAE,IAAI,uBAAuB,CAAC,QAAQ,CAAC,CAC5C,SAAS,CAAE,KACb,CACA,kCAAsB,CACpB,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,MAAM,CACnB,GAAG,CAAE,MAAM,CACX,WAAW,CAAE,CACf"}`
+};
+const PageHeader = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let $$slots = compute_slots(slots);
+  let { title = "" } = $$props;
+  let { subtitle = "" } = $$props;
+  if ($$props.title === void 0 && $$bindings.title && title !== void 0) $$bindings.title(title);
+  if ($$props.subtitle === void 0 && $$bindings.subtitle && subtitle !== void 0) $$bindings.subtitle(subtitle);
+  $$result.css.add(css);
+  return `<header class="page-header svelte-6s9d9"><div class="page-header__text"><h1 class="page-header__title svelte-6s9d9">${escape(title)}</h1> ${subtitle ? `<p class="page-header__subtitle svelte-6s9d9">${escape(subtitle)}</p>` : ``}</div> ${$$slots.actions ? `<div class="page-header__actions svelte-6s9d9">${slots.actions ? slots.actions({}) : ``}</div>` : ``} </header>`;
+});
+export {
+  PageHeader as P
+};

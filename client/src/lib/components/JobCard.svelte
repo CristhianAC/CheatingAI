@@ -68,8 +68,8 @@
     cursor: pointer; transition: all 0.15s;
     background: #fff;
   }
-  .job-card:hover { border-color: #6366f1; }
-  .job-card.selected { border-color: #6366f1; background: #eef2ff; }
+  .job-card:hover { border-color: var(--procto-accent, #0071e3); }
+  .job-card.selected { border-color: var(--procto-accent, #0071e3); background: rgba(0, 113, 227, 0.08); }
   .job-card.completed { border-color: #10b981; }
 
   .job-top {
@@ -110,7 +110,7 @@
   }
   .mini-bar {
     height: 100%; border-radius: 999px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: linear-gradient(90deg, var(--procto-accent, #0071e3), #5ac8fa);
     transition: width 0.4s ease;
   }
 

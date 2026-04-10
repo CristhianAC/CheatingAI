@@ -7,10 +7,13 @@
   let loading = true;
   let error = '';
   let showAllViolations = false;
+  /** Filtro y orden locales sobre la lista de eventos (sin cambiar API). */
+  let eventFilterType = '';
+  let eventSort = 'time-desc';
 
   const VIOLATION_LABELS = {
     multiple_persons: 'Varias personas',
-    no_person: 'Estudiante ausente',
+    no_person: 'Participante ausente',
     looking_away: 'Mirada desviada',
     phone_detected: 'Uso de teléfono',
     tab_switch: 'Cambio de pestaña',
@@ -26,10 +29,10 @@
   };
 
   const LEVEL_META = {
-    bajo:    { label: 'Sin señales de trampa',          bg: '#f0fdf4', border: '#86efac', score_color: '#16a34a', ring: '#bbf7d0' },
+    bajo:    { label: 'Sin señales relevantes',         bg: '#f0fdf4', border: '#86efac', score_color: '#16a34a', ring: '#bbf7d0' },
     medio:   { label: 'Comportamiento inusual',          bg: '#fefce8', border: '#fde047', score_color: '#ca8a04', ring: '#fef08a' },
     alto:    { label: 'Comportamiento sospechoso',       bg: '#fff7ed', border: '#fdba74', score_color: '#ea580c', ring: '#fed7aa' },
-    critico: { label: 'Alta probabilidad de trampa',     bg: '#fef2f2', border: '#fca5a5', score_color: '#dc2626', ring: '#fecaca' },
+    critico: { label: 'Riesgo crítico para revisión',    bg: '#fef2f2', border: '#fca5a5', score_color: '#dc2626', ring: '#fecaca' },
   };
 
   function violationLabel(type) {
@@ -62,6 +65,30 @@
   $: ra = report?.risk_assessment;
   $: levelMeta = ra ? (LEVEL_META[ra.level] ?? LEVEL_META.bajo) : null;
 
+  $: eventTypeOptions = report?.violations?.length
+    ? [...new Set(report.violations.map((v) => v.violation_type))].sort()
+    : [];
+
+  $: filteredViolations = (() => {
+    if (!report?.violations?.length) return [];
+    let list = [...report.violations];
+    if (eventFilterType) {
+      list = list.filter((v) => v.violation_type === eventFilterType);
+    }
+    if (eventSort === 'time-desc') {
+      list.sort((a, b) => new Date(b.detected_at) - new Date(a.detected_at));
+    } else if (eventSort === 'time-asc') {
+      list.sort((a, b) => new Date(a.detected_at) - new Date(b.detected_at));
+    } else if (eventSort === 'conf-desc') {
+      list.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+    } else if (eventSort === 'conf-asc') {
+      list.sort((a, b) => (a.confidence ?? 0) - (b.confidence ?? 0));
+    }
+    return list;
+  })();
+
+  $: visibleViolations = showAllViolations ? filteredViolations : filteredViolations.slice(0, 6);
+
   onMount(async () => {
     const sessionId = $page.params.sessionId;
     try {
@@ -77,17 +104,17 @@
 </script>
 
 <svelte:head>
-  <title>Reporte de Supervisión | CheatingAI</title>
+  <title>Reporte de supervisión | Procto</title>
 </svelte:head>
 
 <div class="page">
   <header class="page__header">
     <div class="page__header-left">
       <a href="/proctoring" class="back-link">← Volver a supervisión</a>
-      <h1 class="page__title">Reporte de Supervisión</h1>
+      <h1 class="page__title">Reporte de supervisión</h1>
       {#if report}
         <p class="page__meta">
-          Estudiante <strong>{report.student_id}</strong> ·
+          Participante <strong>{report.student_id}</strong> ·
           Examen <strong>{report.exam_id}</strong> ·
           {fmtDateTime(report.started_at)}
         </p>
@@ -122,13 +149,18 @@
         </div>
         <div class="verdict-body">
           <div class="verdict-level" style="color:{levelMeta.score_color};">
-            {#if ra.level === 'critico'}⛔{:else if ra.level === 'alto'}⚠️{:else if ra.level === 'medio'}🔶{:else}✅{/if}
-            {ra.level_label}
+            <span class="verdict-level__label">{ra.level_label}</span>
           </div>
           <p class="verdict-summary">{ra.summary}</p>
+          <p class="insight-line">
+            <strong>Nivel de riesgo: qué indica.</strong> Resume la severidad general de las señales observadas en esta sesión.
+          </p>
+          <p class="action-line">
+            <strong>Siguiente acción sugerida:</strong> revisa primero los hallazgos críticos y luego valida la evidencia de eventos.
+          </p>
           {#if ra.critical_findings.length > 0}
             <div class="verdict-findings">
-              <strong>Hallazgos críticos:</strong>
+              <strong>Hallazgos clave: por qué importa.</strong>
               {#each ra.critical_findings as f}
                 <span class="finding-chip finding-chip--critico">{f}</span>
               {/each}
@@ -146,6 +178,137 @@
       </section>
     {/if}
 
+    <section class="card card--compact">
+      <h2 class="card__title">Cómo interpretar este reporte</h2>
+      <ul class="glossary-list">
+        <li><strong>Score (0–100):</strong> lectura general del riesgo en la sesión.</li>
+        <li><strong>Nivel (bajo/medio/alto/crítico):</strong> severidad estimada de las señales.</li>
+        <li><strong>Alertas:</strong> patrones detectados con su evidencia asociada.</li>
+        <li><strong>Clusters o picos:</strong> concentración temporal de señales en una misma ventana.</li>
+      </ul>
+    </section>
+
+    {#if ra?.alerts?.length > 0}
+      <section class="card">
+        <h2 class="card__title">Hallazgos críticos para revisión docente</h2>
+        <p class="card__desc">
+          Cada hallazgo resume un patrón detectado, su severidad y la evidencia temporal disponible.
+        </p>
+        <p class="insight-line">
+          <strong>Qué significa:</strong> la combinación de alertas orienta la prioridad de revisión, pero no implica sanción automática.
+        </p>
+        <p class="action-line">
+          <strong>Qué revisar primero:</strong> comienza por severidad crítica o alta y confirma coincidencia entre descripción y eventos.
+        </p>
+        <div class="alerts-list">
+          {#each ra.alerts as alert}
+            {@const meta = SEVERITY_META[alert.severity] ?? SEVERITY_META.bajo}
+            <article
+              class="alert-card"
+              style="background:{meta.bg}; border-color:{meta.border};"
+            >
+              <div class="alert-card__header">
+                <span class="alert-badge" style="background:{meta.badge};">
+                  {meta.label}
+                </span>
+                <span class="alert-evidence" style="color:{meta.text};">
+                  {alert.evidence_count} evento{alert.evidence_count !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <h3 class="alert-title" style="color:{meta.text};">{alert.title}</h3>
+              <p class="alert-desc">{alert.description}</p>
+              {#if alert.first_at}
+                <p class="alert-time">
+                  Primera detección: {fmtTime(alert.first_at)}
+                  {#if alert.last_at && alert.last_at !== alert.first_at}
+                    · Última: {fmtTime(alert.last_at)}
+                  {/if}
+                </p>
+              {/if}
+            </article>
+          {/each}
+        </div>
+      </section>
+    {:else if ra}
+      <section class="card">
+        <h2 class="card__title">Hallazgos críticos para revisión docente</h2>
+        <div class="no-alerts">
+                    <p>No se generaron alertas. El comportamiento del participante no presentó señales relevantes para revisión adicional.</p>
+        </div>
+      </section>
+    {/if}
+
+    <section class="card">
+      <div class="violations-header">
+        <h2 class="card__title">Eventos con evidencia</h2>
+        <button
+          class="btn btn--ghost btn--sm"
+          on:click={() => showAllViolations = !showAllViolations}
+        >
+          {showAllViolations ? 'Ocultar' : `Ver todos (${filteredViolations.length})`}
+        </button>
+      </div>
+      <p class="card__desc">
+        Lista cronológica de señales observadas durante la sesión, con confianza estimada y capturas cuando existen.
+      </p>
+      <p class="insight-line">
+        <strong>Qué significa:</strong> cada evento aporta contexto para la evaluación docente de la sesión.
+      </p>
+      <p class="action-line">
+        <strong>Qué revisar primero:</strong> prioriza eventos de mayor confianza y aquellos con evidencia visual asociada.
+      </p>
+
+      {#if !report.violations || report.violations.length === 0}
+        <p class="muted">No se registraron eventos en esta sesión.</p>
+      {:else}
+        <div class="events-toolbar">
+          <label class="events-toolbar__field">
+            <span class="events-toolbar__label">Tipo de señal</span>
+            <select bind:value={eventFilterType} class="events-toolbar__select">
+              <option value="">Todos</option>
+              {#each eventTypeOptions as t}
+                <option value={t}>{violationLabel(t)}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="events-toolbar__field">
+            <span class="events-toolbar__label">Orden</span>
+            <select bind:value={eventSort} class="events-toolbar__select">
+              <option value="time-desc">Hora: más recientes</option>
+              <option value="time-asc">Hora: más antiguos</option>
+              <option value="conf-desc">Certeza: mayor primero</option>
+              <option value="conf-asc">Certeza: menor primero</option>
+            </select>
+          </label>
+        </div>
+        {#if filteredViolations.length === 0}
+          <p class="muted">Ningún evento coincide con el filtro actual.</p>
+        {:else}
+          <div class="violations-list" class:violations-list--expanded={showAllViolations}>
+            {#each visibleViolations as v}
+              <article class="violation-row">
+                <div class="violation-row__left">
+                  <span class="violation-time">{fmtTime(v.detected_at)}</span>
+                  <span class="violation-type">{violationLabel(v.violation_type)}</span>
+                  <span class="violation-conf">{(v.confidence * 100).toFixed(0)}% certeza</span>
+                </div>
+                {#if v.frame_snapshot}
+                  <a href={v.frame_snapshot} target="_blank" rel="noopener" class="snapshot-link">
+                    <img src={v.frame_snapshot} alt="Captura del evento" class="snapshot-img" />
+                  </a>
+                {/if}
+              </article>
+            {/each}
+            {#if !showAllViolations && filteredViolations.length > 6}
+              <button type="button" class="show-more-btn" on:click={() => (showAllViolations = true)}>
+                Ver {filteredViolations.length - 6} eventos más…
+              </button>
+            {/if}
+          </div>
+        {/if}
+      {/if}
+    </section>
+
     <div class="layout">
       <!-- ── LEFT COLUMN ────────────────────────────────────────── -->
       <div class="col-left">
@@ -159,7 +322,7 @@
               <span class="summary-value">{report.exam_id}</span>
             </div>
             <div class="summary-item">
-              <span class="summary-label">ID estudiante</span>
+              <span class="summary-label">ID participante</span>
               <span class="summary-value">{report.student_id}</span>
             </div>
             <div class="summary-item">
@@ -183,7 +346,13 @@
 
         <!-- Violation counts breakdown -->
         <section class="card">
-          <h2 class="card__title">Resumen de eventos detectados</h2>
+          <h2 class="card__title">Resumen de señales detectadas</h2>
+          <p class="insight-line">
+            <strong>Qué significa:</strong> muestra qué tipos de eventos se repiten y su peso relativo en la sesión.
+          </p>
+          <p class="action-line">
+            <strong>Qué revisar primero:</strong> prioriza los tipos con mayor frecuencia y contrástalos con la evidencia visual.
+          </p>
           {#if Object.keys(report.violations_by_type ?? {}).length === 0}
             <p class="muted">No se registraron eventos sospechosos.</p>
           {:else}
@@ -212,10 +381,16 @@
         <!-- Suspicious clusters -->
         {#if ra?.suspicious_clusters?.length > 0}
           <section class="card">
-            <h2 class="card__title">Concentraciones de comportamiento sospechoso</h2>
+            <h2 class="card__title">Concentraciones temporales de señales</h2>
             <p class="card__desc">
               Un pico ocurre cuando 3 o más señales se acumulan en menos de 90 segundos.
               Los picos simultáneos tienen mayor peso en la puntuación de riesgo.
+            </p>
+            <p class="insight-line">
+              <strong>Qué significa:</strong> varios eventos juntos en poco tiempo pueden aumentar la necesidad de revisión.
+            </p>
+            <p class="action-line">
+              <strong>Qué revisar primero:</strong> valida los picos con más eventos y la combinación de tipos detectados.
             </p>
             {#each ra.suspicious_clusters as cluster, i}
               <div class="cluster-row">
@@ -240,91 +415,16 @@
 
       <!-- ── RIGHT COLUMN ───────────────────────────────────────── -->
       <div class="col-right">
-
-        <!-- Alerts -->
-        {#if ra?.alerts?.length > 0}
-          <section class="card">
-            <h2 class="card__title">Alertas para el profesor</h2>
-            <p class="card__desc">
-              Cada alerta describe un patrón de comportamiento específico con su
-              nivel de riesgo y evidencia asociada.
-            </p>
-            <div class="alerts-list">
-              {#each ra.alerts as alert}
-                {@const meta = SEVERITY_META[alert.severity] ?? SEVERITY_META.bajo}
-                <article
-                  class="alert-card"
-                  style="background:{meta.bg}; border-color:{meta.border};"
-                >
-                  <div class="alert-card__header">
-                    <span class="alert-badge" style="background:{meta.badge};">
-                      {meta.icon} {meta.label}
-                    </span>
-                    <span class="alert-evidence" style="color:{meta.text};">
-                      {alert.evidence_count} evento{alert.evidence_count !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <h3 class="alert-title" style="color:{meta.text};">{alert.title}</h3>
-                  <p class="alert-desc">{alert.description}</p>
-                  {#if alert.first_at}
-                    <p class="alert-time">
-                      Primera detección: {fmtTime(alert.first_at)}
-                      {#if alert.last_at && alert.last_at !== alert.first_at}
-                        · Última: {fmtTime(alert.last_at)}
-                      {/if}
-                    </p>
-                  {/if}
-                </article>
-              {/each}
-            </div>
-          </section>
-        {:else if ra}
-          <section class="card">
-            <h2 class="card__title">Alertas para el profesor</h2>
-            <div class="no-alerts">
-              <span class="no-alerts__icon">✅</span>
-              <p>No se generaron alertas. El comportamiento del estudiante no presentó señales de trampa.</p>
-            </div>
-          </section>
-        {/if}
-
-        <!-- Full violation log (collapsible) -->
-        <section class="card">
-          <div class="violations-header">
-            <h2 class="card__title">Registro completo de eventos</h2>
-            <button
-              class="btn btn--ghost btn--sm"
-              on:click={() => showAllViolations = !showAllViolations}
-            >
-              {showAllViolations ? 'Ocultar' : `Ver todos (${report.violations?.length ?? 0})`}
-            </button>
-          </div>
-
-          {#if !report.violations || report.violations.length === 0}
-            <p class="muted">No se registraron eventos en esta sesión.</p>
-          {:else}
-            <div class="violations-list" class:violations-list--expanded={showAllViolations}>
-              {#each (showAllViolations ? report.violations : report.violations.slice(0, 6)) as v}
-                <article class="violation-row">
-                  <div class="violation-row__left">
-                    <span class="violation-time">{fmtTime(v.detected_at)}</span>
-                    <span class="violation-type">{violationLabel(v.violation_type)}</span>
-                    <span class="violation-conf">{(v.confidence * 100).toFixed(0)}% certeza</span>
-                  </div>
-                  {#if v.frame_snapshot}
-                    <a href={v.frame_snapshot} target="_blank" rel="noopener" class="snapshot-link">
-                      <img src={v.frame_snapshot} alt="Captura" class="snapshot-img" />
-                    </a>
-                  {/if}
-                </article>
-              {/each}
-              {#if !showAllViolations && report.violations.length > 6}
-                <button class="show-more-btn" on:click={() => showAllViolations = true}>
-                  Ver {report.violations.length - 6} eventos más…
-                </button>
-              {/if}
-            </div>
-          {/if}
+        <section class="card card--compact">
+          <h2 class="card__title">Guía rápida de revisión</h2>
+          <p class="card__desc">
+            Usa esta vista para apoyar la evaluación docente con evidencias y contexto temporal, no como decisión automática.
+          </p>
+          <ul class="glossary-list">
+            <li>Compara hallazgos críticos con los eventos detallados.</li>
+            <li>Verifica primero eventos con mayor confianza y captura asociada.</li>
+            <li>Contrasta picos de señales con el resto del comportamiento de la sesión.</li>
+          </ul>
         </section>
 
       </div>
@@ -351,9 +451,10 @@
   }
   .back-link:hover { color: #111827; }
   .page__title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #111827;
+    font-size: 1.65rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--procto-text, #1d1d1f);
     margin: 0 0 0.25rem;
   }
   .page__meta {
@@ -376,7 +477,7 @@
   .spinner {
     width: 24px; height: 24px;
     border: 3px solid #e5e7eb;
-    border-top-color: #6366f1;
+    border-top-color: var(--procto-accent, #0071e3);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;
@@ -388,10 +489,11 @@
     display: flex;
     align-items: flex-start;
     gap: 1.5rem;
-    border: 2px solid;
-    border-radius: 16px;
+    border: 1px solid;
+    border-radius: var(--procto-radius, 12px);
     padding: 1.5rem 1.75rem;
     margin-bottom: 1.75rem;
+    box-shadow: var(--procto-shadow-card, 0 1px 2px rgba(0, 0, 0, 0.04));
   }
   .verdict-score-ring {
     flex-shrink: 0;
@@ -416,9 +518,13 @@
   }
   .verdict-body { flex: 1; }
   .verdict-level {
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 1.05rem;
+    font-weight: 600;
     margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+  }
+  .verdict-level__label {
+    display: inline-block;
   }
   .verdict-summary {
     font-size: 0.95rem;
@@ -469,6 +575,7 @@
     border-radius: 14px;
     padding: 1.25rem 1.4rem;
   }
+  .card--compact { padding-top: 1rem; }
   .card__title {
     font-size: 1rem;
     font-weight: 700;
@@ -482,6 +589,24 @@
     line-height: 1.5;
   }
   .muted { font-size: 0.87rem; color: #9ca3af; margin: 0; }
+  .glossary-list {
+    margin: 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #374151;
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+  .insight-line,
+  .action-line {
+    margin: 0 0 0.55rem;
+    color: #4b5563;
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+  .action-line { margin-bottom: 0.8rem; }
 
   /* ── Summary grid ─────────────────────────────────────────────── */
   .summary-grid {
@@ -527,7 +652,7 @@
   }
   .breakdown-label { color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .breakdown-bar-wrap { height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
-  .breakdown-bar { height: 100%; background: #6366f1; border-radius: 99px; min-width: 4px; }
+  .breakdown-bar { height: 100%; background: var(--procto-accent, #0071e3); border-radius: 99px; min-width: 4px; }
   .breakdown-count { text-align: right; font-weight: 600; color: #374151; }
 
   /* ── Clusters ─────────────────────────────────────────────────── */
@@ -597,8 +722,7 @@
     padding: 1.5rem 0;
     text-align: center;
   }
-  .no-alerts__icon { font-size: 2rem; }
-  .no-alerts p { font-size: 0.88rem; color: #6b7280; max-width: 340px; margin: 0; }
+  .no-alerts p { font-size: 0.88rem; color: #6b7280; max-width: 420px; margin: 0; }
 
   /* ── Violations log ───────────────────────────────────────────── */
   .violations-header {
@@ -609,6 +733,31 @@
     margin-bottom: 0.75rem;
   }
   .violations-header .card__title { margin: 0; }
+  .events-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    align-items: flex-end;
+  }
+  .events-toolbar__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 160px;
+    flex: 1;
+  }
+  .events-toolbar__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .events-toolbar__select {
+    width: 100%;
+    max-width: 280px;
+  }
   .violations-list { display: flex; flex-direction: column; gap: 0.5rem; }
   .violation-row {
     display: flex;

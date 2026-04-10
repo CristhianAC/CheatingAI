@@ -115,7 +115,6 @@ declare module '$env/static/private' {
 	export const LC_NUMERIC: string;
 	export const OLDPWD: string;
 	export const TERM_PROGRAM: string;
-	export const CURSOR_TRACE_ID: string;
 	export const NODE_ENV: string;
 }
 
@@ -235,7 +234,6 @@ declare module '$env/dynamic/private' {
 		LC_NUMERIC: string;
 		OLDPWD: string;
 		TERM_PROGRAM: string;
-		CURSOR_TRACE_ID: string;
 		NODE_ENV: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;

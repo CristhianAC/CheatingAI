@@ -42,6 +42,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/analysis" | "/jobs" | "/proctoring" | `/proctoring/report/${string}` & {} | "/submissions";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/favicon.svg" | string & {};
+		Asset(): "/roble_amarillo.png" | string & {};
 	}
 }

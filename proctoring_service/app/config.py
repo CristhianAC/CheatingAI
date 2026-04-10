@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "CheatingAI - Proctoring Service"
+    APP_NAME: str = "Procto"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 

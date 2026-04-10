@@ -1,6 +1,8 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { goto } from '$app/navigation';
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
   import { getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
 
   let examId = '';
@@ -39,7 +41,10 @@
       multiple_persons: 'Varias personas',
       no_person: 'Persona ausente',
       looking_away: 'Mirando a otro lado',
-      phone_detected: 'Uso de teléfono'
+      phone_detected: 'Uso de teléfono',
+      tab_switch: 'Cambio de pestaña',
+      window_blur: 'Pérdida de foco',
+      identity_mismatch: 'Posible sustitución de persona',
     };
     return labels[type] ?? type;
   }
@@ -96,8 +101,7 @@
   }
 
   function openReport(sessionId) {
-    // Navega a la vista de reporte detallado
-    window.location.href = `/proctoring/report/${sessionId}`;
+    goto(`/proctoring/report/${sessionId}`);
   }
 
   onMount(() => {
@@ -110,16 +114,14 @@
 </script>
 
 <svelte:head>
-  <title>Supervisión de Examen | CheatingAI</title>
+  <title>Supervisión | Procto</title>
 </svelte:head>
 
 <div class="page">
-  <header class="page__header">
-    <h1 class="page__title">Supervisión de Examen por Cámara</h1>
-    <p class="page__subtitle">
-      Detección en tiempo real de comportamientos sospechosos mediante MediaPipe.
-    </p>
-  </header>
+  <PageHeader
+    title="Examen supervisado"
+    subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
+  />
 
   <div class="layout">
     <!-- Left: Config + Monitor -->
@@ -136,7 +138,7 @@
           />
         </label>
         <label class="field">
-          <span class="field__label">ID del Estudiante</span>
+          <span class="field__label">Identificador del participante</span>
           <input
             class="field__input"
             type="text"
@@ -218,7 +220,7 @@
               <div>
                 <h2 class="activities__title">Actividades por examen</h2>
                 <p class="activities__subtitle">
-                  Vista pensada para profesores: cuántos estudiantes se han supervisado por examen.
+                  Resumen por examen: cantidad de participantes supervisados y última actividad.
                 </p>
               </div>
               <button
@@ -237,7 +239,7 @@
               <p class="activities__error">{examsError}</p>
             {:else if exams.length === 0}
               <p class="activities__info">
-                Aún no hay supervisiones registradas. Cuando un estudiante inicie una sesión,
+                Aún no hay supervisiones registradas. Cuando se inicie una sesión desde el monitor en vivo,
                 aparecerá aquí.
               </p>
             {:else}
@@ -245,7 +247,7 @@
                 <div class="table__head">
                   <div class="table__row">
                     <div class="table__cell table__cell--header">ID Examen</div>
-                    <div class="table__cell table__cell--header table__cell--center"># Estudiantes</div>
+                    <div class="table__cell table__cell--header table__cell--center"># Participantes</div>
                     <div class="table__cell table__cell--header table__cell--right">Última actividad</div>
                     <div class="table__cell table__cell--header table__cell--icon"></div>
                   </div>
@@ -287,18 +289,18 @@
                   {#if selectedExamId}
                     Sesiones del examen <span class="badge badge--exam-inline">{selectedExamId}</span>
                   {:else}
-                    Sesiones por estudiante
+                    Sesiones por participante
                   {/if}
                 </h2>
                 <p class="activities__subtitle">
-                  Para ver el detalle de los estudiantes supervisados, elige primero un examen.
+                  Para ver el detalle por participante, selecciona primero un examen en la tabla superior.
                 </p>
               </div>
             </div>
 
             {#if !selectedExamId}
               <p class="activities__info">
-                Selecciona un examen en la tabla superior para ver sus estudiantes.
+                Selecciona un examen en la tabla superior para ver sus sesiones.
               </p>
             {:else if sessionsLoading && sessions.length === 0}
               <p class="activities__info">Cargando sesiones…</p>
@@ -306,16 +308,16 @@
               <p class="activities__error">{sessionsError}</p>
             {:else if sessions.length === 0}
               <p class="activities__info">
-                Aún no hay estudiantes registrados para este examen.
+                Aún no hay sesiones registradas para este examen.
               </p>
             {:else}
               <div class="table table--sessions">
                 <div class="table__head">
                   <div class="table__row">
-                    <div class="table__cell table__cell--header">ID estudiante</div>
+                    <div class="table__cell table__cell--header">ID participante</div>
                     <div class="table__cell table__cell--header">Inicio</div>
                     <div class="table__cell table__cell--header">Fin</div>
-                    <div class="table__cell table__cell--header table__cell--right">Status</div>
+                    <div class="table__cell table__cell--header table__cell--right">Estado</div>
                   </div>
                 </div>
                 <div class="table__body">
@@ -362,20 +364,17 @@
 </div>
 
 <style>
-  .page { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-  .page__header { margin-bottom: 2rem; }
-  .page__title { font-size: 1.6rem; font-weight: 800; color: #111827; margin: 0 0 0.4rem; }
-  .page__subtitle { color: #6b7280; font-size: 0.95rem; margin: 0; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 0 2rem; }
 
   .layout { display: grid; grid-template-columns: 1fr 1.15fr; gap: 2rem; align-items: start; }
   @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
 
   .config-card {
-    background: #fff;
-    border-radius: 12px;
+    background: var(--procto-surface, #fff);
+    border-radius: var(--procto-radius, 12px);
     padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    box-shadow: var(--procto-shadow-card, 0 1px 2px rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--procto-border, rgba(0, 0, 0, 0.08));
     margin-bottom: 1.25rem;
   }
   .config-card__title { font-size: 1rem; font-weight: 700; margin: 0 0 1rem; color: #374151; }
@@ -390,13 +389,14 @@
     outline: none;
     transition: border-color 0.15s;
   }
-  .field__input:focus { border-color: #4f46e5; }
+  .field__input:focus { border-color: var(--procto-accent, #0071e3); }
 
   .stats-card, .log-card {
-    background: #fff;
-    border-radius: 12px;
+    background: var(--procto-surface, #fff);
+    border-radius: var(--procto-radius, 12px);
     padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    box-shadow: var(--procto-shadow-card);
+    border: 1px solid var(--procto-border);
     margin-bottom: 1.25rem;
   }
   .stats-card__title, .log-card__title {
@@ -468,8 +468,8 @@
   }
   .tabs__tab--active {
     background: #fff;
-    color: #4f46e5;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    color: var(--procto-accent, #0071e3);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
 
   /* Activities panel */
@@ -543,7 +543,7 @@
     cursor: pointer;
   }
   .table__row--clickable:hover {
-    background: #eef2ff;
+    background: rgba(0, 113, 227, 0.06);
   }
   .table__cell {
     padding: 0.1rem 0.15rem;

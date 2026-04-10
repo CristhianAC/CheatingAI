@@ -2,24 +2,34 @@
   import Toast from '$lib/components/Toast.svelte';
   import { page } from '$app/stores';
 
+  /** Documentación API proctoring; configurable con VITE_PROCTORING_DOCS_URL en build */
+  const proctoringDocsUrl =
+    import.meta.env?.VITE_PROCTORING_DOCS_URL || 'http://localhost:8001/docs';
+
   const NAV = [
-    { href: '/submissions', label: '📄 Submissions' },
-    { href: '/analysis',    label: '🔍 Analysis' },
-    { href: '/jobs',        label: '📊 Jobs' },
-    { href: '/proctoring',  label: '📷 Supervisión' },
+    { href: '/submissions', label: 'Entregas' },
+    { href: '/analysis', label: 'Análisis' },
+    { href: '/jobs', label: 'Trabajos' },
+    { href: '/proctoring', label: 'Supervisión' },
   ];
 </script>
 
 <div class="app-shell">
   <header class="header">
     <div class="header-inner">
-      <a href="/" class="logo">
-        <span class="logo-icon">🕵️</span>
-        <span class="logo-text">CheatingAI</span>
-        <span class="logo-sub">Detector de Plagio</span>
+      <a href="/" class="logo" aria-label="Procto, inicio">
+        <img
+          class="logo-img"
+          src="/roble_amarillo.png"
+          alt=""
+          width="44"
+          height="44"
+          decoding="async"
+        />
+        <span class="logo-text">Procto</span>
       </a>
 
-      <nav class="nav">
+      <nav class="nav" aria-label="Principal">
         {#each NAV as { href, label }}
           <a
             {href}
@@ -32,12 +42,12 @@
       </nav>
 
       <a
-        href="http://localhost:8000/docs"
+        href={proctoringDocsUrl}
         target="_blank"
-        rel="noopener"
+        rel="noopener noreferrer"
         class="api-link"
       >
-        📖 API Docs ↗
+        API
       </a>
     </div>
   </header>
@@ -50,135 +60,241 @@
 </div>
 
 <style>
-  :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Tokens Procto: referencia var(--procto-*) en páginas y componentes */
+  :global(:root) {
+    --procto-bg: #f5f5f7;
+    --procto-surface: #ffffff;
+    --procto-text: #1d1d1f;
+    --procto-text-secondary: #6e6e73;
+    --procto-border: rgba(0, 0, 0, 0.08);
+    --procto-border-strong: rgba(0, 0, 0, 0.12);
+    --procto-accent: #0071e3;
+    --procto-accent-hover: #0077ed;
+    --procto-accent-muted: rgba(0, 113, 227, 0.12);
+    --procto-radius: 12px;
+    --procto-radius-sm: 8px;
+    --procto-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.06);
+    --procto-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --procto-header-h: 62px;
+  }
+
+  :global(*, *::before, *::after) {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
   :global(body) {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f1f5f9;
-    color: #1f2937;
+    font-family: var(--procto-font);
+    background: var(--procto-bg);
+    color: var(--procto-text);
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* Inputs, selects, textareas globales */
-  :global(input:not([type=range]):not([type=checkbox])),
+  :global(input:not([type='range']):not([type='checkbox'])),
   :global(select),
   :global(textarea) {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border: 1.5px solid #d1d5db;
-    border-radius: 8px;
+    border: 1px solid var(--procto-border-strong);
+    border-radius: var(--procto-radius-sm);
     font-size: 0.9rem;
     font-family: inherit;
-    background: #fff;
-    transition: border-color 0.15s;
-    color: #1f2937;
+    background: var(--procto-surface);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    color: var(--procto-text);
   }
-  :global(input:focus), :global(select:focus), :global(textarea:focus) {
+  :global(input:focus),
+  :global(select:focus),
+  :global(textarea:focus) {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    border-color: var(--procto-accent);
+    box-shadow: 0 0 0 3px var(--procto-accent-muted);
   }
-  :global(textarea) { resize: vertical; }
+  :global(textarea) {
+    resize: vertical;
+  }
 
   /* Labels globales */
   :global(label) {
     display: block;
     font-size: 0.83rem;
     font-weight: 600;
-    color: #374151;
+    color: #424245;
     margin-bottom: 0.35rem;
   }
 
-  /* Campo global */
-  :global(.field) { display: flex; flex-direction: column; margin-bottom: 0.85rem; }
+  :global(.field) {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.85rem;
+  }
 
   /* Cards */
   :global(.card) {
-    background: #fff;
-    border-radius: 14px;
+    background: var(--procto-surface);
+    border-radius: var(--procto-radius);
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    box-shadow: var(--procto-shadow-card);
+    border: 1px solid var(--procto-border);
     margin-bottom: 1.5rem;
   }
   :global(.card__title) {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1f2937;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--procto-text);
     margin-bottom: 1.1rem;
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    letter-spacing: -0.02em;
   }
 
   /* Botones */
   :global(.btn) {
-    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     padding: 0.5rem 1.1rem;
-    border-radius: 8px;
+    border-radius: var(--procto-radius-sm);
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: all 0.15s;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
     text-decoration: none;
   }
-  :global(.btn:disabled) { opacity: 0.55; cursor: not-allowed; }
-  :global(.btn--primary)   { background: #6366f1; color: #fff; }
-  :global(.btn--primary:hover:not(:disabled)) { background: #4f46e5; }
-  :global(.btn--secondary) { background: #e5e7eb; color: #374151; }
-  :global(.btn--secondary:hover:not(:disabled)) { background: #d1d5db; }
-  :global(.btn--ghost)     { background: transparent; color: #6b7280; border: 1.5px solid #d1d5db; }
-  :global(.btn--ghost:hover:not(:disabled)) { background: #f9fafb; }
-  :global(.btn--danger)    { background: #fee2e2; color: #991b1b; }
-  :global(.btn--danger:hover:not(:disabled)) { background: #fecaca; }
-  :global(.btn--sm)        { padding: 0.3rem 0.75rem; font-size: 0.8rem; }
+  :global(.btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  :global(.btn--primary) {
+    background: var(--procto-accent);
+    color: #fff;
+  }
+  :global(.btn--primary:hover:not(:disabled)) {
+    background: var(--procto-accent-hover);
+  }
+  :global(.btn--secondary) {
+    background: #e8e8ed;
+    color: var(--procto-text);
+  }
+  :global(.btn--secondary:hover:not(:disabled)) {
+    background: #d2d2d7;
+  }
+  :global(.btn--ghost) {
+    background: transparent;
+    color: var(--procto-text-secondary);
+    border: 1px solid var(--procto-border-strong);
+  }
+  :global(.btn--ghost:hover:not(:disabled)) {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--procto-text);
+  }
+  :global(.btn--danger) {
+    background: #ff3b30;
+    color: #fff;
+  }
+  :global(.btn--danger:hover:not(:disabled)) {
+    background: #e6352b;
+  }
+  :global(.btn--sm) {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.8rem;
+  }
 
   /* Header */
   .header {
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+    border-bottom: 1px solid var(--procto-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
   .header-inner {
-    max-width: 1100px; margin: 0 auto;
-    padding: 0 1.5rem;
-    display: flex; align-items: center; gap: 1.5rem;
-    height: 58px;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    height: var(--procto-header-h);
   }
 
   .logo {
-    display: flex; align-items: center; gap: 0.5rem;
-    text-decoration: none; flex-shrink: 0;
-  }
-  .logo-icon { font-size: 1.4rem; }
-  .logo-text { font-size: 1rem; font-weight: 800; color: #6366f1; }
-  .logo-sub { font-size: 0.72rem; color: #9ca3af; display: none; }
-  @media (min-width: 640px) { .logo-sub { display: block; } }
-
-  .nav { display: flex; gap: 0.25rem; flex: 1; }
-  .nav-link {
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
     text-decoration: none;
-    transition: all 0.15s;
+    flex-shrink: 0;
   }
-  .nav-link:hover { background: #f3f4f6; color: #1f2937; }
-  .nav-link.active { background: #eef2ff; color: #6366f1; font-weight: 700; }
+  .logo-img {
+    height: 44px;
+    width: 44px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+  }
+  .logo-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    color: var(--procto-text);
+    font-family: var(--procto-font);
+  }
+
+  .nav {
+    display: flex;
+    gap: 0.2rem;
+    flex: 1;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .nav-link {
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--procto-text-secondary);
+    text-decoration: none;
+    transition: color 0.18s ease, background 0.18s ease;
+  }
+  .nav-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--procto-text);
+  }
+  .nav-link.active {
+    background: rgba(0, 0, 0, 0.07);
+    color: var(--procto-text);
+    font-weight: 600;
+  }
 
   .api-link {
-    font-size: 0.8rem; color: #9ca3af; text-decoration: none;
-    white-space: nowrap; flex-shrink: 0;
-    padding: 0.3rem 0.6rem; border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    transition: all 0.15s;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--procto-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   }
-  .api-link:hover { color: #6366f1; border-color: #c7d2fe; }
+  .api-link:hover {
+    color: var(--procto-text);
+    border-color: var(--procto-border);
+    background: rgba(0, 0, 0, 0.03);
+  }
 
   .main {
-    max-width: 1100px; margin: 0 auto;
-    padding: 2rem 1.5rem;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
   }
 </style>
