@@ -25,6 +25,7 @@
 <svelte:head><title>Análisis de similitud | Procto</title></svelte:head>
 
 <PageHeader
+  focus="Análisis"
   title="Análisis de similitud"
   subtitle="Compara entregas para detectar similitud. El análisis entre dos entregas es inmediato; el análisis por lote se procesa en segundo plano."
 />

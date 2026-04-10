@@ -10,7 +10,7 @@ return {
 	assets: new Set(["roble_amarillo.png"]),
 	mimeTypes: {".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.1uZ2sDNy.js",app:"_app/immutable/entry/app.Phk62r6G.js",imports:["_app/immutable/entry/start.1uZ2sDNy.js","_app/immutable/chunks/x2joDpjq.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/Bzxi7ETN.js","_app/immutable/entry/app.Phk62r6G.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/CAGqB94x.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.Db82mFoU.js",app:"_app/immutable/entry/app.DgiW0Wk9.js",imports:["_app/immutable/entry/start.Db82mFoU.js","_app/immutable/chunks/CwJ7ZuPc.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/Bzxi7ETN.js","_app/immutable/entry/app.DgiW0Wk9.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/CAGqB94x.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),

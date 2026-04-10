@@ -109,8 +109,9 @@
 
 <div class="page">
   <header class="page__header">
-    <div class="page__header-left">
-      <a href="/proctoring" class="back-link">← Volver a supervisión</a>
+    <a href="/proctoring" class="back-link">← Volver a supervisión</a>
+    <div class="page__header-focus">
+      <p class="page__eyebrow">Reporte docente</p>
       <h1 class="page__title">Reporte de supervisión</h1>
       {#if report}
         <p class="page__meta">
@@ -440,27 +441,47 @@
     padding: 2rem 1.5rem 3rem;
   }
   .page__header {
-    margin-bottom: 1.75rem;
+    margin-bottom: 2.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--procto-border, rgba(0, 0, 0, 0.08));
   }
   .back-link {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--procto-text-secondary, #6e6e73);
     text-decoration: none;
     display: inline-block;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.85rem;
   }
-  .back-link:hover { color: #111827; }
-  .page__title {
-    font-size: 1.65rem;
-    font-weight: 600;
-    letter-spacing: -0.03em;
+  .back-link:hover {
     color: var(--procto-text, #1d1d1f);
-    margin: 0 0 0.25rem;
+  }
+  .page__header-focus {
+    border-left: 4px solid var(--procto-accent, #0071e3);
+    padding-left: 1.125rem;
+    margin-left: 2px;
+  }
+  .page__eyebrow {
+    margin: 0 0 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--procto-accent, #0071e3);
+  }
+  .page__title {
+    font-size: clamp(1.75rem, 4vw, 2.125rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    color: var(--procto-text, #1d1d1f);
+    margin: 0 0 0.5rem;
+    line-height: 1.08;
   }
   .page__meta {
-    font-size: 0.88rem;
-    color: #6b7280;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--procto-text-secondary, #6e6e73);
     margin: 0;
+    max-width: 40rem;
   }
 
   /* ── State boxes ──────────────────────────────────────────────── */

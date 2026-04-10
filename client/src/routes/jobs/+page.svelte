@@ -59,6 +59,7 @@
 <svelte:head><title>Trabajos en cola | Procto</title></svelte:head>
 
 <PageHeader
+  focus="Procesamiento"
   title="Trabajos en cola"
   subtitle="Historial de análisis por lotes. Elige un trabajo finalizado para ver el detalle de resultados."
 >

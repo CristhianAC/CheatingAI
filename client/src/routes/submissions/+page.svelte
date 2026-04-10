@@ -18,6 +18,7 @@
 <svelte:head><title>Entregas de código | Procto</title></svelte:head>
 
 <PageHeader
+  focus="Plagio"
   title="Entregas de código"
   subtitle="Gestiona las entregas de los participantes. Pulsa una fila para ver el código fuente."
 />

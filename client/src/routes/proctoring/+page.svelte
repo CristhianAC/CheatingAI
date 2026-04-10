@@ -119,6 +119,7 @@
 
 <div class="page">
   <PageHeader
+    focus="Supervisión"
     title="Examen supervisado"
     subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
   />

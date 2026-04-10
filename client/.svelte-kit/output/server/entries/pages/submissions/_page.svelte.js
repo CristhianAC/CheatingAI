@@ -84,6 +84,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     $$rendered = `${$$result.head += `<!-- HEAD_svelte-1hpmg3r_START -->${$$result.title = `<title>Entregas de código | Procto</title>`, ""}<!-- HEAD_svelte-1hpmg3r_END -->`, ""} ${validate_component(PageHeader, "PageHeader").$$render(
       $$result,
       {
+        focus: "Plagio",
         title: "Entregas de código",
         subtitle: "Gestiona las entregas de los participantes. Pulsa una fila para ver el código fuente."
       },

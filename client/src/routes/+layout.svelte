@@ -17,16 +17,18 @@
 <div class="app-shell">
   <header class="header">
     <div class="header-inner">
-      <a href="/" class="logo" aria-label="Procto, inicio">
-        <img
-          class="logo-img"
-          src="/roble_amarillo.png"
-          alt=""
-          width="44"
-          height="44"
-          decoding="async"
-        />
-        <span class="logo-text">Procto</span>
+      <a href="/" class="brand-lockup" aria-label="Procto, inicio">
+        <span class="brand-lockup__mark" aria-hidden="true">
+          <img
+            class="logo-img"
+            src="/roble_amarillo.png"
+            alt=""
+            width="56"
+            height="56"
+            decoding="async"
+          />
+        </span>
+        <span class="brand-lockup__wordmark">Procto</span>
       </a>
 
       <nav class="nav" aria-label="Principal">
@@ -75,7 +77,7 @@
     --procto-radius-sm: 8px;
     --procto-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.06);
     --procto-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --procto-header-h: 62px;
+    --procto-header-h: 76px;
   }
 
   :global(*, *::before, *::after) {
@@ -226,26 +228,36 @@
     height: var(--procto-header-h);
   }
 
-  .logo {
+  .brand-lockup {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: 0.85rem;
     text-decoration: none;
+    flex-shrink: 0;
+    padding-right: 1.15rem;
+    margin-right: 0.35rem;
+    border-right: 1px solid var(--procto-border);
+    min-height: calc(var(--procto-header-h) - 16px);
+  }
+  .brand-lockup__mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
   }
   .logo-img {
-    height: 44px;
-    width: 44px;
+    height: 56px;
+    width: 56px;
     object-fit: contain;
-    flex-shrink: 0;
     display: block;
   }
-  .logo-text {
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.035em;
+  .brand-lockup__wordmark {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.042em;
     color: var(--procto-text);
     font-family: var(--procto-font);
+    line-height: 1;
   }
 
   .nav {
@@ -275,7 +287,7 @@
   }
 
   .api-link {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     color: var(--procto-text-secondary);
     text-decoration: none;
@@ -295,6 +307,6 @@
   .main {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 2rem 1.5rem 3rem;
+    padding: 2.25rem 1.5rem 3rem;
   }
 </style>
