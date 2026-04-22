@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/analysis" | "/jobs" | "/proctoring" | "/proctoring/report" | "/proctoring/report/[sessionId]" | "/submissions";
+		RouteId(): "/" | "/analysis" | "/jobs" | "/login" | "/proctoring" | "/proctoring/report" | "/proctoring/report/[sessionId]" | "/register" | "/submissions";
 		RouteParams(): {
 			"/proctoring/report/[sessionId]": { sessionId: string }
 		};
@@ -35,12 +35,14 @@ declare module "$app/types" {
 			"/": { sessionId?: string };
 			"/analysis": Record<string, never>;
 			"/jobs": Record<string, never>;
+			"/login": Record<string, never>;
 			"/proctoring": { sessionId?: string };
 			"/proctoring/report": { sessionId?: string };
 			"/proctoring/report/[sessionId]": { sessionId: string };
+			"/register": Record<string, never>;
 			"/submissions": Record<string, never>
 		};
-		Pathname(): "/" | "/analysis" | "/jobs" | "/proctoring" | `/proctoring/report/${string}` & {} | "/submissions";
+		Pathname(): "/" | "/analysis" | "/jobs" | "/login" | "/proctoring" | `/proctoring/report/${string}` & {} | "/register" | "/submissions";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/roble_amarillo.png" | string & {};
 	}

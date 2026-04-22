@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = "redis://redis:6379/0"
 
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 480
+
     WINNOWING_K: int = 5
     WINNOWING_W: int = 4
     DEFAULT_THRESHOLD: float = 0.7

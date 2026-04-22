@@ -1,1 +1,0 @@
-import{s as t,o as n}from"../chunks/DJbiIZ-u.js";import{S as e,i as r}from"../chunks/CAGqB94x.js";import{g as a}from"../chunks/CwJ7ZuPc.js";function i(o){return n(()=>a("/submissions")),[]}class c extends e{constructor(s){super(),r(this,s,i,null,t,{})}}export{c as component};

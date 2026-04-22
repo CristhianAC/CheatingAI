@@ -22,6 +22,11 @@ function subscribe(store, ...callbacks) {
   const unsub = store.subscribe(...callbacks);
   return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
 }
+function get_store_value(store) {
+  let value;
+  subscribe(store, (_) => value = _)();
+  return value;
+}
 function compute_slots(slots) {
   const result = {};
   for (const key in slots) {
@@ -158,8 +163,9 @@ export {
   escape as e,
   createEventDispatcher as f,
   getContext as g,
-  safe_not_equal as h,
-  compute_slots as i,
+  get_store_value as h,
+  safe_not_equal as i,
+  compute_slots as j,
   missing_component as m,
   noop as n,
   onDestroy as o,

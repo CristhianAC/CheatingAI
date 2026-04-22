@@ -1,11 +1,22 @@
-import { c as create_ssr_component, f as createEventDispatcher, d as add_attribute, e as escape, b as each, v as validate_component } from "../../../chunks/ssr.js";
+import { h as get_store_value, c as create_ssr_component, f as createEventDispatcher, d as add_attribute, e as escape, b as each, v as validate_component } from "../../../chunks/ssr.js";
+import { w as writable } from "../../../chunks/index.js";
 import { b as showError } from "../../../chunks/stores.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
+const authStore = writable({
+  token: null,
+  user: null,
+  role: null
+});
 const BASE = "/api/v1";
 async function request(method, path, body = null) {
+  const auth = get_store_value(authStore);
+  const headers = { "Content-Type": "application/json" };
+  if (auth?.token) {
+    headers.Authorization = `Bearer ${auth.token}`;
+  }
   const opts = {
     method,
-    headers: { "Content-Type": "application/json" }
+    headers
   };
   if (body !== null) opts.body = JSON.stringify(body);
   const res = await fetch(`${BASE}${path}`, opts);

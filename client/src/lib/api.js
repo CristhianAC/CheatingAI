@@ -1,9 +1,17 @@
 const BASE = '/api/v1';
+import { get } from 'svelte/store';
+import { authStore } from '$lib/auth.js';
 
 async function request(method, path, body = null) {
+  const auth = get(authStore);
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth?.token) {
+    headers.Authorization = `Bearer ${auth.token}`;
+  }
+
   const opts = {
     method,
-    headers: { 'Content-Type': 'application/json' }
+    headers
   };
   if (body !== null) opts.body = JSON.stringify(body);
 

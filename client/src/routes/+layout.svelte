@@ -1,5 +1,9 @@
 <script>
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { get } from 'svelte/store';
   import Toast from '$lib/components/Toast.svelte';
+  import { authStore, initAuth } from '$lib/auth.js';
   import { page } from '$app/stores';
 
   /** Documentación API proctoring; configurable con VITE_PROCTORING_DOCS_URL en build */
@@ -12,6 +16,25 @@
     { href: '/jobs', label: 'Trabajos' },
     { href: '/proctoring', label: 'Supervisión' },
   ];
+
+  function isPublicAuthPath(pathname) {
+    return pathname === '/login' || pathname === '/register';
+  }
+
+  onMount(() => {
+    initAuth();
+
+    const enforceAuth = (token) => {
+      const pathname = $page.url.pathname;
+      if (!isPublicAuthPath(pathname) && !token) {
+        goto('/login');
+      }
+    };
+
+    enforceAuth(get(authStore)?.token ?? null);
+    const unsubscribe = authStore.subscribe((value) => enforceAuth(value?.token ?? null));
+    return unsubscribe;
+  });
 </script>
 
 <div class="app-shell">

@@ -10,7 +10,7 @@ return {
 	assets: new Set(["roble_amarillo.png"]),
 	mimeTypes: {".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.Db82mFoU.js",app:"_app/immutable/entry/app.DgiW0Wk9.js",imports:["_app/immutable/entry/start.Db82mFoU.js","_app/immutable/chunks/CwJ7ZuPc.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/Bzxi7ETN.js","_app/immutable/entry/app.DgiW0Wk9.js","_app/immutable/chunks/DJbiIZ-u.js","_app/immutable/chunks/CAGqB94x.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.D6fKliSc.js",app:"_app/immutable/entry/app.CUOLlCz8.js",imports:["_app/immutable/entry/start.D6fKliSc.js","_app/immutable/chunks/vGECN2jD.js","_app/immutable/chunks/BfbFWOMZ.js","_app/immutable/chunks/C1gSx5vK.js","_app/immutable/entry/app.CUOLlCz8.js","_app/immutable/chunks/BfbFWOMZ.js","_app/immutable/chunks/XYJEdqoH.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -19,7 +19,9 @@ return {
 			__memo(() => import('./nodes/4.js')),
 			__memo(() => import('./nodes/5.js')),
 			__memo(() => import('./nodes/6.js')),
-			__memo(() => import('./nodes/7.js'))
+			__memo(() => import('./nodes/7.js')),
+			__memo(() => import('./nodes/8.js')),
+			__memo(() => import('./nodes/9.js'))
 		],
 		remotes: {
 			
@@ -47,24 +49,38 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/login",
+				pattern: /^\/login\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				endpoint: null
+			},
+			{
 				id: "/proctoring",
 				pattern: /^\/proctoring\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				page: { layouts: [0,], errors: [1,], leaf: 6 },
 				endpoint: null
 			},
 			{
 				id: "/proctoring/report/[sessionId]",
 				pattern: /^\/proctoring\/report\/([^/]+?)\/?$/,
 				params: [{"name":"sessionId","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				endpoint: null
+			},
+			{
+				id: "/register",
+				pattern: /^\/register\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
 				endpoint: null
 			},
 			{
 				id: "/submissions",
 				pattern: /^\/submissions\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			}
 		],
