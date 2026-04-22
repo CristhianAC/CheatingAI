@@ -19,6 +19,13 @@
       "_app/immutable/assets/PageHeader.Bnkr4Yo6.css"
     ]
   },
+  "_auth.js": {
+    "file": "chunks/auth.js",
+    "name": "auth",
+    "imports": [
+      "_index.js"
+    ]
+  },
   "_environment.js": {
     "file": "chunks/environment.js",
     "name": "environment"
@@ -132,6 +139,7 @@
       "_utils.js",
       "_state.svelte.js",
       "_stores.js",
+      "_auth.js",
       "_stores2.js"
     ],
     "css": [
@@ -165,6 +173,22 @@
     ],
     "css": [
       "_app/immutable/assets/_page.D89wSLQl.css"
+    ]
+  },
+  "src/routes/exams/+page.svelte": {
+    "file": "entries/pages/exams/_page.svelte.js",
+    "name": "entries/pages/exams/_page.svelte",
+    "src": "src/routes/exams/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_auth.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.yK9f3Fj0.css"
     ]
   },
   "src/routes/jobs/+page.svelte": {
@@ -246,7 +270,7 @@
     "isEntry": true,
     "imports": [
       "_ssr.js",
-      "_index.js",
+      "_auth.js",
       "_stores.js",
       "_PageHeader.js"
     ],

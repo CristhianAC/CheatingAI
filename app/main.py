@@ -6,8 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import Base, engine
+from app.models.exam import Exam  # noqa: F401
 from app.models.user import User  # noqa: F401
-from app.routers import analysis, auth, jobs, submissions
+from app.routers import analysis, auth, exams, jobs, submissions
 
 settings = get_settings()
 
@@ -49,6 +50,7 @@ app.include_router(submissions.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(exams.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"], summary="Health check")

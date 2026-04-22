@@ -1,12 +1,7 @@
 import { h as get_store_value, c as create_ssr_component, f as createEventDispatcher, d as add_attribute, e as escape, b as each, v as validate_component } from "../../../chunks/ssr.js";
-import { w as writable } from "../../../chunks/index.js";
+import { a as authStore } from "../../../chunks/auth.js";
 import { b as showError } from "../../../chunks/stores.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-const authStore = writable({
-  token: null,
-  user: null,
-  role: null
-});
 const BASE = "/api/v1";
 async function request(method, path, body = null) {
   const auth = get_store_value(authStore);

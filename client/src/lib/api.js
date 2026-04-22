@@ -2,7 +2,7 @@ const BASE = '/api/v1';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/auth.js';
 
-async function request(method, path, body = null) {
+export async function request(method, path, body = null) {
   const auth = get(authStore);
   const headers = { 'Content-Type': 'application/json' };
   if (auth?.token) {

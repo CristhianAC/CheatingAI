@@ -64,6 +64,11 @@
             {label}
           </a>
         {/each}
+        {#if $authStore?.role === 'PROFESSOR'}
+          <a href="/exams" class="nav-link" class:active={$page.url.pathname.startsWith('/exams')}>
+            Exámenes
+          </a>
+        {/if}
       </nav>
 
       <a

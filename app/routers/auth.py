@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -53,9 +53,30 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse, summary="Iniciar sesión y devolver JWT")
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not pwd_context.verify(payload.password, user.password_hash):
+async def login(request: Request, db: Session = Depends(get_db)):
+    content_type = (request.headers.get("content-type") or "").lower()
+
+    # Compatibilidad dual:
+    # - application/json {email, password} para frontend actual
+    # - application/x-www-form-urlencoded {username, password} para Swagger OAuth2
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(status_code=422, detail="JSON inválido")
+        payload = LoginRequest(**body)
+        email = payload.email
+        password = payload.password
+    else:
+        form = await request.form()
+        username = form.get("username")
+        password = form.get("password")
+        if not username or not password:
+            raise HTTPException(status_code=422, detail="Se requieren username y password")
+        email = username
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not pwd_context.verify(password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     token = _create_access_token({"sub": str(user.id), "role": user.role, "email": user.email})
