@@ -22,6 +22,13 @@ function subscribe(store, ...callbacks) {
   const unsub = store.subscribe(...callbacks);
   return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
 }
+function compute_slots(slots) {
+  const result = {};
+  for (const key in slots) {
+    result[key] = true;
+  }
+  return result;
+}
 function custom_event(type, detail, { bubbles = false, cancelable = false } = {}) {
   return new CustomEvent(type, { detail, bubbles, cancelable });
 }
@@ -152,6 +159,7 @@ export {
   createEventDispatcher as f,
   getContext as g,
   safe_not_equal as h,
+  compute_slots as i,
   missing_component as m,
   noop as n,
   onDestroy as o,

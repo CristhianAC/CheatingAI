@@ -59,9 +59,9 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description=(
-        "Microservicio de supervisión de exámenes en tiempo real mediante cámara web. "
-        "Detecta comportamientos sospechosos: múltiples personas, ausencia del estudiante, "
-        "mirada fuera de pantalla y uso del teléfono. Usa MediaPipe (Google) sin costo."
+        "API de supervisión de exámenes en tiempo real: cámara web y eventos del navegador. "
+        "Señales como varias personas, ausencia en cámara, mirada desviada, teléfono visible, "
+        "cambio de pestaña o foco, y verificación opcional de identidad."
     ),
     lifespan=lifespan,
 )

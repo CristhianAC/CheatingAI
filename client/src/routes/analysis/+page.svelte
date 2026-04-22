@@ -1,6 +1,7 @@
 <script>
   import PairwiseForm from '$lib/components/PairwiseForm.svelte';
   import BatchForm from '$lib/components/BatchForm.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
   import { submissions } from '$lib/stores.js';
   import { listSubmissions } from '$lib/api.js';
   import { showError } from '$lib/stores.js';
@@ -12,7 +13,7 @@
       const res = await listSubmissions({ limit: 200 });
       submissions.set(res.items);
     } catch (e) {
-      showError('No se pudieron cargar las submissions: ' + e.message);
+      showError('No se pudieron cargar las entregas: ' + e.message);
     }
   });
 
@@ -21,16 +22,17 @@
   }
 </script>
 
-<svelte:head><title>Analysis — CheatingAI</title></svelte:head>
+<svelte:head><title>Análisis de similitud | Procto</title></svelte:head>
 
-<div class="page-header">
-  <h1>🔍 Analysis</h1>
-  <p>Lanza comparaciones de plagio entre submissions. El análisis par a par es inmediato; el batch se procesa en background.</p>
-</div>
+<PageHeader
+  focus="Análisis"
+  title="Análisis de similitud"
+  subtitle="Compara entregas para detectar similitud. El análisis entre dos entregas es inmediato; el análisis por lote se procesa en segundo plano."
+/>
 
 {#if $submissions.length === 0}
   <div class="alert-info card">
-    ℹ️ No hay submissions cargadas. Ve a <a href="/submissions">Submissions</a> para crear algunas primero.
+    No hay entregas cargadas. Ve a <a href="/submissions">Entregas</a> para crear algunas primero.
   </div>
 {/if}
 
@@ -40,12 +42,8 @@
 </div>
 
 <style>
-  .page-header { margin-bottom: 1.5rem; }
-  .page-header h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.25rem; }
-  .page-header p  { color: #6b7280; font-size: 0.9rem; }
-
-  .alert-info { color: #1e40af; background: #eff6ff; border: 1.5px solid #bfdbfe; }
-  .alert-info a { color: #6366f1; font-weight: 600; }
+  .alert-info { color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; }
+  .alert-info a { color: var(--procto-accent, #0071e3); font-weight: 600; }
 
   .analysis-grid {
     display: grid;

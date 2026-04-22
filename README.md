@@ -5,6 +5,48 @@
 **Institución:** Universidad del Norte  
 **Fecha de inicio:** Febrero 2025  
 
+La interfaz web muestra el nombre de producto **Procto** (rebranding previsto). El repositorio y los servicios Docker pueden seguir usando el identificador `CheatingAI` en rutas internas.
+
+---
+
+## Demo rápido: supervisión (proctoring) + cliente web
+
+Para probar solo el flujo de **supervisión por cámara** y el frontend SvelteKit sin depender del API de plagio en el puerto 8000:
+
+1. **Variables de entorno**  
+   Copiar `.env.example` a `.env` en la raíz del repositorio y completar, como mínimo para una demo local, los valores del servicio de proctoring (p. ej. `DATABASE_URL` con SQLite por defecto o PostgreSQL si aplica; opcionalmente Supabase Storage para capturas). No commitear `.env`.
+
+2. **Levantar el servicio de proctoring** (API en el puerto **8001**), por ejemplo con Docker Compose desde la raíz del repo:
+
+   ```bash
+   docker compose up proctoring
+   ```
+
+   Comprobar: `http://localhost:8001/health` y documentación interactiva en `http://localhost:8001/docs`.
+
+3. **Levantar el cliente** (desarrollo, con proxy a 8001 ya definido en `client/vite.config.js`):
+
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
+
+   Abrir la URL indicada por Vite (por defecto `http://localhost:5173`) y entrar a **Supervisión**.
+
+El archivo `docker-compose.yml` puede incluir también **Redis, worker Celery, Flower y la API de plagio** (puerto 8000); no son necesarios para el demo anterior de solo proctoring.
+
+### Pruebas automáticas del servicio de proctoring
+
+Con un entorno virtual que tenga instaladas las dependencias de `proctoring_service/requirements.txt` y `proctoring_service/requirements-dev.txt`:
+
+```bash
+cd proctoring_service
+pytest tests/ -v
+```
+
+La primera ejecución que use `TestClient` carga los modelos de visión (MediaPipe) y puede tardar varios segundos.
+
 ---
 
 ## Introducción
