@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { get } from 'svelte/store';
   import Toast from '$lib/components/Toast.svelte';
-  import { authStore, initAuth } from '$lib/auth.js';
+  import { authStore, initAuth, logout } from '$lib/auth.js';
   import { page } from '$app/stores';
 
   /** Documentación API proctoring; configurable con VITE_PROCTORING_DOCS_URL en build */
@@ -21,8 +21,20 @@
     return pathname === '/login' || pathname === '/register';
   }
 
+  function handleLogout() {
+    logout();
+    goto('/login');
+  }
+
   onMount(() => {
     initAuth();
+
+    // Redirigir usuario autenticado fuera de páginas públicas
+    const currentPath = $page.url.pathname;
+    const currentToken = get(authStore)?.token ?? null;
+    if (isPublicAuthPath(currentPath) && currentToken) {
+      goto('/');
+    }
 
     const enforceAuth = (token) => {
       const pathname = $page.url.pathname;
@@ -70,6 +82,14 @@
           </a>
         {/if}
       </nav>
+
+      {#if $authStore?.user}
+        <div class="user-chip">
+          <span class="user-chip__name">{$authStore.user.full_name}</span>
+          <span class="user-chip__sep" aria-hidden="true">·</span>
+          <button class="user-chip__logout" on:click={handleLogout}>Salir</button>
+        </div>
+      {/if}
 
       <a
         href={proctoringDocsUrl}
@@ -336,5 +356,45 @@
     max-width: 1120px;
     margin: 0 auto;
     padding: 2.25rem 1.5rem 3rem;
+  }
+
+  /* User chip */
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .user-chip__name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--procto-text-secondary);
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .user-chip__sep {
+    font-size: 0.8125rem;
+    color: var(--procto-text-secondary);
+    opacity: 0.5;
+  }
+  .user-chip__logout {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--procto-text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    transition: color 0.18s ease, background 0.18s ease;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .user-chip__logout:hover {
+    color: var(--procto-text);
+    background: rgba(0, 0, 0, 0.05);
   }
 </style>
