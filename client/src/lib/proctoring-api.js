@@ -2,8 +2,21 @@
 const SESSION_BASE = '/api/v1/sessions';
 const PROCTOR_BASE = '/api/v1/proctoring';
 
+function _getToken() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem('procto_auth');
+    return raw ? JSON.parse(raw)?.token ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
 async function request(method, url, body = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  const token = _getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
   if (body !== null) opts.body = JSON.stringify(body);
 
   const res = await fetch(url, opts);

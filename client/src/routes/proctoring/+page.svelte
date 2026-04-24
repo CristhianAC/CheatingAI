@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import { authStore } from '$lib/auth.js';
   import { getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
 
   let examId = '';
@@ -22,6 +23,7 @@
   let sessions = [];
   let sessionsLoading = false;
   let sessionsError = '';
+  $: isProfessor = $authStore?.role === 'PROFESSOR';
 
   let pollHandle = null;
 
@@ -130,12 +132,12 @@
       <div class="config-card">
         <h2 class="config-card__title">Configuración de sesión</h2>
         <label class="field">
-          <span class="field__label">ID del Examen</span>
+          <span class="field__label">Código de examen</span>
           <input
             class="field__input"
             type="text"
             bind:value={examId}
-            placeholder="ej. exam-2024-01"
+            placeholder="ej. ABC123"
           />
         </label>
         <label class="field">
@@ -144,7 +146,7 @@
             class="field__input"
             type="text"
             bind:value={studentId}
-            placeholder="ej. student-001"
+            placeholder="Tu nombre o email"
           />
         </label>
       </div>
@@ -159,26 +161,209 @@
 
     <!-- Right: Monitor / Activities -->
     <div class="layout__right">
-      <div class="tabs">
-        <button
-          class="tabs__tab"
-          class:tabs__tab--active={activeTab === 'monitor'}
-          type="button"
-          on:click={() => switchTab('monitor')}
-        >
-          Monitor en vivo
-        </button>
-        <button
-          class="tabs__tab"
-          class:tabs__tab--active={activeTab === 'activities'}
-          type="button"
-          on:click={() => switchTab('activities')}
-        >
-          Actividades
-        </button>
-      </div>
+      {#if isProfessor}
+        <div class="tabs">
+          <button
+            class="tabs__tab"
+            class:tabs__tab--active={activeTab === 'monitor'}
+            type="button"
+            on:click={() => switchTab('monitor')}
+          >
+            Monitor en vivo
+          </button>
+          <button
+            class="tabs__tab"
+            class:tabs__tab--active={activeTab === 'activities'}
+            type="button"
+            on:click={() => switchTab('activities')}
+          >
+            Actividades
+          </button>
+        </div>
 
-      {#if activeTab === 'monitor'}
+        {#if activeTab === 'monitor'}
+          {#if sessionStats}
+            <div class="stats-card">
+              <h2 class="stats-card__title">Resumen de sesión</h2>
+              <p class="stat-row">
+                <span>Total violaciones:</span>
+                <strong>{sessionStats.total_violations}</strong>
+              </p>
+              {#each Object.entries(sessionStats.violations_by_type) as [type, count]}
+                <p class="stat-row">
+                  <span>{violationLabel(type)}:</span>
+                  <strong>{count}</strong>
+                </p>
+              {/each}
+            </div>
+          {/if}
+
+          {#if violationLog.length > 0}
+            <div class="log-card">
+              <h2 class="log-card__title">Registro de violaciones</h2>
+              <div class="log-list">
+                {#each violationLog as entry}
+                  <div class="log-entry log-entry--{entry.violation_type}">
+                    <span class="log-entry__time">{entry.timestamp}</span>
+                    <span class="log-entry__type">{violationLabel(entry.violation_type)}</span>
+                    <span class="log-entry__conf">{(entry.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {:else}
+            <div class="empty-log">
+              <p>No se han detectado violaciones aún.</p>
+              <p class="empty-log__hint">Inicia la supervisión para comenzar el monitoreo.</p>
+            </div>
+          {/if}
+        {:else}
+          <div class="activities">
+            <div class="card activities__card">
+              <div class="activities__header">
+                <div>
+                  <h2 class="activities__title">Actividades por examen</h2>
+                  <p class="activities__subtitle">
+                    Resumen por examen: cantidad de participantes supervisados y última actividad.
+                  </p>
+                </div>
+                <button
+                  class="btn btn--ghost btn--sm"
+                  type="button"
+                  on:click={loadExams}
+                  disabled={examsLoading}
+                >
+                  Recargar
+                </button>
+              </div>
+
+              {#if examsLoading && exams.length === 0}
+                <p class="activities__info">Cargando actividades…</p>
+              {:else if examsError}
+                <p class="activities__error">{examsError}</p>
+              {:else if exams.length === 0}
+                <p class="activities__info">
+                  Aún no hay supervisiones registradas. Cuando se inicie una sesión desde el monitor en vivo,
+                  aparecerá aquí.
+                </p>
+              {:else}
+                <div class="table table--exams">
+                  <div class="table__head">
+                    <div class="table__row">
+                      <div class="table__cell table__cell--header">ID Examen</div>
+                      <div class="table__cell table__cell--header table__cell--center"># Participantes</div>
+                      <div class="table__cell table__cell--header table__cell--right">Última actividad</div>
+                      <div class="table__cell table__cell--header table__cell--icon"></div>
+                    </div>
+                  </div>
+                  <div class="table__body">
+                    {#each exams as exam}
+                      <button
+                        type="button"
+                        class="table__row table__row--clickable"
+                        on:click={() => handleSelectExam(exam.exam_id)}
+                      >
+                        <div class="table__cell">
+                          <span class="badge badge--exam">{exam.exam_id}</span>
+                        </div>
+                        <div class="table__cell table__cell--center">
+                          <strong>{exam.students_count}</strong>
+                        </div>
+                        <div class="table__cell table__cell--right">
+                          {#if exam.last_activity}
+                            {new Date(exam.last_activity).toLocaleString()}
+                          {:else}
+                            —
+                          {/if}
+                        </div>
+                        <div class="table__cell table__cell--icon">
+                          <span class="row-arrow">➜</span>
+                        </div>
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <div class="card activities__card">
+              <div class="activities__header">
+                <div>
+                  <h2 class="activities__title">
+                    {#if selectedExamId}
+                      Sesiones del examen <span class="badge badge--exam-inline">{selectedExamId}</span>
+                    {:else}
+                      Sesiones por participante
+                    {/if}
+                  </h2>
+                  <p class="activities__subtitle">
+                    Para ver el detalle por participante, selecciona primero un examen en la tabla superior.
+                  </p>
+                </div>
+              </div>
+
+              {#if !selectedExamId}
+                <p class="activities__info">
+                  Selecciona un examen en la tabla superior para ver sus sesiones.
+                </p>
+              {:else if sessionsLoading && sessions.length === 0}
+                <p class="activities__info">Cargando sesiones…</p>
+              {:else if sessionsError}
+                <p class="activities__error">{sessionsError}</p>
+              {:else if sessions.length === 0}
+                <p class="activities__info">
+                  Aún no hay sesiones registradas para este examen.
+                </p>
+              {:else}
+                <div class="table table--sessions">
+                  <div class="table__head">
+                    <div class="table__row">
+                      <div class="table__cell table__cell--header">ID participante</div>
+                      <div class="table__cell table__cell--header">Inicio</div>
+                      <div class="table__cell table__cell--header">Fin</div>
+                      <div class="table__cell table__cell--header table__cell--right">Estado</div>
+                    </div>
+                  </div>
+                  <div class="table__body">
+                    {#each sessions as s}
+                      <div class="table__row">
+                        <div class="table__cell">
+                          <span class="badge badge--student">{s.student_id}</span>
+                        </div>
+                        <div class="table__cell">
+                          {new Date(s.started_at).toLocaleString()}
+                        </div>
+                        <div class="table__cell">
+                          {#if s.ended_at}
+                            {new Date(s.ended_at).toLocaleString()}
+                          {:else}
+                            —
+                          {/if}
+                        </div>
+                        <div class="table__cell table__cell--right">
+                          {#if (typeof s.status === 'string' ? s.status : s.status.value ?? s.status) === 'ended'}
+                            <button
+                              type="button"
+                              class="status-pill status-pill--clickable"
+                              on:click={() => openReport(s.id)}
+                            >
+                              {statusLabel(s.status)}
+                            </button>
+                          {:else}
+                            <span class="status-pill status-pill--active">
+                              {statusLabel(s.status)}
+                            </span>
+                          {/if}
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      {:else}
         {#if sessionStats}
           <div class="stats-card">
             <h2 class="stats-card__title">Resumen de sesión</h2>
@@ -214,151 +399,6 @@
             <p class="empty-log__hint">Inicia la supervisión para comenzar el monitoreo.</p>
           </div>
         {/if}
-      {:else}
-        <div class="activities">
-          <div class="card activities__card">
-            <div class="activities__header">
-              <div>
-                <h2 class="activities__title">Actividades por examen</h2>
-                <p class="activities__subtitle">
-                  Resumen por examen: cantidad de participantes supervisados y última actividad.
-                </p>
-              </div>
-              <button
-                class="btn btn--ghost btn--sm"
-                type="button"
-                on:click={loadExams}
-                disabled={examsLoading}
-              >
-                Recargar
-              </button>
-            </div>
-
-            {#if examsLoading && exams.length === 0}
-              <p class="activities__info">Cargando actividades…</p>
-            {:else if examsError}
-              <p class="activities__error">{examsError}</p>
-            {:else if exams.length === 0}
-              <p class="activities__info">
-                Aún no hay supervisiones registradas. Cuando se inicie una sesión desde el monitor en vivo,
-                aparecerá aquí.
-              </p>
-            {:else}
-              <div class="table table--exams">
-                <div class="table__head">
-                  <div class="table__row">
-                    <div class="table__cell table__cell--header">ID Examen</div>
-                    <div class="table__cell table__cell--header table__cell--center"># Participantes</div>
-                    <div class="table__cell table__cell--header table__cell--right">Última actividad</div>
-                    <div class="table__cell table__cell--header table__cell--icon"></div>
-                  </div>
-                </div>
-                <div class="table__body">
-                  {#each exams as exam}
-                    <button
-                      type="button"
-                      class="table__row table__row--clickable"
-                      on:click={() => handleSelectExam(exam.exam_id)}
-                    >
-                      <div class="table__cell">
-                        <span class="badge badge--exam">{exam.exam_id}</span>
-                      </div>
-                      <div class="table__cell table__cell--center">
-                        <strong>{exam.students_count}</strong>
-                      </div>
-                      <div class="table__cell table__cell--right">
-                        {#if exam.last_activity}
-                          {new Date(exam.last_activity).toLocaleString()}
-                        {:else}
-                          —
-                        {/if}
-                      </div>
-                      <div class="table__cell table__cell--icon">
-                        <span class="row-arrow">➜</span>
-                      </div>
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </div>
-
-          <div class="card activities__card">
-            <div class="activities__header">
-              <div>
-                <h2 class="activities__title">
-                  {#if selectedExamId}
-                    Sesiones del examen <span class="badge badge--exam-inline">{selectedExamId}</span>
-                  {:else}
-                    Sesiones por participante
-                  {/if}
-                </h2>
-                <p class="activities__subtitle">
-                  Para ver el detalle por participante, selecciona primero un examen en la tabla superior.
-                </p>
-              </div>
-            </div>
-
-            {#if !selectedExamId}
-              <p class="activities__info">
-                Selecciona un examen en la tabla superior para ver sus sesiones.
-              </p>
-            {:else if sessionsLoading && sessions.length === 0}
-              <p class="activities__info">Cargando sesiones…</p>
-            {:else if sessionsError}
-              <p class="activities__error">{sessionsError}</p>
-            {:else if sessions.length === 0}
-              <p class="activities__info">
-                Aún no hay sesiones registradas para este examen.
-              </p>
-            {:else}
-              <div class="table table--sessions">
-                <div class="table__head">
-                  <div class="table__row">
-                    <div class="table__cell table__cell--header">ID participante</div>
-                    <div class="table__cell table__cell--header">Inicio</div>
-                    <div class="table__cell table__cell--header">Fin</div>
-                    <div class="table__cell table__cell--header table__cell--right">Estado</div>
-                  </div>
-                </div>
-                <div class="table__body">
-                  {#each sessions as s}
-                    <div class="table__row">
-                      <div class="table__cell">
-                        <span class="badge badge--student">{s.student_id}</span>
-                      </div>
-                      <div class="table__cell">
-                        {new Date(s.started_at).toLocaleString()}
-                      </div>
-                      <div class="table__cell">
-                        {#if s.ended_at}
-                          {new Date(s.ended_at).toLocaleString()}
-                        {:else}
-                          —
-                        {/if}
-                      </div>
-                      <div class="table__cell table__cell--right">
-                        {#if (typeof s.status === 'string' ? s.status : s.status.value ?? s.status) === 'ended'}
-                          <button
-                            type="button"
-                            class="status-pill status-pill--clickable"
-                            on:click={() => openReport(s.id)}
-                          >
-                            {statusLabel(s.status)}
-                          </button>
-                        {:else}
-                          <span class="status-pill status-pill--active">
-                            {statusLabel(s.status)}
-                          </span>
-                        {/if}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </div>
-        </div>
       {/if}
     </div>
   </div>

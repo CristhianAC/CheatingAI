@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -13,6 +13,16 @@ from app.schemas.session import (
 from app.services.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+
+
+def require_auth(authorization: str | None = Header(default=None)) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Autenticación requerida",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return authorization
 
 
 @router.post(
@@ -30,7 +40,7 @@ def create_session(payload: SessionCreate, db: Session = Depends(get_db)):
     response_model=list[ExamSummary],
     summary="List exams with student counts",
 )
-def list_exams_summary(db: Session = Depends(get_db)):
+def list_exams_summary(db: Session = Depends(get_db), _: str = Depends(require_auth)):
     return SessionService(db).get_exams_summary()
 
 
@@ -39,7 +49,7 @@ def list_exams_summary(db: Session = Depends(get_db)):
     response_model=list[ExamSessionListItem],
     summary="List sessions for a given exam",
 )
-def list_sessions_by_exam(exam_id: str, db: Session = Depends(get_db)):
+def list_sessions_by_exam(exam_id: str, db: Session = Depends(get_db), _: str = Depends(require_auth)):
     return SessionService(db).list_by_exam(exam_id)
 
 

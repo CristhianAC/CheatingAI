@@ -143,7 +143,7 @@
       "_stores2.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.BJh1ADWm.css"
+      "_app/immutable/assets/_layout.C-4ohlE7.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -229,7 +229,8 @@
       "_exports.js",
       "_utils.js",
       "_state.svelte.js",
-      "_PageHeader.js"
+      "_PageHeader.js",
+      "_auth.js"
     ],
     "css": [
       "_app/immutable/assets/_page.CNy-i-Kg.css"

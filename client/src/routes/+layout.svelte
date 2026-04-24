@@ -14,7 +14,6 @@
     { href: '/submissions', label: 'Entregas' },
     { href: '/analysis', label: 'Análisis' },
     { href: '/jobs', label: 'Trabajos' },
-    { href: '/proctoring', label: 'Supervisión' },
   ];
 
   function isPublicAuthPath(pathname) {
@@ -79,6 +78,11 @@
         {#if $authStore?.role === 'PROFESSOR'}
           <a href="/exams" class="nav-link" class:active={$page.url.pathname.startsWith('/exams')}>
             Exámenes
+          </a>
+        {/if}
+        {#if $authStore?.role === 'STUDENT'}
+          <a href="/proctoring" class="nav-link" class:active={$page.url.pathname.startsWith('/proctoring')}>
+            Supervisión
           </a>
         {/if}
       </nav>
