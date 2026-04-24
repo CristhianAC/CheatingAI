@@ -10,7 +10,7 @@ return {
 	assets: new Set(["roble_amarillo.png"]),
 	mimeTypes: {".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.BRyglRat.js",app:"_app/immutable/entry/app.C4RwkhEY.js",imports:["_app/immutable/entry/start.BRyglRat.js","_app/immutable/chunks/IpRF-qpP.js","_app/immutable/chunks/CWk8UI6I.js","_app/immutable/chunks/Cw3P8xHC.js","_app/immutable/entry/app.C4RwkhEY.js","_app/immutable/chunks/CWk8UI6I.js","_app/immutable/chunks/BsmMEUrz.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.Dnc2cRQb.js",app:"_app/immutable/entry/app.DILPXAGQ.js",imports:["_app/immutable/entry/start.Dnc2cRQb.js","_app/immutable/chunks/m-JEnjXw.js","_app/immutable/chunks/D8pinU_y.js","_app/immutable/chunks/BQKu9N-y.js","_app/immutable/entry/app.DILPXAGQ.js","_app/immutable/chunks/D8pinU_y.js","_app/immutable/chunks/Dfcb-t-o.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -23,7 +23,9 @@ return {
 			__memo(() => import('./nodes/8.js')),
 			__memo(() => import('./nodes/9.js')),
 			__memo(() => import('./nodes/10.js')),
-			__memo(() => import('./nodes/11.js'))
+			__memo(() => import('./nodes/11.js')),
+			__memo(() => import('./nodes/12.js')),
+			__memo(() => import('./nodes/13.js'))
 		],
 		remotes: {
 			
@@ -51,52 +53,66 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/exams/[examId]/sessions",
+				pattern: /^\/exams\/([^/]+?)\/sessions\/?$/,
+				params: [{"name":"examId","optional":false,"rest":false,"chained":false}],
+				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				endpoint: null
+			},
+			{
 				id: "/jobs",
 				pattern: /^\/jobs\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				page: { layouts: [0,], errors: [1,], leaf: 6 },
 				endpoint: null
 			},
 			{
 				id: "/join-exam",
 				pattern: /^\/join-exam\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
 				endpoint: null
 			},
 			{
 				id: "/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
 				endpoint: null
 			},
 			{
 				id: "/proctoring",
 				pattern: /^\/proctoring\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			},
 			{
 				id: "/proctoring/report/[sessionId]",
 				pattern: /^\/proctoring\/report\/([^/]+?)\/?$/,
 				params: [{"name":"sessionId","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				endpoint: null
+			},
+			{
+				id: "/profile",
+				pattern: /^\/profile\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			},
 			{
 				id: "/register",
 				pattern: /^\/register\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				page: { layouts: [0,], errors: [1,], leaf: 12 },
 				endpoint: null
 			},
 			{
 				id: "/submissions",
 				pattern: /^\/submissions\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 11 },
+				page: { layouts: [0,], errors: [1,], leaf: 13 },
 				endpoint: null
 			}
 		],

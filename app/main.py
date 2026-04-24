@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.database import Base, engine
 from app.models.exam import Exam  # noqa: F401
 from app.models.user import User  # noqa: F401
-from app.routers import analysis, auth, exams, jobs, submissions
+from app.routers import analysis, auth, exams, jobs, submissions, users
 
 settings = get_settings()
 
@@ -51,6 +51,7 @@ app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(exams.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"], summary="Health check")

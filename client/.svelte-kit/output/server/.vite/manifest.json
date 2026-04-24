@@ -143,7 +143,7 @@
       "_stores2.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.C-4ohlE7.css"
+      "_app/immutable/assets/_layout.Dy4MO-6L.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -189,6 +189,23 @@
     ],
     "css": [
       "_app/immutable/assets/_page.yK9f3Fj0.css"
+    ]
+  },
+  "src/routes/exams/[examId]/sessions/+page.svelte": {
+    "file": "entries/pages/exams/_examId_/sessions/_page.svelte.js",
+    "name": "entries/pages/exams/_examId_/sessions/_page.svelte",
+    "src": "src/routes/exams/[examId]/sessions/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_PageHeader.js",
+      "_auth.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BTvA7Jj4.css"
     ]
   },
   "src/routes/jobs/+page.svelte": {
@@ -265,6 +282,19 @@
       "_app/immutable/assets/_page.fZA_AVoV.css"
     ]
   },
+  "src/routes/profile/+page.svelte": {
+    "file": "entries/pages/profile/_page.svelte.js",
+    "name": "entries/pages/profile/_page.svelte",
+    "src": "src/routes/profile/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_PageHeader.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.B6iDOnvk.css"
+    ]
+  },
   "src/routes/register/+page.svelte": {
     "file": "entries/pages/register/_page.svelte.js",
     "name": "entries/pages/register/_page.svelte",
@@ -277,7 +307,7 @@
       "_state.svelte.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.CQ17Sbwo.css"
+      "_app/immutable/assets/_page.-G9f4mBg.css"
     ]
   },
   "src/routes/submissions/+page.svelte": {

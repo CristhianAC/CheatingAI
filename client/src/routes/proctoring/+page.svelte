@@ -118,27 +118,30 @@
     await tick();
 
     const auth = get(authStore);
-    const role = auth?.role ?? null;
 
-    if (role === 'PROFESSOR') {
+    if (!auth?.token) {
+      goto('/login');
+      return;
+    }
+
+    if (auth.role === 'PROFESSOR') {
       goto('/exams');
       return;
     }
 
-    if (role !== 'PROFESSOR') {
-      if (!auth?.token) {
-        goto('/login');
-        return;
-      }
-      studentId = auth?.user?.id ?? '';
-      const exam = get(selectedExamStore);
-      if (!exam?.id) {
-        goto('/join-exam');
-        return;
-      }
-      selectedExam = exam;
-      examId = exam.id;
+    if (auth.role !== 'STUDENT') {
+      goto('/');
+      return;
     }
+
+    studentId = auth?.user?.id ?? '';
+    const exam = get(selectedExamStore);
+    if (!exam?.id) {
+      goto('/join-exam');
+      return;
+    }
+    selectedExam = exam;
+    examId = exam.id;
 
     pollHandle = setInterval(tickPolling, 5000);
   });

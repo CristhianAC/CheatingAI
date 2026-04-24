@@ -6,12 +6,6 @@
   import { authStore, initAuth, logout } from '$lib/auth.js';
   import { page } from '$app/stores';
 
-  const NAV = [
-    { href: '/submissions', label: 'Entregas' },
-    { href: '/analysis', label: 'Análisis' },
-    { href: '/jobs', label: 'Trabajos' },
-  ];
-
   function isPublicAuthPath(pathname) {
     return pathname === '/login' || pathname === '/register';
   }
@@ -65,15 +59,6 @@
 
       {#if !isAuthPage}
         <nav class="nav" aria-label="Principal">
-          {#each NAV as { href, label }}
-            <a
-              {href}
-              class="nav-link"
-              class:active={$page.url.pathname.startsWith(href)}
-            >
-              {label}
-            </a>
-          {/each}
           {#if $authStore?.role === 'PROFESSOR'}
             <a href="/exams" class="nav-link" class:active={$page.url.pathname.startsWith('/exams')}>
               Exámenes
@@ -88,7 +73,7 @@
 
         {#if $authStore?.user}
           <div class="user-chip">
-            <span class="user-chip__name">{$authStore.user.full_name}</span>
+            <a href="/profile" class="user-chip__name">{$authStore.user.full_name}</a>
             <span class="user-chip__sep" aria-hidden="true">·</span>
             <button class="user-chip__logout" on:click={handleLogout}>Salir</button>
           </div>
@@ -351,6 +336,10 @@
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-decoration: none;
+  }
+  .user-chip__name:hover {
+    color: var(--procto-text);
   }
   .user-chip__sep {
     font-size: 0.8125rem;

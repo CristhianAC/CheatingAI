@@ -13,7 +13,8 @@ export const nodes = [
 	() => import('./nodes/9'),
 	() => import('./nodes/10'),
 	() => import('./nodes/11'),
-	() => import('./nodes/12')
+	() => import('./nodes/12'),
+	() => import('./nodes/13')
 ];
 
 export const server_loads = [];
@@ -28,8 +29,9 @@ export const dictionary = {
 		"/login": [8],
 		"/proctoring": [9],
 		"/proctoring/report/[sessionId]": [10],
-		"/register": [11],
-		"/submissions": [12]
+		"/profile": [11],
+		"/register": [12],
+		"/submissions": [13]
 	};
 
 export const hooks = {
