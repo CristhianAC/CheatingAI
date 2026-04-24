@@ -204,6 +204,22 @@
       "_app/immutable/assets/_page.vO6Vbea9.css"
     ]
   },
+  "src/routes/join-exam/+page.svelte": {
+    "file": "entries/pages/join-exam/_page.svelte.js",
+    "name": "entries/pages/join-exam/_page.svelte",
+    "src": "src/routes/join-exam/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_exports.js",
+      "_utils.js",
+      "_state.svelte.js",
+      "_PageHeader.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DRhM-qOd.css"
+    ]
+  },
   "src/routes/login/+page.svelte": {
     "file": "entries/pages/login/_page.svelte.js",
     "name": "entries/pages/login/_page.svelte",
@@ -233,7 +249,7 @@
       "_auth.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.CNy-i-Kg.css"
+      "_app/immutable/assets/_page.CpQoohCI.css"
     ]
   },
   "src/routes/proctoring/report/[sessionId]/+page.svelte": {

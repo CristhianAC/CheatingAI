@@ -1,0 +1,1 @@
+import{r}from"./DYWkTHj3.js";function t(e){return r("POST","/exams/",e)}function s(){return r("GET","/exams/")}function n(e){return r("POST","/exams/verify-code",{code:e})}export{t as c,s as l,n as v};

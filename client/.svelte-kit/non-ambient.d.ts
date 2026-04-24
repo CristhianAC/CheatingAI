@@ -27,7 +27,7 @@ export {};
 
 declare module "$app/types" {
 	export interface AppTypes {
-		RouteId(): "/" | "/analysis" | "/exams" | "/jobs" | "/login" | "/proctoring" | "/proctoring/report" | "/proctoring/report/[sessionId]" | "/register" | "/submissions";
+		RouteId(): "/" | "/analysis" | "/exams" | "/jobs" | "/join-exam" | "/login" | "/proctoring" | "/proctoring/report" | "/proctoring/report/[sessionId]" | "/register" | "/submissions";
 		RouteParams(): {
 			"/proctoring/report/[sessionId]": { sessionId: string }
 		};
@@ -36,6 +36,7 @@ declare module "$app/types" {
 			"/analysis": Record<string, never>;
 			"/exams": Record<string, never>;
 			"/jobs": Record<string, never>;
+			"/join-exam": Record<string, never>;
 			"/login": Record<string, never>;
 			"/proctoring": { sessionId?: string };
 			"/proctoring/report": { sessionId?: string };
@@ -43,7 +44,7 @@ declare module "$app/types" {
 			"/register": Record<string, never>;
 			"/submissions": Record<string, never>
 		};
-		Pathname(): "/" | "/analysis" | "/exams" | "/jobs" | "/login" | "/proctoring" | `/proctoring/report/${string}` & {} | "/register" | "/submissions";
+		Pathname(): "/" | "/analysis" | "/exams" | "/jobs" | "/join-exam" | "/login" | "/proctoring" | `/proctoring/report/${string}` & {} | "/register" | "/submissions";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/roble_amarillo.png" | string & {};
 	}

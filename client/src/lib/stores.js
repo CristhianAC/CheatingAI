@@ -8,6 +8,9 @@ export const toast = writable(null);
 
 // Job batch activo en progreso (para polling)
 export const activeJob = writable(null);
+export const selectedExamStore = writable(null);
+// Estructura esperada:
+// { id: string, code: string, name: string, professor_id: string }
 
 // ── Helpers de toast ──────────────────────────────────────────────────────────
 

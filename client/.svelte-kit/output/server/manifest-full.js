@@ -10,7 +10,7 @@ return {
 	assets: new Set(["roble_amarillo.png"]),
 	mimeTypes: {".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.BVxKEEu2.js",app:"_app/immutable/entry/app.7X0Dn0AE.js",imports:["_app/immutable/entry/start.BVxKEEu2.js","_app/immutable/chunks/BXRmF7LY.js","_app/immutable/chunks/hNPdwy8Q.js","_app/immutable/chunks/CUF2qY9T.js","_app/immutable/entry/app.7X0Dn0AE.js","_app/immutable/chunks/hNPdwy8Q.js","_app/immutable/chunks/CyffHFiI.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.BRyglRat.js",app:"_app/immutable/entry/app.C4RwkhEY.js",imports:["_app/immutable/entry/start.BRyglRat.js","_app/immutable/chunks/IpRF-qpP.js","_app/immutable/chunks/CWk8UI6I.js","_app/immutable/chunks/Cw3P8xHC.js","_app/immutable/entry/app.C4RwkhEY.js","_app/immutable/chunks/CWk8UI6I.js","_app/immutable/chunks/BsmMEUrz.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -22,7 +22,8 @@ return {
 			__memo(() => import('./nodes/7.js')),
 			__memo(() => import('./nodes/8.js')),
 			__memo(() => import('./nodes/9.js')),
-			__memo(() => import('./nodes/10.js'))
+			__memo(() => import('./nodes/10.js')),
+			__memo(() => import('./nodes/11.js'))
 		],
 		remotes: {
 			
@@ -57,38 +58,45 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/join-exam",
+				pattern: /^\/join-exam\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				endpoint: null
+			},
+			{
 				id: "/login",
 				pattern: /^\/login\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
 				endpoint: null
 			},
 			{
 				id: "/proctoring",
 				pattern: /^\/proctoring\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
 				endpoint: null
 			},
 			{
 				id: "/proctoring/report/[sessionId]",
 				pattern: /^\/proctoring\/report\/([^/]+?)\/?$/,
 				params: [{"name":"sessionId","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			},
 			{
 				id: "/register",
 				pattern: /^\/register\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
 				endpoint: null
 			},
 			{
 				id: "/submissions",
 				pattern: /^\/submissions\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			}
 		],

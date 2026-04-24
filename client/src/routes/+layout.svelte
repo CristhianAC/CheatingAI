@@ -81,6 +81,9 @@
           </a>
         {/if}
         {#if $authStore?.role === 'STUDENT'}
+          <a href="/join-exam" class="nav-link" class:active={$page.url.pathname.startsWith('/join-exam')}>
+            Unirse a examen
+          </a>
           <a href="/proctoring" class="nav-link" class:active={$page.url.pathname.startsWith('/proctoring')}>
             Supervisión
           </a>

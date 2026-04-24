@@ -1,13 +1,16 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { authStore } from '$lib/auth.js';
+  import { selectedExamStore } from '$lib/stores.js';
   import { getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
 
   let examId = '';
   let studentId = '';
+  let selectedExam = null;
   let sessionStats = null;
   let violationLog = [];
 
@@ -36,6 +39,11 @@
 
   function handleEnded(event) {
     sessionStats = event.detail.stats;
+    if (!isProfessor) {
+      selectedExamStore.set(null);
+      selectedExam = null;
+      examId = '';
+    }
   }
 
   function violationLabel(type) {
@@ -107,6 +115,24 @@
   }
 
   onMount(() => {
+    const auth = get(authStore);
+    const role = auth?.role ?? null;
+
+    if (role !== 'PROFESSOR') {
+      if (!auth?.token) {
+        goto('/login');
+        return;
+      }
+      studentId = auth?.user?.id ?? '';
+      const exam = get(selectedExamStore);
+      if (!exam?.id) {
+        goto('/join-exam');
+        return;
+      }
+      selectedExam = exam;
+      examId = exam.id;
+    }
+
     pollHandle = setInterval(tickPolling, 5000);
   });
 
@@ -131,24 +157,37 @@
     <div class="layout__left">
       <div class="config-card">
         <h2 class="config-card__title">Configuración de sesión</h2>
-        <label class="field">
-          <span class="field__label">Código de examen</span>
-          <input
-            class="field__input"
-            type="text"
-            bind:value={examId}
-            placeholder="ej. ABC123"
-          />
-        </label>
-        <label class="field">
-          <span class="field__label">Identificador del participante</span>
-          <input
-            class="field__input"
-            type="text"
-            bind:value={studentId}
-            placeholder="Tu nombre o email"
-          />
-        </label>
+        {#if isProfessor}
+          <label class="field">
+            <span class="field__label">Código de examen</span>
+            <input
+              class="field__input"
+              type="text"
+              bind:value={examId}
+              placeholder="ej. ABC123"
+            />
+          </label>
+          <label class="field">
+            <span class="field__label">Identificador del participante</span>
+            <input
+              class="field__input"
+              type="text"
+              bind:value={studentId}
+              placeholder="Tu nombre o email"
+            />
+          </label>
+        {:else}
+          <div class="field">
+            <span class="field__label">Examen seleccionado</span>
+            <p class="field__readonly">
+              {selectedExam?.name ?? 'Sin examen'} · Código {selectedExam?.code ?? '—'}
+            </p>
+          </div>
+          <div class="field">
+            <span class="field__label">Participante</span>
+            <p class="field__readonly">{studentId || 'No identificado'}</p>
+          </div>
+        {/if}
       </div>
 
       <ProctoringMonitor
@@ -431,6 +470,15 @@
     transition: border-color 0.15s;
   }
   .field__input:focus { border-color: var(--procto-accent, #0071e3); }
+  .field__readonly {
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+    font-size: 0.9rem;
+    background: #f9fafb;
+    color: #374151;
+  }
 
   .stats-card, .log-card {
     background: var(--procto-surface, #fff);
