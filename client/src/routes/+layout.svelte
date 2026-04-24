@@ -6,10 +6,6 @@
   import { authStore, initAuth, logout } from '$lib/auth.js';
   import { page } from '$app/stores';
 
-  /** Documentación API proctoring; configurable con VITE_PROCTORING_DOCS_URL en build */
-  const proctoringDocsUrl =
-    import.meta.env?.VITE_PROCTORING_DOCS_URL || 'http://localhost:8001/docs';
-
   const NAV = [
     { href: '/submissions', label: 'Entregas' },
     { href: '/analysis', label: 'Análisis' },
@@ -24,6 +20,8 @@
     logout();
     goto('/login');
   }
+
+  $: isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register';
 
   onMount(() => {
     initAuth();
@@ -65,47 +63,37 @@
         <span class="brand-lockup__wordmark">Procto</span>
       </a>
 
-      <nav class="nav" aria-label="Principal">
-        {#each NAV as { href, label }}
-          <a
-            {href}
-            class="nav-link"
-            class:active={$page.url.pathname.startsWith(href)}
-          >
-            {label}
-          </a>
-        {/each}
-        {#if $authStore?.role === 'PROFESSOR'}
-          <a href="/exams" class="nav-link" class:active={$page.url.pathname.startsWith('/exams')}>
-            Exámenes
-          </a>
-        {/if}
-        {#if $authStore?.role === 'STUDENT'}
-          <a href="/join-exam" class="nav-link" class:active={$page.url.pathname.startsWith('/join-exam')}>
-            Unirse a examen
-          </a>
-          <a href="/proctoring" class="nav-link" class:active={$page.url.pathname.startsWith('/proctoring')}>
-            Supervisión
-          </a>
-        {/if}
-      </nav>
+      {#if !isAuthPage}
+        <nav class="nav" aria-label="Principal">
+          {#each NAV as { href, label }}
+            <a
+              {href}
+              class="nav-link"
+              class:active={$page.url.pathname.startsWith(href)}
+            >
+              {label}
+            </a>
+          {/each}
+          {#if $authStore?.role === 'PROFESSOR'}
+            <a href="/exams" class="nav-link" class:active={$page.url.pathname.startsWith('/exams')}>
+              Exámenes
+            </a>
+          {/if}
+          {#if $authStore?.role === 'STUDENT'}
+            <a href="/join-exam" class="nav-link" class:active={$page.url.pathname.startsWith('/join-exam')}>
+              Unirse a examen
+            </a>
+          {/if}
+        </nav>
 
-      {#if $authStore?.user}
-        <div class="user-chip">
-          <span class="user-chip__name">{$authStore.user.full_name}</span>
-          <span class="user-chip__sep" aria-hidden="true">·</span>
-          <button class="user-chip__logout" on:click={handleLogout}>Salir</button>
-        </div>
+        {#if $authStore?.user}
+          <div class="user-chip">
+            <span class="user-chip__name">{$authStore.user.full_name}</span>
+            <span class="user-chip__sep" aria-hidden="true">·</span>
+            <button class="user-chip__logout" on:click={handleLogout}>Salir</button>
+          </div>
+        {/if}
       {/if}
-
-      <a
-        href={proctoringDocsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="api-link"
-      >
-        API
-      </a>
     </div>
   </header>
 
@@ -339,24 +327,6 @@
     background: rgba(0, 0, 0, 0.07);
     color: var(--procto-text);
     font-weight: 600;
-  }
-
-  .api-link {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--procto-text-secondary);
-    text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
-    padding: 0.35rem 0.6rem;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-  }
-  .api-link:hover {
-    color: var(--procto-text);
-    border-color: var(--procto-border);
-    background: rgba(0, 0, 0, 0.03);
   }
 
   .main {

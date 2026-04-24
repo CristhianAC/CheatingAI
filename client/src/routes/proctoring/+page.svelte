@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
@@ -114,9 +114,16 @@
     goto(`/proctoring/report/${sessionId}`);
   }
 
-  onMount(() => {
+  onMount(async () => {
+    await tick();
+
     const auth = get(authStore);
     const role = auth?.role ?? null;
+
+    if (role === 'PROFESSOR') {
+      goto('/exams');
+      return;
+    }
 
     if (role !== 'PROFESSOR') {
       if (!auth?.token) {

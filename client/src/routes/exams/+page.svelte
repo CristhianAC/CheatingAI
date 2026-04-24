@@ -55,6 +55,10 @@
     return new Date(value).toLocaleString('es');
   }
 
+  function openSessions(examId) {
+    goto(`/exams/${examId}/sessions`);
+  }
+
   onMount(async () => {
     if ($authStore?.role === 'PROFESSOR') {
       await loadExams();
@@ -129,6 +133,7 @@
               <th>Descripción</th>
               <th>Duración</th>
               <th>Fecha</th>
+              <th>Supervisiones</th>
             </tr>
           </thead>
           <tbody>
@@ -139,6 +144,11 @@
                 <td>{exam.description ?? '—'}</td>
                 <td>{exam.duration_minutes ? `${exam.duration_minutes} min` : '—'}</td>
                 <td>{fmtDate(exam.scheduled_at)}</td>
+                <td>
+                  <button class="btn btn--ghost btn--sm" type="button" on:click={() => openSessions(exam.id)}>
+                    Ver →
+                  </button>
+                </td>
               </tr>
             {/each}
           </tbody>

@@ -62,6 +62,10 @@
       {loading ? 'Creando...' : 'Crear cuenta'}
     </button>
   </form>
+
+  <p class="auth-switch">
+    ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+  </p>
 </section>
 
 <style>
@@ -77,5 +81,10 @@
   .error {
     color: #b42318;
     font-size: 0.9rem;
+  }
+  .auth-switch {
+    margin-top: 0.9rem;
+    font-size: 0.9rem;
+    color: var(--procto-text-secondary);
   }
 </style>
