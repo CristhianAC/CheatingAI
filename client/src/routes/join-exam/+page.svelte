@@ -5,11 +5,14 @@
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { verifyExamCode } from '$lib/exams-api.js';
   import { authStore } from '$lib/auth.js';
-  import { selectedExamStore } from '$lib/stores.js';
+  import { examStore } from '$lib/exam-store.js';
 
   let code = '';
   let loading = false;
-  let errorMessage = '';
+  let invalidMessage = '';
+  let notFoundMessage = '';
+  let finishedMessage = '';
+  let networkMessage = '';
   let successMessage = '';
   let foundExam = null;
 
@@ -19,7 +22,10 @@
 
   function handleCodeInput(event) {
     code = normalizeCode(event.currentTarget.value);
-    errorMessage = '';
+    invalidMessage = '';
+    notFoundMessage = '';
+    finishedMessage = '';
+    networkMessage = '';
     successMessage = '';
     foundExam = null;
   }
@@ -27,26 +33,39 @@
   async function handleVerify() {
     const normalized = normalizeCode(code);
     if (normalized.length !== 6) {
-      errorMessage = 'Ingresa un código válido de 6 caracteres.';
+      invalidMessage = 'Ingresa un código válido de 6 caracteres.';
       return;
     }
 
     loading = true;
-    errorMessage = '';
+    invalidMessage = '';
+    notFoundMessage = '';
+    finishedMessage = '';
+    networkMessage = '';
     successMessage = '';
     foundExam = null;
 
     try {
       const exam = await verifyExamCode(normalized);
       foundExam = exam;
-      selectedExamStore.set(exam);
+      examStore.set({
+        id: exam.id,
+        name: exam.name,
+        ends_at: exam.ends_at ?? null,
+        code: exam.code,
+        expired_at: null,
+      });
       successMessage = `✓ Examen encontrado: ${exam.name}`;
     } catch (e) {
-      if ((e.message || '').includes('Código de examen no válido')) {
-        errorMessage = 'Código de examen no válido. Inténtalo de nuevo.';
+      const msg = e?.message ?? '';
+      if (msg.includes('CODE_NOT_FOUND')) {
+        notFoundMessage = 'Código no encontrado. Verifica el código con tu profesor.';
+        code = '';
+      } else if (msg.includes('EXAM_FINISHED')) {
+        finishedMessage = 'Este examen ya finalizó.';
         code = '';
       } else {
-        errorMessage = 'Error de conexión. Verifica que el servidor esté activo.';
+        networkMessage = 'Error de conexión. Verifica que el servidor esté activo.';
       }
     } finally {
       loading = false;
@@ -104,8 +123,20 @@
       {/if}
     </button>
 
-    {#if errorMessage}
-      <p class="join-card__feedback join-card__feedback--error">{errorMessage}</p>
+    {#if invalidMessage}
+      <p class="join-card__feedback join-card__feedback--error">⚠ {invalidMessage}</p>
+    {/if}
+
+    {#if notFoundMessage}
+      <p class="join-card__feedback join-card__feedback--error">🔎 {notFoundMessage}</p>
+    {/if}
+
+    {#if finishedMessage}
+      <p class="join-card__feedback join-card__feedback--finished">⏱ {finishedMessage}</p>
+    {/if}
+
+    {#if networkMessage}
+      <p class="join-card__feedback join-card__feedback--error">✗ {networkMessage}</p>
     {/if}
 
     {#if successMessage}
@@ -151,5 +182,9 @@
 
   .join-card__feedback--success {
     color: #15803d;
+  }
+
+  .join-card__feedback--finished {
+    color: #92400e;
   }
 </style>

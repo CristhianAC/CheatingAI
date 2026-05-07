@@ -3,16 +3,20 @@
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
+  import ExamCountdown from '$lib/components/ExamCountdown.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { authStore } from '$lib/auth.js';
-  import { selectedExamStore } from '$lib/stores.js';
-  import { getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
+  import { examStore } from '$lib/exam-store.js';
+  import { endSession, getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
 
   let examId = '';
   let studentId = '';
   let selectedExam = null;
   let sessionStats = null;
   let violationLog = [];
+  let sessionId = null;
+  let hasExpired = false;
+  let expiredAt = null;
 
   // Tabs on the right panel: 'monitor' | 'activities'
   let activeTab = 'monitor';
@@ -40,9 +44,35 @@
   function handleEnded(event) {
     sessionStats = event.detail.stats;
     if (!isProfessor) {
-      selectedExamStore.set(null);
+      // Si terminó normalmente, limpiar el examen activo.
+      examStore.set(null);
       selectedExam = null;
       examId = '';
+    }
+  }
+
+  function handleStarted(event) {
+    sessionId = event.detail.sessionId;
+  }
+
+  async function handleExpired() {
+    if (hasExpired) return;
+    hasExpired = true;
+    expiredAt = new Date().toISOString();
+
+    const current = get(examStore);
+    if (current) {
+      examStore.set({ ...current, expired_at: expiredAt });
+    }
+
+    // Unmount del monitor -> su onDestroy detiene cámara.
+    // Extra: intentar cerrar sesión de proctoring si ya existe sessionId.
+    if (sessionId) {
+      try {
+        await endSession(sessionId);
+      } catch {
+        // ignore (puede ya estar terminada por el propio monitor)
+      }
     }
   }
 
@@ -135,9 +165,17 @@
     }
 
     studentId = auth?.user?.id ?? '';
-    const exam = get(selectedExamStore);
+    const exam = get(examStore);
     if (!exam?.id) {
       goto('/join-exam');
+      return;
+    }
+    // Si ya expiró previamente (persistido), mostrar pantalla final.
+    if (exam?.expired_at) {
+      selectedExam = exam;
+      examId = exam.id;
+      hasExpired = true;
+      expiredAt = exam.expired_at;
       return;
     }
     selectedExam = exam;
@@ -161,6 +199,12 @@
     title="Examen supervisado"
     subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
   />
+
+  {#if !isProfessor && selectedExam?.ends_at}
+    <div class="countdown-wrap" aria-label="Tiempo restante">
+      <ExamCountdown endsAt={selectedExam.ends_at} onExpired={handleExpired} />
+    </div>
+  {/if}
 
   <div class="layout">
     <!-- Left: Config + Monitor -->
@@ -200,12 +244,28 @@
         {/if}
       </div>
 
-      <ProctoringMonitor
-        {examId}
-        {studentId}
-        on:violation={handleViolation}
-        on:ended={handleEnded}
-      />
+      {#if hasExpired}
+        <section class="card finished-card">
+          <h2 class="card__title">Examen finalizado</h2>
+          <p class="finished-card__meta">
+            <strong>{selectedExam?.name ?? 'Examen'}</strong>
+            {#if expiredAt}
+              · Finalizado: {new Date(expiredAt).toLocaleString()}
+            {/if}
+          </p>
+          <p class="finished-card__hint">
+            El tiempo de la prueba se agotó. Esta sesión quedó cerrada y ya no es posible continuar.
+          </p>
+        </section>
+      {:else}
+        <ProctoringMonitor
+          {examId}
+          {studentId}
+          on:started={handleStarted}
+          on:violation={handleViolation}
+          on:ended={handleEnded}
+        />
+      {/if}
     </div>
 
     <!-- Right: Monitor / Activities -->
@@ -455,6 +515,28 @@
 
 <style>
   .page { max-width: 1200px; margin: 0 auto; padding: 0 0 2rem; }
+
+  .countdown-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 1rem;
+  }
+
+  .finished-card {
+    max-width: 640px;
+  }
+
+  .finished-card__meta {
+    margin: 0 0 0.6rem;
+    color: var(--procto-text);
+  }
+
+  .finished-card__hint {
+    margin: 0;
+    color: var(--procto-text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
 
   .layout { display: grid; grid-template-columns: 1fr 1.15fr; gap: 2rem; align-items: start; }
   @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }

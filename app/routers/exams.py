@@ -1,6 +1,6 @@
 import random
 import string
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -22,8 +22,38 @@ def _generate_exam_code() -> str:
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     return "".join(random.choices(alphabet, k=6))
 
+def _tz_aware(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _compute_ends_at(exam: Exam) -> datetime | None:
+    """
+    ends_at puede venir NULL si la BD no soportó columna generada.
+    Para el MVP, si hay scheduled_at y duration_minutes, lo calculamos en runtime.
+    """
+    ends_at = getattr(exam, "ends_at", None)
+    if ends_at is not None:
+        return _tz_aware(ends_at)
+
+    scheduled_at = _tz_aware(getattr(exam, "scheduled_at", None))
+    duration_minutes = getattr(exam, "duration_minutes", None)
+    if scheduled_at is None or duration_minutes is None:
+        return None
+
+    try:
+        minutes_int = int(duration_minutes)
+    except Exception:
+        return None
+    if minutes_int <= 0:
+        return None
+
+    return scheduled_at + timedelta(minutes=minutes_int)
+
 
 def _to_exam_response(exam: Exam) -> ExamResponse:
+    ends_at_calc = _compute_ends_at(exam)
     return ExamResponse(
         id=str(exam.id),
         code=exam.code,
@@ -32,7 +62,7 @@ def _to_exam_response(exam: Exam) -> ExamResponse:
         description=exam.description,
         duration_minutes=exam.duration_minutes,
         scheduled_at=exam.scheduled_at,
-        ends_at=getattr(exam, "ends_at", None),
+        ends_at=ends_at_calc,
         professor_id=str(exam.professor_id),
         created_at=exam.created_at,
     )
@@ -112,20 +142,16 @@ def verify_exam_code(
         raise HTTPException(status_code=404, detail="CODE_NOT_FOUND")
 
     status_value = (getattr(exam, "status", None) or "scheduled").lower()
-    ends_at = getattr(exam, "ends_at", None)
+    ends_at = _compute_ends_at(exam)
     now = datetime.now(timezone.utc)
 
     # Considerar examen finalizado si:
     # - status='finished', o
-    # - ends_at existe y ya pasó
+    # - ends_at (calculado si es NULL) existe y ya pasó
     if status_value == "finished":
         raise HTTPException(status_code=410, detail="EXAM_FINISHED")
     if ends_at is not None:
-        try:
-            ends_at_utc = ends_at if ends_at.tzinfo else ends_at.replace(tzinfo=timezone.utc)
-        except Exception:
-            ends_at_utc = None
-        if ends_at_utc and ends_at_utc <= now:
+        if ends_at <= now:
             raise HTTPException(status_code=410, detail="EXAM_FINISHED")
 
     return _to_exam_response(exam)
