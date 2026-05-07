@@ -11,3 +11,7 @@ export function listExams() {
 export function verifyExamCode(code) {
   return request('POST', '/exams/verify-code', { code });
 }
+
+export function updateExamStatus(examId, status) {
+  return request('PATCH', `/exams/${encodeURIComponent(examId)}/status`, { status });
+}

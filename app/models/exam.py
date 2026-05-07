@@ -15,5 +15,7 @@ class Exam(Base):
     description = Column(Text, nullable=True)
     duration_minutes = Column(Integer, nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, nullable=False, server_default=text("'scheduled'"))
+    ends_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

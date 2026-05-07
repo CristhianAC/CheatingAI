@@ -1,12 +1,13 @@
 import random
 import string
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
 from app.models.exam import Exam
-from app.schemas.exam import ExamCodeCheck, ExamCreate, ExamResponse
+from app.schemas.exam import ExamCodeCheck, ExamCreate, ExamResponse, ExamStatusUpdate
 
 router = APIRouter(prefix="/exams", tags=["Exams"])
 
@@ -17,7 +18,8 @@ def _require_professor(current_user: dict) -> None:
 
 
 def _generate_exam_code() -> str:
-    alphabet = string.ascii_uppercase + string.digits
+    # Excluir caracteres ambiguos: 0, O, I, 1
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     return "".join(random.choices(alphabet, k=6))
 
 
@@ -26,9 +28,11 @@ def _to_exam_response(exam: Exam) -> ExamResponse:
         id=str(exam.id),
         code=exam.code,
         name=exam.name,
+        status=getattr(exam, "status", "scheduled") or "scheduled",
         description=exam.description,
         duration_minutes=exam.duration_minutes,
         scheduled_at=exam.scheduled_at,
+        ends_at=getattr(exam, "ends_at", None),
         professor_id=str(exam.professor_id),
         created_at=exam.created_at,
     )
@@ -43,7 +47,7 @@ def create_exam(
     _require_professor(current_user)
 
     code = None
-    for _ in range(5):
+    for _ in range(10):
         candidate = _generate_exam_code()
         exists = db.query(Exam).filter(Exam.code == candidate).first()
         if not exists:
@@ -60,6 +64,7 @@ def create_exam(
         description=payload.description,
         duration_minutes=payload.duration_minutes,
         scheduled_at=payload.scheduled_at,
+        status="scheduled",
     )
     db.add(exam)
     db.commit()
@@ -104,5 +109,46 @@ def verify_exam_code(
     _ = current_user
     exam = db.query(Exam).filter(Exam.code == payload.code.upper()).first()
     if not exam:
-        raise HTTPException(status_code=404, detail="Código de examen no válido")
+        raise HTTPException(status_code=404, detail="CODE_NOT_FOUND")
+
+    status_value = (getattr(exam, "status", None) or "scheduled").lower()
+    ends_at = getattr(exam, "ends_at", None)
+    now = datetime.now(timezone.utc)
+
+    # Considerar examen finalizado si:
+    # - status='finished', o
+    # - ends_at existe y ya pasó
+    if status_value == "finished":
+        raise HTTPException(status_code=410, detail="EXAM_FINISHED")
+    if ends_at is not None:
+        try:
+            ends_at_utc = ends_at if ends_at.tzinfo else ends_at.replace(tzinfo=timezone.utc)
+        except Exception:
+            ends_at_utc = None
+        if ends_at_utc and ends_at_utc <= now:
+            raise HTTPException(status_code=410, detail="EXAM_FINISHED")
+
+    return _to_exam_response(exam)
+
+
+@router.patch("/{exam_id}/status", response_model=ExamResponse)
+def update_exam_status(
+    exam_id: str,
+    payload: ExamStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    _require_professor(current_user)
+    next_status = (payload.status or "").lower().strip()
+    if next_status not in ("scheduled", "active", "finished"):
+        raise HTTPException(status_code=422, detail="Estado inválido")
+
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.professor_id == current_user["sub"]).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Examen no encontrado")
+
+    exam.status = next_status
+    db.add(exam)
+    db.commit()
+    db.refresh(exam)
     return _to_exam_response(exam)

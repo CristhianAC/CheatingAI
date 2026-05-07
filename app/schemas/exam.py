@@ -14,9 +14,11 @@ class ExamResponse(BaseModel):
     id: str
     code: str
     name: str
+    status: str
     description: str | None = None
     duration_minutes: int | None = None
     scheduled_at: datetime | None = None
+    ends_at: datetime | None = None
     professor_id: str
     created_at: datetime
 
@@ -26,3 +28,7 @@ class ExamResponse(BaseModel):
 
 class ExamCodeCheck(BaseModel):
     code: str
+
+
+class ExamStatusUpdate(BaseModel):
+    status: str
