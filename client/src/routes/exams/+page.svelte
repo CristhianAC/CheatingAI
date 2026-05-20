@@ -3,6 +3,15 @@
   import { goto } from '$app/navigation';
   import { authStore } from '$lib/auth.js';
   import { createExam, listExams } from '$lib/exams-api.js';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import * as Card from '$lib/components/ui/card';
+  import * as Table from '$lib/components/ui/table';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+  import { Badge } from '$lib/components/ui/badge';
+  import * as Alert from '$lib/components/ui/alert';
+  import { Skeleton } from '$lib/components/ui/skeleton';
 
   let loading = false;
   let saving = false;
@@ -71,139 +80,109 @@
 </svelte:head>
 
 {#if $authStore?.role !== 'PROFESSOR'}
-  <section class="card exams-page__restricted">
-    <h1 class="card__title">Acceso restringido</h1>
-    <p>Solo los profesores pueden gestionar exámenes.</p>
-    <button class="btn btn--secondary" type="button" on:click={() => goto('/')}>Volver</button>
-  </section>
+  <Card.Root class="rounded-xl">
+    <Card.Header>
+      <Card.Title>Acceso restringido</Card.Title>
+      <Card.Description>Solo los profesores pueden gestionar exámenes.</Card.Description>
+    </Card.Header>
+    <Card.Footer>
+      <Button variant="secondary" onclick={() => goto('/')}>Volver</Button>
+    </Card.Footer>
+  </Card.Root>
 {:else}
-  <section class="card exams-page">
-    <div class="exams-page__top">
-      <h1 class="card__title">Gestión de exámenes</h1>
-      <button class="btn btn--primary" type="button" on:click={() => (showCreate = !showCreate)}>
-        {showCreate ? 'Cancelar' : 'Crear Examen'}
-      </button>
-    </div>
+  <PageHeader
+    focus="Docencia"
+    title="Gestión de exámenes"
+    subtitle="Crea exámenes y revisa las supervisiones de cada uno."
+  >
+    <svelte:fragment slot="actions">
+      <Button onclick={() => (showCreate = !showCreate)}>
+        {showCreate ? 'Cancelar' : 'Crear examen'}
+      </Button>
+    </svelte:fragment>
+  </PageHeader>
 
-    {#if showCreate}
-      <form class="exams-form" on:submit|preventDefault={submitCreate}>
-        <label class="field">
-          <span>Nombre</span>
-          <input type="text" bind:value={name} required />
-        </label>
+  {#if showCreate}
+    <Card.Root class="mb-6 rounded-xl">
+      <Card.Header>
+        <Card.Title class="text-base">Nuevo examen</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <form on:submit|preventDefault={submitCreate} class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2 sm:col-span-2">
+            <Label for="name">Nombre</Label>
+            <Input id="name" type="text" bind:value={name} required />
+          </div>
+          <div class="space-y-2 sm:col-span-2">
+            <Label for="desc">Descripción</Label>
+            <textarea
+              id="desc"
+              rows="3"
+              bind:value={description}
+              class="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            ></textarea>
+          </div>
+          <div class="space-y-2">
+            <Label for="dur">Duración (min)</Label>
+            <Input id="dur" type="number" min="1" bind:value={durationMinutes} />
+          </div>
+          <div class="space-y-2">
+            <Label for="sched">Fecha programada</Label>
+            <Input id="sched" type="datetime-local" bind:value={scheduledAt} />
+          </div>
+          <div class="sm:col-span-2">
+            <Button type="submit" disabled={saving}>{saving ? 'Creando...' : 'Guardar examen'}</Button>
+          </div>
+        </form>
+      </Card.Content>
+    </Card.Root>
+  {/if}
 
-        <label class="field">
-          <span>Descripción</span>
-          <textarea rows="3" bind:value={description}></textarea>
-        </label>
+  {#if error}
+    <Alert.Root variant="destructive" class="mb-4">
+      <Alert.Description>{error}</Alert.Description>
+    </Alert.Root>
+  {/if}
 
-        <label class="field">
-          <span>Duración (min)</span>
-          <input type="number" min="1" bind:value={durationMinutes} />
-        </label>
-
-        <label class="field">
-          <span>Fecha programada</span>
-          <input type="datetime-local" bind:value={scheduledAt} />
-        </label>
-
-        <div class="exams-form__actions">
-          <button class="btn btn--primary" type="submit" disabled={saving}>
-            {saving ? 'Creando...' : 'Guardar examen'}
-          </button>
+  <Card.Root class="rounded-xl">
+    <Card.Content class="pt-6">
+      {#if loading}
+        <div class="space-y-2">
+          <Skeleton class="h-10 w-full" />
+          <Skeleton class="h-10 w-full" />
         </div>
-      </form>
-    {/if}
-
-    {#if error}
-      <p class="exams-error">{error}</p>
-    {/if}
-
-    {#if loading}
-      <p>Cargando exámenes...</p>
-    {:else if exams.length === 0}
-      <p>No tienes exámenes creados todavía.</p>
-    {:else}
-      <div class="table-wrap">
-        <table class="exams-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Código</th>
-              <th>Descripción</th>
-              <th>Duración</th>
-              <th>Fecha</th>
-              <th>Supervisiones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each exams as exam}
-              <tr>
-                <td>{exam.name}</td>
-                <td><span class="code-badge">{exam.code}</span></td>
-                <td>{exam.description ?? '—'}</td>
-                <td>{exam.duration_minutes ? `${exam.duration_minutes} min` : '—'}</td>
-                <td>{fmtDate(exam.scheduled_at)}</td>
-                <td>
-                  <button class="btn btn--ghost btn--sm" type="button" on:click={() => openSessions(exam.id)}>
-                    Ver →
-                  </button>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    {/if}
-  </section>
+      {:else if exams.length === 0}
+        <p class="text-sm text-muted-foreground">No tienes exámenes creados todavía.</p>
+      {:else}
+        <div class="overflow-x-auto">
+          <Table.Root>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head>Nombre</Table.Head>
+                <Table.Head>Código</Table.Head>
+                <Table.Head>Descripción</Table.Head>
+                <Table.Head>Duración</Table.Head>
+                <Table.Head>Fecha</Table.Head>
+                <Table.Head class="text-right">Acciones</Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {#each exams as exam}
+                <Table.Row>
+                  <Table.Cell class="font-medium">{exam.name}</Table.Cell>
+                  <Table.Cell><Badge variant="outline" class="font-mono tracking-wider">{exam.code}</Badge></Table.Cell>
+                  <Table.Cell class="max-w-[200px] truncate text-muted-foreground">{exam.description ?? '—'}</Table.Cell>
+                  <Table.Cell>{exam.duration_minutes ? `${exam.duration_minutes} min` : '—'}</Table.Cell>
+                  <Table.Cell class="text-muted-foreground">{fmtDate(exam.scheduled_at)}</Table.Cell>
+                  <Table.Cell class="text-right">
+                    <Button variant="ghost" size="sm" onclick={() => openSessions(exam.id)}>Supervisiones →</Button>
+                  </Table.Cell>
+                </Table.Row>
+              {/each}
+            </Table.Body>
+          </Table.Root>
+        </div>
+      {/if}
+    </Card.Content>
+  </Card.Root>
 {/if}
-
-<style>
-  .exams-page__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  .exams-form {
-    border: 1px solid var(--procto-border);
-    border-radius: var(--procto-radius-sm);
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  .exams-form__actions {
-    margin-top: 0.75rem;
-  }
-  .table-wrap {
-    overflow-x: auto;
-  }
-  .exams-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .exams-table th,
-  .exams-table td {
-    border-bottom: 1px solid var(--procto-border);
-    text-align: left;
-    padding: 0.65rem 0.5rem;
-    font-size: 0.9rem;
-  }
-  .code-badge {
-    display: inline-block;
-    background: var(--procto-accent-muted);
-    color: var(--procto-accent);
-    border: 1px solid rgba(0, 113, 227, 0.25);
-    border-radius: 999px;
-    padding: 0.2rem 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-  }
-  .exams-error {
-    color: #b42318;
-    margin: 0 0 0.75rem;
-  }
-  .exams-page__restricted p {
-    margin-bottom: 0.75rem;
-  }
-</style>

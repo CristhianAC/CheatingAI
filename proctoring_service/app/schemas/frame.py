@@ -13,6 +13,10 @@ class FrameAnalysisRequest(BaseModel):
         None,
         description="Active session ID to record violations against. If None, violations are not persisted.",
     )
+    student_id: Optional[str] = Field(
+        None,
+        description="Student UUID; if omitted, taken from the session record.",
+    )
     frame_base64: str = Field(
         ...,
         description="Base64-encoded image bytes (JPEG preferred for performance)",

@@ -1,7 +1,9 @@
-import { o as onMount } from "./ssr2.js";
+import "clsx";
+import { q as noop } from "./index2.js";
 import "./exports.js";
 import "@sveltejs/kit/internal/server";
-const is_legacy = onMount.toString().includes("$$") || /function \w+\(\) \{\}/.test(onMount.toString());
+import "./root.js";
+const is_legacy = noop.toString().includes("$$") || /function \w+\(\) \{\}/.test(noop.toString());
 if (is_legacy) {
   ({
     data: {},

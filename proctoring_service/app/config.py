@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     SUPABASE_BUCKET: str = "proctoring-violations"
+    SUPABASE_VIOLATION_CAPTURES_BUCKET: str = "violation-captures"
 
     # Gaze thresholds — fractions of face size (not degrees).
     # Calibrated for the ratio-based GazeEstimator.

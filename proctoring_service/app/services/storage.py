@@ -64,3 +64,54 @@ def upload_violation_frame(
     except Exception as exc:  # pragma: no cover - defensive logging
         logger.exception("Error uploading frame to Supabase Storage: %s", exc)
         return None
+
+
+def upload_identity_violation_capture(
+    session_id: str,
+    frame_bytes: bytes,
+    content_type: str = "image/jpeg",
+) -> Optional[str]:
+    """
+    Sube captura de identity_mismatch al bucket violation-captures.
+    Ruta: violations/{session_id}/{timestamp}.jpg
+    """
+    settings = get_settings()
+    bucket = settings.SUPABASE_VIOLATION_CAPTURES_BUCKET or "violation-captures"
+
+    if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
+        logger.warning(
+            "Supabase storage not configured for violation-captures: url=%s, has_key=%s",
+            settings.SUPABASE_URL or "<empty>",
+            bool(settings.SUPABASE_SERVICE_KEY),
+        )
+        return None
+
+    try:
+        from supabase import create_client  # type: ignore[import]
+    except ImportError:
+        logger.error("Supabase client library is not installed inside proctoring container.")
+        return None
+
+    try:
+        client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
+        path = f"violations/{session_id}/{timestamp}.jpg"
+
+        logger.info(
+            "Uploading identity violation capture: bucket=%s, path=%s",
+            bucket,
+            path,
+        )
+
+        client.storage.from_(bucket).upload(
+            path,
+            frame_bytes,
+            file_options={"content-type": content_type},
+        )
+
+        public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}"
+        logger.info("Identity violation capture uploaded: %s", public_url)
+        return public_url
+    except Exception as exc:  # pragma: no cover
+        logger.exception("Error uploading identity violation capture: %s", exc)
+        return None

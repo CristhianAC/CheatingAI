@@ -2,6 +2,12 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { getSessionReport } from '$lib/proctoring-api.js';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import * as Card from '$lib/components/ui/card';
+  import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/components/ui/badge';
+  import { Label } from '$lib/components/ui/label';
+  import * as Accordion from '$lib/components/ui/accordion';
 
   let report = null;
   let loading = true;
@@ -107,21 +113,18 @@
   <title>Reporte de supervisión | Procto</title>
 </svelte:head>
 
-<div class="page">
-  <header class="page__header">
-    <a href="/proctoring" class="back-link">← Volver a supervisión</a>
-    <div class="page__header-focus">
-      <p class="page__eyebrow">Reporte docente</p>
-      <h1 class="page__title">Reporte de supervisión</h1>
-      {#if report}
-        <p class="page__meta">
-          Participante <strong>{report.student_id}</strong> ·
-          Examen <strong>{report.exam_id}</strong> ·
-          {fmtDateTime(report.started_at)}
-        </p>
-      {/if}
-    </div>
-  </header>
+<div class="page space-y-6">
+  <PageHeader
+    focus="Reporte docente"
+    title="Reporte de supervisión"
+    subtitle={report
+      ? `${report.student_name ?? report.student_id}${report.student_email ? ` · ${report.student_email}` : ''} — ${report.exam_name ?? report.exam_id}${report.exam_code ? ` (${report.exam_code})` : ''} · ${fmtDateTime(report.started_at)}`
+      : 'Detalle de la sesión supervisada'}
+  >
+    <svelte:fragment slot="actions">
+      <Button variant="outline" size="sm" href="/proctoring">← Volver</Button>
+    </svelte:fragment>
+  </PageHeader>
 
   {#if loading}
     <div class="state-box">
@@ -137,6 +140,36 @@
       <p>No se encontró información para esta sesión.</p>
     </div>
   {:else}
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <Card.Root class="rounded-xl">
+        <Card.Header class="pb-2">
+          <Card.Description>Riesgo</Card.Description>
+          <Card.Title class="text-2xl">{ra?.score ?? '—'}/100</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <Badge variant="outline">{ra?.level_label ?? 'Sin evaluar'}</Badge>
+        </Card.Content>
+      </Card.Root>
+      <Card.Root class="rounded-xl">
+        <Card.Header class="pb-2">
+          <Card.Description>Eventos</Card.Description>
+          <Card.Title class="text-2xl">{report.total_violations ?? 0}</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <p class="text-sm text-muted-foreground">Señales registradas</p>
+        </Card.Content>
+      </Card.Root>
+      <Card.Root class="rounded-xl">
+        <Card.Header class="pb-2">
+          <Card.Description>Duración</Card.Description>
+          <Card.Title class="text-2xl">{fmtDuration(report.duration_seconds)}</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <p class="text-sm text-muted-foreground">{statusLabel(report.status)}</p>
+        </Card.Content>
+      </Card.Root>
+    </div>
 
     <!-- ── VERDICT HERO ─────────────────────────────────────────── -->
     {#if ra}
@@ -242,12 +275,9 @@
     <section class="card">
       <div class="violations-header">
         <h2 class="card__title">Eventos con evidencia</h2>
-        <button
-          class="btn btn--ghost btn--sm"
-          on:click={() => showAllViolations = !showAllViolations}
-        >
+        <Button variant="ghost" size="sm" onclick={() => (showAllViolations = !showAllViolations)}>
           {showAllViolations ? 'Ocultar' : `Ver todos (${filteredViolations.length})`}
-        </button>
+        </Button>
       </div>
       <p class="card__desc">
         Lista cronológica de señales observadas durante la sesión, con confianza estimada y capturas cuando existen.
@@ -262,19 +292,19 @@
       {#if !report.violations || report.violations.length === 0}
         <p class="muted">No se registraron eventos en esta sesión.</p>
       {:else}
-        <div class="events-toolbar">
-          <label class="events-toolbar__field">
-            <span class="events-toolbar__label">Tipo de señal</span>
-            <select bind:value={eventFilterType} class="events-toolbar__select">
+        <div class="events-toolbar mb-4 flex flex-wrap gap-4 rounded-lg border border-border bg-muted/30 p-4">
+          <label class="events-toolbar__field min-w-[180px] space-y-1.5">
+            <Label class="events-toolbar__label">Tipo de señal</Label>
+            <select bind:value={eventFilterType} class="events-toolbar__select flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
               <option value="">Todos</option>
               {#each eventTypeOptions as t}
                 <option value={t}>{violationLabel(t)}</option>
               {/each}
             </select>
           </label>
-          <label class="events-toolbar__field">
-            <span class="events-toolbar__label">Orden</span>
-            <select bind:value={eventSort} class="events-toolbar__select">
+          <label class="events-toolbar__field min-w-[180px] space-y-1.5">
+            <Label class="events-toolbar__label">Orden</Label>
+            <select bind:value={eventSort} class="events-toolbar__select flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
               <option value="time-desc">Hora: más recientes</option>
               <option value="time-asc">Hora: más antiguos</option>
               <option value="conf-desc">Certeza: mayor primero</option>
@@ -430,6 +460,28 @@
 
       </div>
     </div>
+
+    <Accordion.Root type="single" class="rounded-xl border border-border bg-card px-4">
+      <Accordion.Item value="tech">
+        <Accordion.Trigger class="py-4 text-sm font-semibold">Datos técnicos</Accordion.Trigger>
+        <Accordion.Content>
+      <div class="tech-details__body pb-4">
+        <div class="tech-row">
+          <span class="tech-label">session_id</span>
+          <code class="tech-value">{report.id}</code>
+        </div>
+        <div class="tech-row">
+          <span class="tech-label">exam_id</span>
+          <code class="tech-value">{report.exam_id}</code>
+        </div>
+        <div class="tech-row">
+          <span class="tech-label">student_id</span>
+          <code class="tech-value">{report.student_id}</code>
+        </div>
+      </div>
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion.Root>
   {/if}
 </div>
 
@@ -482,6 +534,29 @@
     color: var(--procto-text-secondary, #6e6e73);
     margin: 0;
     max-width: 40rem;
+  }
+  .page__meta-secondary {
+    color: var(--procto-text-secondary, #6e6e73);
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+  .page__meta-sep {
+    margin: 0 0.35rem;
+    opacity: 0.55;
+  }
+
+  .code-badge {
+    display: inline-block;
+    background: var(--procto-accent-muted, rgba(0, 113, 227, 0.12));
+    color: var(--procto-accent, #0071e3);
+    border: 1px solid rgba(0, 113, 227, 0.25);
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    font-size: 0.78rem;
+    margin-left: 0.4rem;
+    white-space: nowrap;
   }
 
   /* ── State boxes ──────────────────────────────────────────────── */
@@ -826,4 +901,42 @@
   .btn--ghost { background: transparent; border: 1px solid #d1d5db; color: #374151; }
   .btn--ghost:hover { background: #f3f4f6; }
   .btn--sm { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
+
+  /* Datos técnicos */
+  .tech-details {
+    margin-top: 1.25rem;
+  }
+  .tech-details__summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #374151;
+  }
+  .tech-details__body {
+    margin-top: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .tech-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+  }
+  .tech-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    font-weight: 700;
+  }
+  .tech-value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.82rem;
+    color: #111827;
+  }
 </style>

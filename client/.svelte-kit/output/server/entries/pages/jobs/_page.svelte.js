@@ -1,75 +1,156 @@
-import { c as create_ssr_component, e as escape, o as onDestroy, v as validate_component, b as each } from "../../../chunks/ssr.js";
+import { k as fallback, d as attr_class, e as escape_html, l as stringify, m as attr_style, b as bind_props, j as head, h as ensure_array_like } from "../../../chunks/index2.js";
+import { l as listJobs } from "../../../chunks/api.js";
+import { b as showError } from "../../../chunks/stores.js";
+import { o as onDestroy } from "../../../chunks/index-server.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-const css$1 = {
-  code: ".job-card.svelte-1ag64q3.svelte-1ag64q3{padding:1rem;border-radius:10px;border:2px solid #e5e7eb;cursor:pointer;transition:all 0.15s;background:#fff}.job-card.svelte-1ag64q3.svelte-1ag64q3:hover{border-color:var(--procto-accent, #0071e3)}.job-card.selected.svelte-1ag64q3.svelte-1ag64q3{border-color:var(--procto-accent, #0071e3);background:rgba(0, 113, 227, 0.08)}.job-card.completed.svelte-1ag64q3.svelte-1ag64q3{border-color:#10b981}.job-top.svelte-1ag64q3.svelte-1ag64q3{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem}.job-left.svelte-1ag64q3.svelte-1ag64q3{display:flex;align-items:flex-start;gap:0.6rem}.job-icon.svelte-1ag64q3.svelte-1ag64q3{font-size:1.3rem;margin-top:0.1rem}.job-id.svelte-1ag64q3.svelte-1ag64q3{display:flex;align-items:center;gap:0.4rem}.job-id.svelte-1ag64q3 code.svelte-1ag64q3{font-family:monospace;font-size:0.82rem;color:#374151}.job-scope.svelte-1ag64q3.svelte-1ag64q3{font-size:0.78rem;color:#6b7280;margin-top:0.15rem}.badge-type.svelte-1ag64q3.svelte-1ag64q3{padding:0.15rem 0.45rem;border-radius:999px;font-size:0.7rem;font-weight:600}.badge-type--batch.svelte-1ag64q3.svelte-1ag64q3{background:#dbeafe;color:#1e40af}.badge-type--pairwise.svelte-1ag64q3.svelte-1ag64q3{background:#f3e8ff;color:#6d28d9}.badge-status.svelte-1ag64q3.svelte-1ag64q3{padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;white-space:nowrap}.badge-status--pending.svelte-1ag64q3.svelte-1ag64q3{background:#fef9c3;color:#713f12}.badge-status--running.svelte-1ag64q3.svelte-1ag64q3{background:#dbeafe;color:#1e40af}.badge-status--completed.svelte-1ag64q3.svelte-1ag64q3{background:#d1fae5;color:#065f46}.badge-status--failed.svelte-1ag64q3.svelte-1ag64q3{background:#fee2e2;color:#991b1b}.job-stats.svelte-1ag64q3.svelte-1ag64q3{display:flex;gap:1rem;flex-wrap:wrap;font-size:0.78rem;color:#6b7280}.mini-progress.svelte-1ag64q3.svelte-1ag64q3{height:5px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:0.5rem}.mini-bar.svelte-1ag64q3.svelte-1ag64q3{height:100%;border-radius:999px;background:linear-gradient(90deg, var(--procto-accent, #0071e3), #5ac8fa);transition:width 0.4s ease}.job-error.svelte-1ag64q3.svelte-1ag64q3{font-size:0.8rem;color:#ef4444;margin-top:0.5rem}",
-  map: `{"version":3,"file":"JobCard.svelte","sources":["JobCard.svelte"],"sourcesContent":["<script>\\n  export let job;\\n  export let selected = false;\\n\\n  const STATUS_ICON = {\\n    pending:   '⏳',\\n    running:   '⚙️',\\n    completed: '✅',\\n    failed:    '❌'\\n  };\\n\\n  function fmt(dt) {\\n    return dt ? new Date(dt).toLocaleString('es-CO') : '—';\\n  }\\n\\n  $: duration = (() => {\\n    if (!job.started_at || !job.finished_at) return null;\\n    const ms = new Date(job.finished_at) - new Date(job.started_at);\\n    return ms < 1000 ? \`\${ms}ms\` : \`\${(ms/1000).toFixed(1)}s\`;\\n  })();\\n<\/script>\\n\\n<div class=\\"job-card\\" class:selected class:completed={job.status === 'completed'}>\\n  <div class=\\"job-top\\">\\n    <div class=\\"job-left\\">\\n      <span class=\\"job-icon\\">{STATUS_ICON[job.status]}</span>\\n      <div>\\n        <div class=\\"job-id\\">\\n          <code>{job.id.slice(0,8)}…</code>\\n          <span class=\\"badge-type badge-type--{job.job_type}\\">{job.job_type}</span>\\n        </div>\\n        <div class=\\"job-scope\\">\\n          {#if job.problem_id}📁 {job.problem_id}{/if}\\n          {#if job.exam_id}📋 {job.exam_id}{/if}\\n          {#if job.submission_a_id}🔗 Par a par{/if}\\n        </div>\\n      </div>\\n    </div>\\n    <span class=\\"badge-status badge-status--{job.status}\\">{job.status}</span>\\n  </div>\\n\\n  <div class=\\"job-stats\\">\\n    {#if job.total_comparisons > 0}\\n      <span>🔁 {job.completed_comparisons}/{job.total_comparisons} comparaciones</span>\\n    {/if}\\n    {#if duration}\\n      <span>⏱️ {duration}</span>\\n    {/if}\\n    <span>🕐 {fmt(job.created_at)}</span>\\n  </div>\\n\\n  {#if job.status === 'running' && job.total_comparisons > 0}\\n    {@const pct = Math.round((job.completed_comparisons / job.total_comparisons) * 100)}\\n    <div class=\\"mini-progress\\">\\n      <div class=\\"mini-bar\\" style=\\"width:{pct}%\\"></div>\\n    </div>\\n  {/if}\\n\\n  {#if job.error_message}\\n    <p class=\\"job-error\\">⚠️ {job.error_message}</p>\\n  {/if}\\n</div>\\n\\n<style>\\n  .job-card {\\n    padding: 1rem; border-radius: 10px;\\n    border: 2px solid #e5e7eb;\\n    cursor: pointer; transition: all 0.15s;\\n    background: #fff;\\n  }\\n  .job-card:hover { border-color: var(--procto-accent, #0071e3); }\\n  .job-card.selected { border-color: var(--procto-accent, #0071e3); background: rgba(0, 113, 227, 0.08); }\\n  .job-card.completed { border-color: #10b981; }\\n\\n  .job-top {\\n    display: flex; justify-content: space-between;\\n    align-items: flex-start; margin-bottom: 0.5rem;\\n  }\\n  .job-left { display: flex; align-items: flex-start; gap: 0.6rem; }\\n  .job-icon { font-size: 1.3rem; margin-top: 0.1rem; }\\n\\n  .job-id { display: flex; align-items: center; gap: 0.4rem; }\\n  .job-id code { font-family: monospace; font-size: 0.82rem; color: #374151; }\\n\\n  .job-scope { font-size: 0.78rem; color: #6b7280; margin-top: 0.15rem; }\\n\\n  .badge-type {\\n    padding: 0.15rem 0.45rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600;\\n  }\\n  .badge-type--batch    { background: #dbeafe; color: #1e40af; }\\n  .badge-type--pairwise { background: #f3e8ff; color: #6d28d9; }\\n\\n  .badge-status {\\n    padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;\\n    white-space: nowrap;\\n  }\\n  .badge-status--pending   { background: #fef9c3; color: #713f12; }\\n  .badge-status--running   { background: #dbeafe; color: #1e40af; }\\n  .badge-status--completed { background: #d1fae5; color: #065f46; }\\n  .badge-status--failed    { background: #fee2e2; color: #991b1b; }\\n\\n  .job-stats {\\n    display: flex; gap: 1rem; flex-wrap: wrap;\\n    font-size: 0.78rem; color: #6b7280;\\n  }\\n\\n  .mini-progress {\\n    height: 5px; background: #e5e7eb; border-radius: 999px;\\n    overflow: hidden; margin-top: 0.5rem;\\n  }\\n  .mini-bar {\\n    height: 100%; border-radius: 999px;\\n    background: linear-gradient(90deg, var(--procto-accent, #0071e3), #5ac8fa);\\n    transition: width 0.4s ease;\\n  }\\n\\n  .job-error { font-size: 0.8rem; color: #ef4444; margin-top: 0.5rem; }\\n</style>\\n"],"names":[],"mappings":"AAgEE,uCAAU,CACR,OAAO,CAAE,IAAI,CAAE,aAAa,CAAE,IAAI,CAClC,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,OAAO,CACzB,MAAM,CAAE,OAAO,CAAE,UAAU,CAAE,GAAG,CAAC,KAAK,CACtC,UAAU,CAAE,IACd,CACA,uCAAS,MAAO,CAAE,YAAY,CAAE,IAAI,eAAe,CAAC,QAAQ,CAAG,CAC/D,SAAS,uCAAU,CAAE,YAAY,CAAE,IAAI,eAAe,CAAC,QAAQ,CAAC,CAAE,UAAU,CAAE,KAAK,CAAC,CAAC,CAAC,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,IAAI,CAAG,CACvG,SAAS,wCAAW,CAAE,YAAY,CAAE,OAAS,CAE7C,sCAAS,CACP,OAAO,CAAE,IAAI,CAAE,eAAe,CAAE,aAAa,CAC7C,WAAW,CAAE,UAAU,CAAE,aAAa,CAAE,MAC1C,CACA,uCAAU,CAAE,OAAO,CAAE,IAAI,CAAE,WAAW,CAAE,UAAU,CAAE,GAAG,CAAE,MAAQ,CACjE,uCAAU,CAAE,SAAS,CAAE,MAAM,CAAE,UAAU,CAAE,MAAQ,CAEnD,qCAAQ,CAAE,OAAO,CAAE,IAAI,CAAE,WAAW,CAAE,MAAM,CAAE,GAAG,CAAE,MAAQ,CAC3D,sBAAO,CAAC,mBAAK,CAAE,WAAW,CAAE,SAAS,CAAE,SAAS,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAE3E,wCAAW,CAAE,SAAS,CAAE,OAAO,CAAE,KAAK,CAAE,OAAO,CAAE,UAAU,CAAE,OAAS,CAEtE,yCAAY,CACV,OAAO,CAAE,OAAO,CAAC,OAAO,CAAE,aAAa,CAAE,KAAK,CAAE,SAAS,CAAE,MAAM,CAAE,WAAW,CAAE,GAClF,CACA,gDAAsB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAC7D,mDAAsB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAE7D,2CAAc,CACZ,OAAO,CAAE,MAAM,CAAC,MAAM,CAAE,aAAa,CAAE,KAAK,CAAE,SAAS,CAAE,OAAO,CAAE,WAAW,CAAE,GAAG,CAClF,WAAW,CAAE,MACf,CACA,oDAAyB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAChE,oDAAyB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAChE,sDAAyB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAChE,mDAAyB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAS,CAEhE,wCAAW,CACT,OAAO,CAAE,IAAI,CAAE,GAAG,CAAE,IAAI,CAAE,SAAS,CAAE,IAAI,CACzC,SAAS,CAAE,OAAO,CAAE,KAAK,CAAE,OAC7B,CAEA,4CAAe,CACb,MAAM,CAAE,GAAG,CAAE,UAAU,CAAE,OAAO,CAAE,aAAa,CAAE,KAAK,CACtD,QAAQ,CAAE,MAAM,CAAE,UAAU,CAAE,MAChC,CACA,uCAAU,CACR,MAAM,CAAE,IAAI,CAAE,aAAa,CAAE,KAAK,CAClC,UAAU,CAAE,gBAAgB,KAAK,CAAC,CAAC,IAAI,eAAe,CAAC,QAAQ,CAAC,CAAC,CAAC,OAAO,CAAC,CAC1E,UAAU,CAAE,KAAK,CAAC,IAAI,CAAC,IACzB,CAEA,wCAAW,CAAE,SAAS,CAAE,MAAM,CAAE,KAAK,CAAE,OAAO,CAAE,UAAU,CAAE,MAAQ"}`
-};
-function fmt(dt) {
-  return dt ? new Date(dt).toLocaleString("es-CO") : "—";
-}
-const JobCard = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let duration;
-  let { job } = $$props;
-  let { selected = false } = $$props;
-  const STATUS_ICON = {
-    pending: "⏳",
-    running: "⚙️",
-    completed: "✅",
-    failed: "❌"
-  };
-  if ($$props.job === void 0 && $$bindings.job && job !== void 0) $$bindings.job(job);
-  if ($$props.selected === void 0 && $$bindings.selected && selected !== void 0) $$bindings.selected(selected);
-  $$result.css.add(css$1);
-  duration = (() => {
-    if (!job.started_at || !job.finished_at) return null;
-    const ms = new Date(job.finished_at) - new Date(job.started_at);
-    return ms < 1e3 ? `${ms}ms` : `${(ms / 1e3).toFixed(1)}s`;
-  })();
-  return `<div class="${[
-    "job-card svelte-1ag64q3",
-    (selected ? "selected" : "") + " " + (job.status === "completed" ? "completed" : "")
-  ].join(" ").trim()}"><div class="job-top svelte-1ag64q3"><div class="job-left svelte-1ag64q3"><span class="job-icon svelte-1ag64q3">${escape(STATUS_ICON[job.status])}</span> <div><div class="job-id svelte-1ag64q3"><code class="svelte-1ag64q3">${escape(job.id.slice(0, 8))}…</code> <span class="${"badge-type badge-type--" + escape(job.job_type, true) + " svelte-1ag64q3"}">${escape(job.job_type)}</span></div> <div class="job-scope svelte-1ag64q3">${job.problem_id ? `📁 ${escape(job.problem_id)}` : ``} ${job.exam_id ? `📋 ${escape(job.exam_id)}` : ``} ${job.submission_a_id ? `🔗 Par a par` : ``}</div></div></div> <span class="${"badge-status badge-status--" + escape(job.status, true) + " svelte-1ag64q3"}">${escape(job.status)}</span></div> <div class="job-stats svelte-1ag64q3">${job.total_comparisons > 0 ? `<span>🔁 ${escape(job.completed_comparisons)}/${escape(job.total_comparisons)} comparaciones</span>` : ``} ${duration ? `<span>⏱️ ${escape(duration)}</span>` : ``} <span>🕐 ${escape(fmt(job.created_at))}</span></div> ${job.status === "running" && job.total_comparisons > 0 ? (() => {
-    let pct = Math.round(job.completed_comparisons / job.total_comparisons * 100);
-    return ` <div class="mini-progress svelte-1ag64q3"><div class="mini-bar svelte-1ag64q3" style="${"width:" + escape(pct, true) + "%"}"></div></div>`;
-  })() : ``} ${job.error_message ? `<p class="job-error svelte-1ag64q3">⚠️ ${escape(job.error_message)}</p>` : ``} </div>`;
-});
-const css = {
-  code: ".alert-running.svelte-1qaes6d.svelte-1qaes6d{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;margin-bottom:1.5rem;padding:0.75rem 1rem;font-size:0.9rem}.empty.svelte-1qaes6d.svelte-1qaes6d{text-align:center;padding:3rem;color:#9ca3af}.empty.svelte-1qaes6d a.svelte-1qaes6d{color:var(--procto-accent, #0071e3);font-weight:600}.jobs-layout.svelte-1qaes6d.svelte-1qaes6d{display:grid;grid-template-columns:380px 1fr;gap:1.5rem;align-items:start}.jobs-list.svelte-1qaes6d.svelte-1qaes6d{display:flex;flex-direction:column;gap:0.75rem}.select-hint.svelte-1qaes6d.svelte-1qaes6d{text-align:center;padding:3rem 1.5rem;color:#9ca3af;font-size:0.9rem}@media(max-width: 900px){.jobs-layout.svelte-1qaes6d.svelte-1qaes6d{grid-template-columns:1fr}}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import JobCard from '$lib/components/JobCard.svelte';\\n  import ResultsTable from '$lib/components/ResultsTable.svelte';\\n  import PageHeader from '$lib/components/PageHeader.svelte';\\n  import { listJobs, getJobStatus } from '$lib/api.js';\\n  import { showError } from '$lib/stores.js';\\n  import { onMount, onDestroy } from 'svelte';\\n\\n  let jobs = [];\\n  let loading = false;\\n  let selectedJobId = null;\\n  let resultsRef;\\n  let pollInterval = null;\\n\\n  async function loadJobs() {\\n    loading = true;\\n    try {\\n      jobs = await listJobs({ limit: 50 });\\n    } catch (e) {\\n      showError(e.message);\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  function selectJob(job) {\\n    if (job.status !== 'completed') return;\\n    selectedJobId = job.id;\\n  }\\n\\n  async function pollRunningJobs() {\\n    const running = jobs.filter((j) => j.status === 'running' || j.status === 'pending');\\n    if (running.length === 0) return;\\n\\n    for (const job of running) {\\n      try {\\n        const updated = await getJobStatus(job.id);\\n        const idx = jobs.findIndex((j) => j.id === job.id);\\n        if (idx !== -1) {\\n          jobs[idx] = { ...jobs[idx], ...updated };\\n          jobs = [...jobs];\\n        }\\n      } catch (_) {}\\n    }\\n  }\\n\\n  onMount(async () => {\\n    await loadJobs();\\n    pollInterval = setInterval(pollRunningJobs, 3000);\\n  });\\n\\n  onDestroy(() => {\\n    if (pollInterval) clearInterval(pollInterval);\\n  });\\n\\n  $: hasRunning = jobs.some((j) => j.status === 'running' || j.status === 'pending');\\n<\/script>\\n\\n<svelte:head><title>Trabajos en cola | Procto</title></svelte:head>\\n\\n<PageHeader\\n  focus=\\"Procesamiento\\"\\n  title=\\"Trabajos en cola\\"\\n  subtitle=\\"Historial de análisis por lotes. Elige un trabajo finalizado para ver el detalle de resultados.\\"\\n>\\n  <div slot=\\"actions\\">\\n    <button class=\\"btn btn--secondary\\" type=\\"button\\" on:click={loadJobs} disabled={loading}>\\n      {loading ? 'Cargando…' : 'Actualizar'}\\n    </button>\\n  </div>\\n</PageHeader>\\n\\n{#if hasRunning}\\n  <div class=\\"alert-running card\\">\\n    Hay análisis en progreso. Esta vista se actualiza sola cada pocos segundos.\\n  </div>\\n{/if}\\n\\n{#if jobs.length === 0 && !loading}\\n  <div class=\\"card empty\\">\\n    No hay trabajos todavía. Ve a <a href=\\"/analysis\\">Análisis</a> para lanzar uno.\\n  </div>\\n{:else}\\n  <div class=\\"jobs-layout\\">\\n    <div class=\\"jobs-list\\">\\n      {#each jobs as job (job.id)}\\n        <div\\n          on:click={() => selectJob(job)}\\n          on:keydown={(e) => e.key === 'Enter' && selectJob(job)}\\n          role=\\"button\\"\\n          tabindex=\\"0\\"\\n        >\\n          <JobCard {job} selected={selectedJobId === job.id} />\\n        </div>\\n      {/each}\\n    </div>\\n\\n    <div class=\\"results-panel\\">\\n      {#if selectedJobId}\\n        <div class=\\"card\\">\\n          <h2 class=\\"card__title\\">Resultados</h2>\\n          <ResultsTable bind:this={resultsRef} jobId={selectedJobId} />\\n        </div>\\n      {:else}\\n        <div class=\\"card select-hint\\">\\n          <p>Selecciona un trabajo completado en la lista para ver sus resultados.</p>\\n        </div>\\n      {/if}\\n    </div>\\n  </div>\\n{/if}\\n\\n<style>\\n  .alert-running {\\n    background: #eff6ff;\\n    border: 1px solid #bfdbfe;\\n    color: #1e40af;\\n    margin-bottom: 1.5rem;\\n    padding: 0.75rem 1rem;\\n    font-size: 0.9rem;\\n  }\\n\\n  .empty {\\n    text-align: center;\\n    padding: 3rem;\\n    color: #9ca3af;\\n  }\\n  .empty a {\\n    color: var(--procto-accent, #0071e3);\\n    font-weight: 600;\\n  }\\n\\n  .jobs-layout {\\n    display: grid;\\n    grid-template-columns: 380px 1fr;\\n    gap: 1.5rem;\\n    align-items: start;\\n  }\\n\\n  .jobs-list {\\n    display: flex;\\n    flex-direction: column;\\n    gap: 0.75rem;\\n  }\\n\\n  .select-hint {\\n    text-align: center;\\n    padding: 3rem 1.5rem;\\n    color: #9ca3af;\\n    font-size: 0.9rem;\\n  }\\n\\n  @media (max-width: 900px) {\\n    .jobs-layout {\\n      grid-template-columns: 1fr;\\n    }\\n  }\\n</style>\\n"],"names":[],"mappings":"AAiHE,4CAAe,CACb,UAAU,CAAE,OAAO,CACnB,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,OAAO,CACzB,KAAK,CAAE,OAAO,CACd,aAAa,CAAE,MAAM,CACrB,OAAO,CAAE,OAAO,CAAC,IAAI,CACrB,SAAS,CAAE,MACb,CAEA,oCAAO,CACL,UAAU,CAAE,MAAM,CAClB,OAAO,CAAE,IAAI,CACb,KAAK,CAAE,OACT,CACA,qBAAM,CAAC,gBAAE,CACP,KAAK,CAAE,IAAI,eAAe,CAAC,QAAQ,CAAC,CACpC,WAAW,CAAE,GACf,CAEA,0CAAa,CACX,OAAO,CAAE,IAAI,CACb,qBAAqB,CAAE,KAAK,CAAC,GAAG,CAChC,GAAG,CAAE,MAAM,CACX,WAAW,CAAE,KACf,CAEA,wCAAW,CACT,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,GAAG,CAAE,OACP,CAEA,0CAAa,CACX,UAAU,CAAE,MAAM,CAClB,OAAO,CAAE,IAAI,CAAC,MAAM,CACpB,KAAK,CAAE,OAAO,CACd,SAAS,CAAE,MACb,CAEA,MAAO,YAAY,KAAK,CAAE,CACxB,0CAAa,CACX,qBAAqB,CAAE,GACzB,CACF"}`
-};
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let hasRunning;
-  let jobs = [];
-  let selectedJobId = null;
-  onDestroy(() => {
+import { B as Button } from "../../../chunks/button.js";
+function JobCard($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let duration;
+    let job = $$props["job"];
+    let selected = fallback($$props["selected"], false);
+    const STATUS_ICON = { pending: "⏳", running: "⚙️", completed: "✅", failed: "❌" };
+    function fmt(dt) {
+      return dt ? new Date(dt).toLocaleString("es-CO") : "—";
+    }
+    duration = (() => {
+      if (!job.started_at || !job.finished_at) return null;
+      const ms = new Date(job.finished_at) - new Date(job.started_at);
+      return ms < 1e3 ? `${ms}ms` : `${(ms / 1e3).toFixed(1)}s`;
+    })();
+    $$renderer2.push(`<div${attr_class(`job-card mb-3 cursor-pointer rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md ${selected ? "ring-2 ring-primary" : ""} ${job.status === "completed" ? "hover:border-primary/40" : ""}`, "svelte-1vivc5", {
+      "selected": selected,
+      "completed": job.status === "completed"
+    })}><div class="job-top svelte-1vivc5"><div class="job-left svelte-1vivc5"><span class="job-icon svelte-1vivc5">${escape_html(STATUS_ICON[job.status])}</span> <div><div class="job-id svelte-1vivc5"><code class="svelte-1vivc5">${escape_html(job.id.slice(0, 8))}…</code> <span${attr_class(`badge-type badge-type--${stringify(job.job_type)}`, "svelte-1vivc5")}>${escape_html(job.job_type)}</span></div> <div class="job-scope svelte-1vivc5">`);
+    if (job.problem_id) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`📁 ${escape_html(job.problem_id)}`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (job.exam_id) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`📋 ${escape_html(job.exam_id)}`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (job.submission_a_id) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`🔗 Par a par`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--></div></div></div> <span${attr_class(`badge-status badge-status--${stringify(job.status)}`, "svelte-1vivc5")}>${escape_html(job.status)}</span></div> <div class="job-stats svelte-1vivc5">`);
+    if (job.total_comparisons > 0) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<span>🔁 ${escape_html(job.completed_comparisons)}/${escape_html(job.total_comparisons)} comparaciones</span>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (duration) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<span>⏱️ ${escape_html(duration)}</span>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> <span>🕐 ${escape_html(fmt(job.created_at))}</span></div> `);
+    if (job.status === "running" && job.total_comparisons > 0) {
+      $$renderer2.push("<!--[0-->");
+      const pct = Math.round(job.completed_comparisons / job.total_comparisons * 100);
+      $$renderer2.push(`<div class="mini-progress svelte-1vivc5"><div class="mini-bar svelte-1vivc5"${attr_style(`width:${stringify(pct)}%`)}></div></div>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (job.error_message) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<p class="job-error svelte-1vivc5">⚠️ ${escape_html(job.error_message)}</p>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--></div>`);
+    bind_props($$props, { job, selected });
   });
-  $$result.css.add(css);
-  let $$settled;
-  let $$rendered;
-  let previous_head = $$result.head;
-  do {
-    $$settled = true;
-    $$result.head = previous_head;
+}
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let hasRunning;
+    let jobs = [];
+    let loading = false;
+    let selectedJobId = null;
+    async function loadJobs() {
+      loading = true;
+      try {
+        jobs = await listJobs({ limit: 50 });
+      } catch (e) {
+        showError(e.message);
+      } finally {
+        loading = false;
+      }
+    }
+    onDestroy(() => {
+    });
     hasRunning = jobs.some((j) => j.status === "running" || j.status === "pending");
-    $$rendered = `${$$result.head += `<!-- HEAD_svelte-1pfwbyw_START -->${$$result.title = `<title>Trabajos en cola | Procto</title>`, ""}<!-- HEAD_svelte-1pfwbyw_END -->`, ""} ${validate_component(PageHeader, "PageHeader").$$render(
-      $$result,
-      {
-        focus: "Procesamiento",
-        title: "Trabajos en cola",
-        subtitle: "Historial de análisis por lotes. Elige un trabajo finalizado para ver el detalle de resultados."
-      },
-      {},
-      {
-        actions: () => {
-          return `<div slot="actions"><button class="btn btn--secondary" type="button" ${""}>${escape("Actualizar")}</button></div>`;
+    head("4b134t", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Trabajos en cola | Procto</title>`);
+      });
+    });
+    PageHeader($$renderer2, {
+      focus: "Procesamiento",
+      title: "Trabajos en cola",
+      subtitle: "Historial de análisis por lotes. Elige un trabajo finalizado para ver el detalle de resultados.",
+      $$slots: {
+        actions: ($$renderer3) => {
+          {
+            Button($$renderer3, {
+              variant: "outline",
+              size: "sm",
+              onclick: loadJobs,
+              disabled: loading,
+              children: ($$renderer4) => {
+                $$renderer4.push(`<!---->${escape_html(loading ? "Cargando…" : "Actualizar")}`);
+              },
+              $$slots: { default: true }
+            });
+          }
         }
       }
-    )} ${hasRunning ? `<div class="alert-running card svelte-1qaes6d" data-svelte-h="svelte-8pg7jz">Hay análisis en progreso. Esta vista se actualiza sola cada pocos segundos.</div>` : ``} ${jobs.length === 0 && true ? `<div class="card empty svelte-1qaes6d" data-svelte-h="svelte-12hnobl">No hay trabajos todavía. Ve a <a href="/analysis" class="svelte-1qaes6d">Análisis</a> para lanzar uno.</div>` : `<div class="jobs-layout svelte-1qaes6d"><div class="jobs-list svelte-1qaes6d">${each(jobs, (job) => {
-      return `<div role="button" tabindex="0">${validate_component(JobCard, "JobCard").$$render($$result, { job, selected: selectedJobId === job.id }, {}, {})} </div>`;
-    })}</div> <div class="results-panel">${`<div class="card select-hint svelte-1qaes6d" data-svelte-h="svelte-u4x2hx"><p>Selecciona un trabajo completado en la lista para ver sus resultados.</p></div>`}</div></div>`}`;
-  } while (!$$settled);
-  return $$rendered;
-});
+    });
+    $$renderer2.push(`<!----> `);
+    if (hasRunning) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">Hay análisis en progreso. Esta vista se actualiza sola cada pocos segundos.</div>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    if (jobs.length === 0 && !loading) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<div class="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">No hay trabajos todavía. Ve a <a href="/analysis" class="font-semibold text-primary hover:underline">Análisis</a> para lanzar uno.</div>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<div class="jobs-layout grid gap-6 lg:grid-cols-[380px_1fr] svelte-4b134t"><div class="jobs-list svelte-4b134t"><!--[-->`);
+      const each_array = ensure_array_like(jobs);
+      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+        let job = each_array[$$index];
+        $$renderer2.push(`<div role="button" tabindex="0">`);
+        JobCard($$renderer2, { job, selected: selectedJobId === job.id });
+        $$renderer2.push(`<!----></div>`);
+      }
+      $$renderer2.push(`<!--]--></div> <div class="results-panel">`);
+      {
+        $$renderer2.push("<!--[-1-->");
+        $$renderer2.push(`<div class="rounded-xl border border-dashed border-border bg-muted/20 p-12 text-center text-sm text-muted-foreground"><p>Selecciona un trabajo completado en la lista para ver sus resultados.</p></div>`);
+      }
+      $$renderer2.push(`<!--]--></div></div>`);
+    }
+    $$renderer2.push(`<!--]-->`);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

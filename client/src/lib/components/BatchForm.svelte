@@ -66,7 +66,7 @@
   onDestroy(stopPolling);
 </script>
 
-<div class="card">
+<div class="rounded-xl border border-border bg-card p-6 shadow-sm">
   <h2 class="card__title">📊 Análisis Batch <span class="badge-async">Asíncrono</span></h2>
   <p class="card__desc">Compara todas las submissions de un problema o examen. Se ejecuta en background.</p>
 

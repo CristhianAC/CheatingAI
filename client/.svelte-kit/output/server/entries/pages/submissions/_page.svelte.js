@@ -1,115 +1,116 @@
-import { h as get_store_value, c as create_ssr_component, f as createEventDispatcher, d as add_attribute, e as escape, b as each, v as validate_component } from "../../../chunks/ssr.js";
-import { a as authStore } from "../../../chunks/auth.js";
+import { i as attr, e as escape_html, h as ensure_array_like, d as attr_class, l as stringify, b as bind_props, j as head } from "../../../chunks/index2.js";
+import { c as createEventDispatcher } from "../../../chunks/index-server.js";
+import { a as listSubmissions } from "../../../chunks/api.js";
 import { b as showError } from "../../../chunks/stores.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-const BASE = "/api/v1";
-async function request(method, path, body = null) {
-  const auth = get_store_value(authStore);
-  const headers = { "Content-Type": "application/json" };
-  if (auth?.token) {
-    headers.Authorization = `Bearer ${auth.token}`;
-  }
-  const opts = {
-    method,
-    headers
-  };
-  if (body !== null) opts.body = JSON.stringify(body);
-  const res = await fetch(`${BASE}${path}`, opts);
-  if (res.status === 204) return null;
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = data?.detail || `Error ${res.status}`;
-    throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-  }
-  return data;
-}
-function listSubmissions(filters = {}) {
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([k, v]) => {
-    if (v) params.set(k, v);
-  });
-  const qs = params.toString();
-  return request("GET", `/submissions/${qs ? "?" + qs : ""}`);
-}
-const css$1 = {
-  code: ".grid-2.svelte-us8ekq.svelte-us8ekq{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}.code-header.svelte-us8ekq.svelte-us8ekq{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem}.code-header.svelte-us8ekq label.svelte-us8ekq{margin-bottom:0}textarea.svelte-us8ekq.svelte-us8ekq{font-family:'Courier New', monospace;font-size:0.85rem}@media(max-width: 600px){.grid-2.svelte-us8ekq.svelte-us8ekq{grid-template-columns:1fr}}",
-  map: `{"version":3,"file":"SubmissionForm.svelte","sources":["SubmissionForm.svelte"],"sourcesContent":["<script>\\n  import { createEventDispatcher } from 'svelte';\\n  import { createSubmission } from '$lib/api.js';\\n  import { showToast, showError } from '$lib/stores.js';\\n\\n  const dispatch = createEventDispatcher();\\n\\n  let form = {\\n    student_id: '',\\n    problem_id: '',\\n    exam_id: '',\\n    language: 'python',\\n    source_code: ''\\n  };\\n\\n  let loading = false;\\n\\n  const EXAMPLES = {\\n    python: \`def fibonacci(n):\\n    if n <= 1:\\n        return n\\n    return fibonacci(n - 1) + fibonacci(n - 2)\`,\\n    java: \`public class Solution {\\n    public int fibonacci(int n) {\\n        if (n <= 1) return n;\\n        return fibonacci(n - 1) + fibonacci(n - 2);\\n    }\\n}\`\\n  };\\n\\n  function fillExample() {\\n    form.source_code = EXAMPLES[form.language];\\n  }\\n\\n  async function handleSubmit() {\\n    if (!form.student_id || !form.problem_id || !form.source_code.trim()) {\\n      showError('Completa student_id, problem_id y source_code.');\\n      return;\\n    }\\n    loading = true;\\n    try {\\n      const payload = { ...form };\\n      if (!payload.exam_id) delete payload.exam_id;\\n      const result = await createSubmission(payload);\\n      showToast(\`Submission creada: \${result.id.slice(0, 8)}…\`);\\n      form = { student_id: '', problem_id: '', exam_id: '', language: 'python', source_code: '' };\\n      dispatch('created', result);\\n    } catch (e) {\\n      showError(e.message);\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n<\/script>\\n\\n<form class=\\"card\\" on:submit|preventDefault={handleSubmit}>\\n  <h2 class=\\"card__title\\">Nueva Submission</h2>\\n\\n  <div class=\\"grid-2\\">\\n    <div class=\\"field\\">\\n      <label for=\\"student_id\\">Student ID *</label>\\n      <input id=\\"student_id\\" bind:value={form.student_id} placeholder=\\"est-001\\" required />\\n    </div>\\n    <div class=\\"field\\">\\n      <label for=\\"problem_id\\">Problem ID *</label>\\n      <input id=\\"problem_id\\" bind:value={form.problem_id} placeholder=\\"prob-fibonacci\\" required />\\n    </div>\\n    <div class=\\"field\\">\\n      <label for=\\"exam_id\\">Exam ID (opcional)</label>\\n      <input id=\\"exam_id\\" bind:value={form.exam_id} placeholder=\\"parcial-1\\" />\\n    </div>\\n    <div class=\\"field\\">\\n      <label for=\\"language\\">Lenguaje *</label>\\n      <select id=\\"language\\" bind:value={form.language}>\\n        <option value=\\"python\\">Python</option>\\n        <option value=\\"java\\">Java</option>\\n      </select>\\n    </div>\\n  </div>\\n\\n  <div class=\\"field\\">\\n    <div class=\\"code-header\\">\\n      <label for=\\"source_code\\">Código fuente *</label>\\n      <button type=\\"button\\" class=\\"btn btn--ghost btn--sm\\" on:click={fillExample}>\\n        📋 Cargar ejemplo\\n      </button>\\n    </div>\\n    <textarea\\n      id=\\"source_code\\"\\n      bind:value={form.source_code}\\n      rows=\\"10\\"\\n      placeholder=\\"Pega el código aquí...\\"\\n      spellcheck=\\"false\\"\\n      required\\n    ></textarea>\\n  </div>\\n\\n  <button class=\\"btn btn--primary\\" type=\\"submit\\" disabled={loading}>\\n    {loading ? '⏳ Enviando...' : '📤 Crear Submission'}\\n  </button>\\n</form>\\n\\n<style>\\n  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }\\n  .code-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }\\n  .code-header label { margin-bottom: 0; }\\n  textarea { font-family: 'Courier New', monospace; font-size: 0.85rem; }\\n  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }\\n</style>\\n"],"names":[],"mappings":"AAuGE,mCAAQ,CAAE,OAAO,CAAE,IAAI,CAAE,qBAAqB,CAAE,GAAG,CAAC,GAAG,CAAE,GAAG,CAAE,OAAS,CACvE,wCAAa,CAAE,OAAO,CAAE,IAAI,CAAE,eAAe,CAAE,aAAa,CAAE,WAAW,CAAE,MAAM,CAAE,aAAa,CAAE,OAAS,CAC3G,0BAAY,CAAC,mBAAM,CAAE,aAAa,CAAE,CAAG,CACvC,oCAAS,CAAE,WAAW,CAAE,aAAa,CAAC,CAAC,SAAS,CAAE,SAAS,CAAE,OAAS,CACtE,MAAO,YAAY,KAAK,CAAE,CAAE,mCAAQ,CAAE,qBAAqB,CAAE,GAAK,CAAE"}`
-};
-const SubmissionForm = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  createEventDispatcher();
-  let form = {
-    student_id: "",
-    problem_id: "",
-    exam_id: ""
-  };
-  $$result.css.add(css$1);
-  return `<form class="card"><h2 class="card__title" data-svelte-h="svelte-10g3bsw">Nueva Submission</h2> <div class="grid-2 svelte-us8ekq"><div class="field"><label for="student_id" data-svelte-h="svelte-1q23ulp">Student ID *</label> <input id="student_id" placeholder="est-001" required${add_attribute("value", form.student_id, 0)}></div> <div class="field"><label for="problem_id" data-svelte-h="svelte-1xn4vdh">Problem ID *</label> <input id="problem_id" placeholder="prob-fibonacci" required${add_attribute("value", form.problem_id, 0)}></div> <div class="field"><label for="exam_id" data-svelte-h="svelte-v04423">Exam ID (opcional)</label> <input id="exam_id" placeholder="parcial-1"${add_attribute("value", form.exam_id, 0)}></div> <div class="field"><label for="language" data-svelte-h="svelte-1qmchs5">Lenguaje *</label> <select id="language"><option value="python" data-svelte-h="svelte-zhikea">Python</option><option value="java" data-svelte-h="svelte-1j26hjq">Java</option></select></div></div> <div class="field"><div class="code-header svelte-us8ekq"><label for="source_code" class="svelte-us8ekq" data-svelte-h="svelte-3jifzh">Código fuente *</label> <button type="button" class="btn btn--ghost btn--sm" data-svelte-h="svelte-of9oy">📋 Cargar ejemplo</button></div> <textarea id="source_code" rows="10" placeholder="Pega el código aquí..." spellcheck="false" required class="svelte-us8ekq">${escape("")}</textarea></div> <button class="btn btn--primary" type="submit" ${""}>${escape("📤 Crear Submission")}</button> </form>`;
-});
-const css = {
-  code: ".filters.svelte-1sch78l.svelte-1sch78l{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem}.filters.svelte-1sch78l input.svelte-1sch78l,.filters.svelte-1sch78l select.svelte-1sch78l{flex:1;min-width:150px}.table-meta.svelte-1sch78l.svelte-1sch78l{font-size:0.82rem;color:#6b7280;margin-bottom:0.5rem}.table-wrap.svelte-1sch78l.svelte-1sch78l{overflow-x:auto}table.svelte-1sch78l.svelte-1sch78l{width:100%;border-collapse:collapse;font-size:0.88rem}th.svelte-1sch78l.svelte-1sch78l{background:#f3f4f6;text-align:left;padding:0.6rem 0.8rem;font-weight:600;color:#374151}td.svelte-1sch78l.svelte-1sch78l{padding:0.55rem 0.8rem;border-bottom:1px solid #f3f4f6;vertical-align:middle}.row-hover.svelte-1sch78l.svelte-1sch78l:hover{background:#f9fafb;cursor:pointer}.mono.svelte-1sch78l.svelte-1sch78l{font-family:monospace;font-size:0.8rem}.date.svelte-1sch78l.svelte-1sch78l{font-size:0.78rem;color:#6b7280}.badge.svelte-1sch78l.svelte-1sch78l{padding:0.2rem 0.55rem;border-radius:999px;font-size:0.75rem;font-weight:600}.badge--python.svelte-1sch78l.svelte-1sch78l{background:#dbeafe;color:#1e40af}.badge--java.svelte-1sch78l.svelte-1sch78l{background:#fef9c3;color:#713f12}.empty.svelte-1sch78l.svelte-1sch78l{text-align:center;color:#9ca3af;padding:2rem}.overlay.svelte-1sch78l.svelte-1sch78l{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}.overlay-backdrop.svelte-1sch78l.svelte-1sch78l{position:absolute;inset:0;border:none;padding:0;margin:0;background:rgba(0, 0, 0, 0.45);cursor:pointer}.modal.svelte-1sch78l.svelte-1sch78l{position:relative;z-index:1;background:#fff;border-radius:12px;padding:1.5rem;max-width:700px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0, 0, 0, 0.25);pointer-events:auto}.modal--loading.svelte-1sch78l.svelte-1sch78l{max-width:320px;text-align:center}.modal-header.svelte-1sch78l.svelte-1sch78l{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}.modal-header.svelte-1sch78l h3.svelte-1sch78l{margin:0 0 0.2rem;font-size:1rem}.modal-meta.svelte-1sch78l.svelte-1sch78l{font-size:0.8rem;color:#6b7280;margin:0}.code-block.svelte-1sch78l.svelte-1sch78l{background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;font-size:0.82rem;line-height:1.5;overflow-x:auto;white-space:pre;margin:0}.hash-line.svelte-1sch78l.svelte-1sch78l{font-size:0.75rem;color:#9ca3af;margin-top:0.75rem;word-break:break-all}.hash-line.svelte-1sch78l code.svelte-1sch78l{font-family:monospace}",
-  map: `{"version":3,"file":"SubmissionList.svelte","sources":["SubmissionList.svelte"],"sourcesContent":["<script>\\n  import { createEventDispatcher, onMount } from 'svelte';\\n  import { listSubmissions, getSubmission, deleteSubmission } from '$lib/api.js';\\n  import { showToast, showError } from '$lib/stores.js';\\n\\n  const dispatch = createEventDispatcher();\\n\\n  let filters = { problem_id: '', exam_id: '', language: '' };\\n  let items = [];\\n  let total = 0;\\n  let loading = false;\\n\\n  let modalSub = null;\\n  let modalLoading = false;\\n\\n  export async function reload() {\\n    loading = true;\\n    try {\\n      const res = await listSubmissions(filters);\\n      items = res.items;\\n      total = res.total;\\n      dispatch('loaded', items);\\n    } catch (e) {\\n      showError(e.message);\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  async function handleDelete(id) {\\n    if (!confirm('¿Eliminar esta entrega?')) return;\\n    try {\\n      await deleteSubmission(id);\\n      showToast('Entrega eliminada');\\n      reload();\\n    } catch (e) {\\n      showError(e.message);\\n    }\\n  }\\n\\n  async function openModal(sub) {\\n    modalSub = null;\\n    modalLoading = true;\\n    try {\\n      const full = await getSubmission(sub.id);\\n      modalSub = full;\\n    } catch (e) {\\n      showError(e.message);\\n    } finally {\\n      modalLoading = false;\\n    }\\n  }\\n\\n  function closeModal() {\\n    modalSub = null;\\n  }\\n\\n  function onModalKeydown(e) {\\n    if (!modalSub || e.key !== 'Escape') return;\\n    closeModal();\\n  }\\n\\n  onMount(reload);\\n<\/script>\\n\\n<svelte:window on:keydown={onModalKeydown} />\\n\\n<div class=\\"card\\">\\n  <div class=\\"filters\\">\\n    <input bind:value={filters.problem_id} placeholder=\\"Filtrar por problem_id\\" />\\n    <input bind:value={filters.exam_id} placeholder=\\"Filtrar por exam_id\\" />\\n    <select bind:value={filters.language}>\\n      <option value=\\"\\">Todos los lenguajes</option>\\n      <option value=\\"python\\">Python</option>\\n      <option value=\\"java\\">Java</option>\\n    </select>\\n    <button type=\\"button\\" class=\\"btn btn--secondary\\" on:click={reload} disabled={loading}>\\n      {loading ? 'Buscando…' : 'Buscar'}\\n    </button>\\n  </div>\\n\\n  <div class=\\"table-meta\\">\\n    <span>{total} entrega{total !== 1 ? 's' : ''} encontrada{total !== 1 ? 's' : ''}</span>\\n  </div>\\n\\n  {#if items.length === 0 && !loading}\\n    <div class=\\"empty\\">No hay entregas aún. Crea una con el formulario superior.</div>\\n  {:else}\\n    <div class=\\"table-wrap\\">\\n      <table>\\n        <thead>\\n          <tr>\\n            <th>ID</th>\\n            <th>Participante</th>\\n            <th>Problema</th>\\n            <th>Examen</th>\\n            <th>Lenguaje</th>\\n            <th>Creado</th>\\n            <th>Acciones</th>\\n          </tr>\\n        </thead>\\n        <tbody>\\n          {#each items as sub (sub.id)}\\n            <tr class=\\"row-hover\\" on:click={() => openModal(sub)}>\\n              <td class=\\"mono\\">{sub.id.slice(0, 8)}…</td>\\n              <td>{sub.student_id}</td>\\n              <td>{sub.problem_id}</td>\\n              <td>{sub.exam_id ?? '—'}</td>\\n              <td><span class=\\"badge badge--{sub.language}\\">{sub.language}</span></td>\\n              <td class=\\"date\\">{new Date(sub.created_at).toLocaleString('es-CO')}</td>\\n              <td>\\n                <button\\n                  type=\\"button\\"\\n                  class=\\"btn btn--danger btn--sm\\"\\n                  on:click|stopPropagation={() => handleDelete(sub.id)}\\n                  aria-label=\\"Eliminar entrega\\"\\n                >\\n                  Eliminar\\n                </button>\\n              </td>\\n            </tr>\\n          {/each}\\n        </tbody>\\n      </table>\\n    </div>\\n  {/if}\\n</div>\\n\\n{#if modalLoading}\\n  <div class=\\"overlay\\">\\n    <div class=\\"modal modal--loading\\"><p>Cargando código…</p></div>\\n  </div>\\n{/if}\\n\\n{#if modalSub}\\n  <div class=\\"overlay\\">\\n    <button type=\\"button\\" class=\\"overlay-backdrop\\" aria-label=\\"Cerrar\\" on:click={closeModal}></button>\\n    <div class=\\"modal\\" role=\\"dialog\\" aria-modal=\\"true\\" aria-labelledby=\\"modal-code-title\\">\\n      <div class=\\"modal-header\\">\\n        <div>\\n          <h3 id=\\"modal-code-title\\">Código fuente</h3>\\n          <p class=\\"modal-meta\\">\\n            {modalSub.student_id} · {modalSub.problem_id} · {modalSub.language}\\n          </p>\\n        </div>\\n        <button type=\\"button\\" class=\\"btn btn--ghost btn--sm\\" on:click={closeModal}>Cerrar</button>\\n      </div>\\n      <pre class=\\"code-block\\">{modalSub.source_code}</pre>\\n      <p class=\\"hash-line\\">SHA256: <code>{modalSub.code_hash}</code></p>\\n    </div>\\n  </div>\\n{/if}\\n\\n<style>\\n  .filters {\\n    display: flex;\\n    gap: 0.6rem;\\n    flex-wrap: wrap;\\n    margin-bottom: 1rem;\\n  }\\n  .filters input,\\n  .filters select {\\n    flex: 1;\\n    min-width: 150px;\\n  }\\n\\n  .table-meta {\\n    font-size: 0.82rem;\\n    color: #6b7280;\\n    margin-bottom: 0.5rem;\\n  }\\n\\n  .table-wrap {\\n    overflow-x: auto;\\n  }\\n  table {\\n    width: 100%;\\n    border-collapse: collapse;\\n    font-size: 0.88rem;\\n  }\\n  th {\\n    background: #f3f4f6;\\n    text-align: left;\\n    padding: 0.6rem 0.8rem;\\n    font-weight: 600;\\n    color: #374151;\\n  }\\n  td {\\n    padding: 0.55rem 0.8rem;\\n    border-bottom: 1px solid #f3f4f6;\\n    vertical-align: middle;\\n  }\\n  .row-hover:hover {\\n    background: #f9fafb;\\n    cursor: pointer;\\n  }\\n  .mono {\\n    font-family: monospace;\\n    font-size: 0.8rem;\\n  }\\n  .date {\\n    font-size: 0.78rem;\\n    color: #6b7280;\\n  }\\n\\n  .badge {\\n    padding: 0.2rem 0.55rem;\\n    border-radius: 999px;\\n    font-size: 0.75rem;\\n    font-weight: 600;\\n  }\\n  .badge--python {\\n    background: #dbeafe;\\n    color: #1e40af;\\n  }\\n  .badge--java {\\n    background: #fef9c3;\\n    color: #713f12;\\n  }\\n\\n  .empty {\\n    text-align: center;\\n    color: #9ca3af;\\n    padding: 2rem;\\n  }\\n\\n  .overlay {\\n    position: fixed;\\n    inset: 0;\\n    z-index: 200;\\n    display: flex;\\n    align-items: center;\\n    justify-content: center;\\n    padding: 1rem;\\n  }\\n  .overlay-backdrop {\\n    position: absolute;\\n    inset: 0;\\n    border: none;\\n    padding: 0;\\n    margin: 0;\\n    background: rgba(0, 0, 0, 0.45);\\n    cursor: pointer;\\n  }\\n  .modal {\\n    position: relative;\\n    z-index: 1;\\n    background: #fff;\\n    border-radius: 12px;\\n    padding: 1.5rem;\\n    max-width: 700px;\\n    width: 100%;\\n    max-height: 80vh;\\n    overflow-y: auto;\\n    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);\\n    pointer-events: auto;\\n  }\\n  .modal--loading {\\n    max-width: 320px;\\n    text-align: center;\\n  }\\n  .modal-header {\\n    display: flex;\\n    justify-content: space-between;\\n    align-items: flex-start;\\n    margin-bottom: 1rem;\\n  }\\n  .modal-header h3 {\\n    margin: 0 0 0.2rem;\\n    font-size: 1rem;\\n  }\\n  .modal-meta {\\n    font-size: 0.8rem;\\n    color: #6b7280;\\n    margin: 0;\\n  }\\n  .code-block {\\n    background: #1e1e2e;\\n    color: #cdd6f4;\\n    padding: 1rem;\\n    border-radius: 8px;\\n    font-size: 0.82rem;\\n    line-height: 1.5;\\n    overflow-x: auto;\\n    white-space: pre;\\n    margin: 0;\\n  }\\n  .hash-line {\\n    font-size: 0.75rem;\\n    color: #9ca3af;\\n    margin-top: 0.75rem;\\n    word-break: break-all;\\n  }\\n  .hash-line code {\\n    font-family: monospace;\\n  }\\n</style>\\n"],"names":[],"mappings":"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"}`
-};
-const SubmissionList = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  const dispatch = createEventDispatcher();
-  let filters = {
-    problem_id: "",
-    exam_id: "",
-    language: ""
-  };
-  let items = [];
-  let total = 0;
-  let loading = false;
-  async function reload() {
-    loading = true;
-    try {
-      const res = await listSubmissions(filters);
-      items = res.items;
-      total = res.total;
-      dispatch("loaded", items);
-    } catch (e) {
-      showError(e.message);
-    } finally {
-      loading = false;
+function SubmissionForm($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let form = {
+      student_id: "",
+      problem_id: "",
+      exam_id: "",
+      language: "python",
+      source_code: ""
+    };
+    let loading = false;
+    $$renderer2.push(`<form class="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm"><h2 class="mb-4 text-lg font-semibold">Nueva entrega</h2> <div class="grid-2 svelte-1xn7aei"><div class="field"><label for="student_id">Student ID *</label> <input id="student_id"${attr("value", form.student_id)} placeholder="est-001" required=""/></div> <div class="field"><label for="problem_id">Problem ID *</label> <input id="problem_id"${attr("value", form.problem_id)} placeholder="prob-fibonacci" required=""/></div> <div class="field"><label for="exam_id">Exam ID (opcional)</label> <input id="exam_id"${attr("value", form.exam_id)} placeholder="parcial-1"/></div> <div class="field"><label for="language">Lenguaje *</label> `);
+    $$renderer2.select({ id: "language", value: form.language }, ($$renderer3) => {
+      $$renderer3.option({ value: "python" }, ($$renderer4) => {
+        $$renderer4.push(`Python`);
+      });
+      $$renderer3.option({ value: "java" }, ($$renderer4) => {
+        $$renderer4.push(`Java`);
+      });
+    });
+    $$renderer2.push(`</div></div> <div class="field"><div class="code-header svelte-1xn7aei"><label for="source_code" class="svelte-1xn7aei">Código fuente *</label> <button type="button" class="btn btn--ghost btn--sm">📋 Cargar ejemplo</button></div> <textarea id="source_code" rows="10" placeholder="Pega el código aquí..." spellcheck="false" required="" class="svelte-1xn7aei">`);
+    const $$body = escape_html(form.source_code);
+    if ($$body) {
+      $$renderer2.push(`${$$body}`);
     }
-  }
-  if ($$props.reload === void 0 && $$bindings.reload && reload !== void 0) $$bindings.reload(reload);
-  $$result.css.add(css);
-  return ` <div class="card"><div class="filters svelte-1sch78l"><input placeholder="Filtrar por problem_id" class="svelte-1sch78l"${add_attribute("value", filters.problem_id, 0)}> <input placeholder="Filtrar por exam_id" class="svelte-1sch78l"${add_attribute("value", filters.exam_id, 0)}> <select class="svelte-1sch78l"><option value="" data-svelte-h="svelte-ruzj3j">Todos los lenguajes</option><option value="python" data-svelte-h="svelte-zhikea">Python</option><option value="java" data-svelte-h="svelte-1j26hjq">Java</option></select> <button type="button" class="btn btn--secondary" ${loading ? "disabled" : ""}>${escape(loading ? "Buscando…" : "Buscar")}</button></div> <div class="table-meta svelte-1sch78l"><span>${escape(total)} entrega${escape(total !== 1 ? "s" : "")} encontrada${escape(total !== 1 ? "s" : "")}</span></div> ${items.length === 0 && !loading ? `<div class="empty svelte-1sch78l" data-svelte-h="svelte-2tma9e">No hay entregas aún. Crea una con el formulario superior.</div>` : `<div class="table-wrap svelte-1sch78l"><table class="svelte-1sch78l"><thead data-svelte-h="svelte-1elrw4t"><tr><th class="svelte-1sch78l">ID</th> <th class="svelte-1sch78l">Participante</th> <th class="svelte-1sch78l">Problema</th> <th class="svelte-1sch78l">Examen</th> <th class="svelte-1sch78l">Lenguaje</th> <th class="svelte-1sch78l">Creado</th> <th class="svelte-1sch78l">Acciones</th></tr></thead> <tbody>${each(items, (sub) => {
-    return `<tr class="row-hover svelte-1sch78l"><td class="mono svelte-1sch78l">${escape(sub.id.slice(0, 8))}…</td> <td class="svelte-1sch78l">${escape(sub.student_id)}</td> <td class="svelte-1sch78l">${escape(sub.problem_id)}</td> <td class="svelte-1sch78l">${escape(sub.exam_id ?? "—")}</td> <td class="svelte-1sch78l"><span class="${"badge badge--" + escape(sub.language, true) + " svelte-1sch78l"}">${escape(sub.language)}</span></td> <td class="date svelte-1sch78l">${escape(new Date(sub.created_at).toLocaleString("es-CO"))}</td> <td class="svelte-1sch78l"><button type="button" class="btn btn--danger btn--sm" aria-label="Eliminar entrega" data-svelte-h="svelte-mh1rnl">Eliminar
-                </button></td> </tr>`;
-  })}</tbody></table></div>`}</div> ${``} ${``}`;
-});
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let listRef;
-  let $$settled;
-  let $$rendered;
-  let previous_head = $$result.head;
-  do {
-    $$settled = true;
-    $$result.head = previous_head;
-    $$rendered = `${$$result.head += `<!-- HEAD_svelte-1hpmg3r_START -->${$$result.title = `<title>Entregas de código | Procto</title>`, ""}<!-- HEAD_svelte-1hpmg3r_END -->`, ""} ${validate_component(PageHeader, "PageHeader").$$render(
-      $$result,
-      {
-        focus: "Plagio",
-        title: "Entregas de código",
-        subtitle: "Gestiona las entregas de los participantes. Pulsa una fila para ver el código fuente."
+    $$renderer2.push(`</textarea></div> <button class="btn btn--primary" type="submit"${attr("disabled", loading, true)}>${escape_html("📤 Crear Submission")}</button></form>`);
+  });
+}
+function SubmissionList($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    const dispatch = createEventDispatcher();
+    let filters = { problem_id: "", exam_id: "", language: "" };
+    let items = [];
+    let total = 0;
+    let loading = false;
+    async function reload() {
+      loading = true;
+      try {
+        const res = await listSubmissions(filters);
+        items = res.items;
+        total = res.total;
+        dispatch("loaded", items);
+      } catch (e) {
+        showError(e.message);
+      } finally {
+        loading = false;
+      }
+    }
+    $$renderer2.push(`<div class="rounded-xl border border-border bg-card p-6 shadow-sm"><div class="filters svelte-wtx1co"><input${attr("value", filters.problem_id)} placeholder="Filtrar por problem_id" class="svelte-wtx1co"/> <input${attr("value", filters.exam_id)} placeholder="Filtrar por exam_id" class="svelte-wtx1co"/> `);
+    $$renderer2.select(
+      { value: filters.language, class: "" },
+      ($$renderer3) => {
+        $$renderer3.option({ value: "" }, ($$renderer4) => {
+          $$renderer4.push(`Todos los lenguajes`);
+        });
+        $$renderer3.option({ value: "python" }, ($$renderer4) => {
+          $$renderer4.push(`Python`);
+        });
+        $$renderer3.option({ value: "java" }, ($$renderer4) => {
+          $$renderer4.push(`Java`);
+        });
       },
-      {},
-      {}
-    )} ${validate_component(SubmissionForm, "SubmissionForm").$$render($$result, {}, {}, {})} ${validate_component(SubmissionList, "SubmissionList").$$render(
-      $$result,
-      { this: listRef },
-      {
-        this: ($$value) => {
-          listRef = $$value;
-          $$settled = false;
-        }
-      },
-      {}
-    )}`;
-  } while (!$$settled);
-  return $$rendered;
-});
+      "svelte-wtx1co"
+    );
+    $$renderer2.push(` <button type="button" class="btn btn--secondary"${attr("disabled", loading, true)}>${escape_html(loading ? "Buscando…" : "Buscar")}</button></div> <div class="table-meta svelte-wtx1co"><span>${escape_html(total)} entrega${escape_html(total !== 1 ? "s" : "")} encontrada${escape_html(total !== 1 ? "s" : "")}</span></div> `);
+    if (items.length === 0 && !loading) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<div class="empty svelte-wtx1co">No hay entregas aún. Crea una con el formulario superior.</div>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+      $$renderer2.push(`<div class="table-wrap svelte-wtx1co"><table class="svelte-wtx1co"><thead><tr><th class="svelte-wtx1co">ID</th><th class="svelte-wtx1co">Participante</th><th class="svelte-wtx1co">Problema</th><th class="svelte-wtx1co">Examen</th><th class="svelte-wtx1co">Lenguaje</th><th class="svelte-wtx1co">Creado</th><th class="svelte-wtx1co">Acciones</th></tr></thead><tbody><!--[-->`);
+      const each_array = ensure_array_like(items);
+      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+        let sub = each_array[$$index];
+        $$renderer2.push(`<tr class="row-hover svelte-wtx1co"><td class="mono svelte-wtx1co">${escape_html(sub.id.slice(0, 8))}…</td><td class="svelte-wtx1co">${escape_html(sub.student_id)}</td><td class="svelte-wtx1co">${escape_html(sub.problem_id)}</td><td class="svelte-wtx1co">${escape_html(sub.exam_id ?? "—")}</td><td class="svelte-wtx1co"><span${attr_class(`badge badge--${stringify(sub.language)}`, "svelte-wtx1co")}>${escape_html(sub.language)}</span></td><td class="date svelte-wtx1co">${escape_html(new Date(sub.created_at).toLocaleString("es-CO"))}</td><td class="svelte-wtx1co"><button type="button" class="btn btn--danger btn--sm" aria-label="Eliminar entrega">Eliminar</button></td></tr>`);
+      }
+      $$renderer2.push(`<!--]--></tbody></table></div>`);
+    }
+    $$renderer2.push(`<!--]--></div> `);
+    {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--> `);
+    {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]-->`);
+    bind_props($$props, { reload });
+  });
+}
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    head("6yqrsq", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Entregas de código | Procto</title>`);
+      });
+    });
+    PageHeader($$renderer2, {
+      focus: "Plagio",
+      title: "Entregas de código",
+      subtitle: "Gestiona las entregas de los participantes. Pulsa una fila para ver el código fuente."
+    });
+    $$renderer2.push(`<!----> `);
+    SubmissionForm($$renderer2);
+    $$renderer2.push(`<!----> `);
+    SubmissionList($$renderer2, {});
+    $$renderer2.push(`<!---->`);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

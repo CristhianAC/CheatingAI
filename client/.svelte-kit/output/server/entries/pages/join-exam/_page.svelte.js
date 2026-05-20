@@ -1,28 +1,234 @@
-import { c as create_ssr_component, v as validate_component, d as add_attribute } from "../../../chunks/ssr.js";
-import "@sveltejs/kit/internal";
-import "../../../chunks/exports.js";
-import "../../../chunks/utils.js";
-import "@sveltejs/kit/internal/server";
-import "../../../chunks/state.svelte.js";
+import { j as head, e as escape_html } from "../../../chunks/index2.js";
+import { g as goto } from "../../../chunks/client.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-const css = {
-  code: ".join-page.svelte-1hvisi3{max-width:760px;margin:0 auto}.join-card.svelte-1hvisi3{display:flex;flex-direction:column;gap:0.85rem;max-width:520px}.join-card__input.svelte-1hvisi3{text-transform:uppercase;letter-spacing:0.08em;font-weight:600}.join-card__feedback.svelte-1hvisi3{margin:0;font-size:0.9rem;font-weight:500}.join-card__feedback--error.svelte-1hvisi3{color:#b91c1c}.join-card__feedback--success.svelte-1hvisi3{color:#15803d}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import { onMount } from 'svelte';\\n  import { goto } from '$app/navigation';\\n  import { get } from 'svelte/store';\\n  import PageHeader from '$lib/components/PageHeader.svelte';\\n  import { verifyExamCode } from '$lib/exams-api.js';\\n  import { authStore } from '$lib/auth.js';\\n  import { selectedExamStore } from '$lib/stores.js';\\n\\n  let code = '';\\n  let loading = false;\\n  let errorMessage = '';\\n  let successMessage = '';\\n  let foundExam = null;\\n\\n  function normalizeCode(value) {\\n    return value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);\\n  }\\n\\n  function handleCodeInput(event) {\\n    code = normalizeCode(event.currentTarget.value);\\n    errorMessage = '';\\n    successMessage = '';\\n    foundExam = null;\\n  }\\n\\n  async function handleVerify() {\\n    const normalized = normalizeCode(code);\\n    if (normalized.length !== 6) {\\n      errorMessage = 'Ingresa un código válido de 6 caracteres.';\\n      return;\\n    }\\n\\n    loading = true;\\n    errorMessage = '';\\n    successMessage = '';\\n    foundExam = null;\\n\\n    try {\\n      const exam = await verifyExamCode(normalized);\\n      foundExam = exam;\\n      selectedExamStore.set(exam);\\n      successMessage = \`✓ Examen encontrado: \${exam.name}\`;\\n    } catch (e) {\\n      if ((e.message || '').includes('Código de examen no válido')) {\\n        errorMessage = 'Código de examen no válido. Inténtalo de nuevo.';\\n        code = '';\\n      } else {\\n        errorMessage = 'Error de conexión. Verifica que el servidor esté activo.';\\n      }\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  function startProctoring() {\\n    if (!foundExam) return;\\n    goto('/proctoring');\\n  }\\n\\n  onMount(() => {\\n    const auth = get(authStore);\\n    if (!auth?.token) {\\n      goto('/login');\\n      return;\\n    }\\n    if (auth.role === 'PROFESSOR') {\\n      goto('/exams');\\n    }\\n  });\\n<\/script>\\n\\n<svelte:head>\\n  <title>Unirse a examen | Procto</title>\\n</svelte:head>\\n\\n<div class=\\"join-page\\">\\n  <PageHeader\\n    focus=\\"Supervisión\\"\\n    title=\\"Unirse a un examen\\"\\n    subtitle=\\"Ingresa el código del examen para validar tu acceso antes de iniciar la supervisión.\\"\\n  />\\n\\n  <section class=\\"card join-card\\">\\n    <div class=\\"field\\">\\n      <label for=\\"examCode\\">Código de examen</label>\\n      <input\\n        id=\\"examCode\\"\\n        class=\\"join-card__input\\"\\n        type=\\"text\\"\\n        value={code}\\n        on:input={handleCodeInput}\\n        maxlength=\\"6\\"\\n        placeholder=\\"ABC123\\"\\n        autocomplete=\\"off\\"\\n      />\\n    </div>\\n\\n    <button class=\\"btn btn--primary\\" type=\\"button\\" on:click={handleVerify} disabled={loading}>\\n      {#if loading}\\n        Verificando...\\n      {:else}\\n        Verificar código\\n      {/if}\\n    </button>\\n\\n    {#if errorMessage}\\n      <p class=\\"join-card__feedback join-card__feedback--error\\">{errorMessage}</p>\\n    {/if}\\n\\n    {#if successMessage}\\n      <p class=\\"join-card__feedback join-card__feedback--success\\">{successMessage}</p>\\n    {/if}\\n\\n    {#if foundExam}\\n      <button class=\\"btn btn--secondary\\" type=\\"button\\" on:click={startProctoring}>\\n        Iniciar supervisión\\n      </button>\\n    {/if}\\n  </section>\\n</div>\\n\\n<style>\\n  .join-page {\\n    max-width: 760px;\\n    margin: 0 auto;\\n  }\\n\\n  .join-card {\\n    display: flex;\\n    flex-direction: column;\\n    gap: 0.85rem;\\n    max-width: 520px;\\n  }\\n\\n  .join-card__input {\\n    text-transform: uppercase;\\n    letter-spacing: 0.08em;\\n    font-weight: 600;\\n  }\\n\\n  .join-card__feedback {\\n    margin: 0;\\n    font-size: 0.9rem;\\n    font-weight: 500;\\n  }\\n\\n  .join-card__feedback--error {\\n    color: #b91c1c;\\n  }\\n\\n  .join-card__feedback--success {\\n    color: #15803d;\\n  }\\n</style>\\n"],"names":[],"mappings":"AA2HE,yBAAW,CACT,SAAS,CAAE,KAAK,CAChB,MAAM,CAAE,CAAC,CAAC,IACZ,CAEA,yBAAW,CACT,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,GAAG,CAAE,OAAO,CACZ,SAAS,CAAE,KACb,CAEA,gCAAkB,CAChB,cAAc,CAAE,SAAS,CACzB,cAAc,CAAE,MAAM,CACtB,WAAW,CAAE,GACf,CAEA,mCAAqB,CACnB,MAAM,CAAE,CAAC,CACT,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GACf,CAEA,0CAA4B,CAC1B,KAAK,CAAE,OACT,CAEA,4CAA8B,CAC5B,KAAK,CAAE,OACT"}`
-};
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let code = "";
-  $$result.css.add(css);
-  return `${$$result.head += `<!-- HEAD_svelte-1h6vio7_START -->${$$result.title = `<title>Unirse a examen | Procto</title>`, ""}<!-- HEAD_svelte-1h6vio7_END -->`, ""} <div class="join-page svelte-1hvisi3">${validate_component(PageHeader, "PageHeader").$$render(
-    $$result,
-    {
+import { r as request } from "../../../chunks/api.js";
+import { e as examStore } from "../../../chunks/exam-store.js";
+import { C as Card, a as Card_content } from "../../../chunks/card-content.js";
+import "clsx";
+import { B as Button } from "../../../chunks/button.js";
+import { L as Label, I as Input } from "../../../chunks/label.js";
+import { A as Alert } from "../../../chunks/alert.js";
+import { A as Alert_description } from "../../../chunks/alert-description.js";
+function verifyExamCode(code) {
+  return request("POST", "/exams/verify-code", { code });
+}
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let code = "";
+    let loading = false;
+    let invalidMessage = "";
+    let notFoundMessage = "";
+    let finishedMessage = "";
+    let networkMessage = "";
+    let successMessage = "";
+    let foundExam = null;
+    function normalizeCode(value) {
+      return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    }
+    async function handleVerify() {
+      const normalized = normalizeCode(code);
+      if (normalized.length !== 6) {
+        invalidMessage = "Ingresa un código válido de 6 caracteres.";
+        return;
+      }
+      loading = true;
+      invalidMessage = "";
+      notFoundMessage = "";
+      finishedMessage = "";
+      networkMessage = "";
+      successMessage = "";
+      foundExam = null;
+      try {
+        const exam = await verifyExamCode(normalized);
+        foundExam = exam;
+        examStore.set({
+          id: exam.id,
+          name: exam.name,
+          ends_at: exam.ends_at ?? null,
+          code: exam.code,
+          expired_at: null
+        });
+        successMessage = `Examen encontrado: ${exam.name}`;
+      } catch (e) {
+        const msg = e?.message ?? "";
+        if (msg.includes("CODE_NOT_FOUND")) {
+          notFoundMessage = "Código no encontrado. Verifica el código con tu profesor.";
+          code = "";
+        } else if (msg.includes("EXAM_FINISHED")) {
+          finishedMessage = "Este examen ya finalizó.";
+          code = "";
+        } else {
+          networkMessage = "Error de conexión. Verifica que el servidor esté activo.";
+        }
+      } finally {
+        loading = false;
+      }
+    }
+    function startProctoring() {
+      if (!foundExam) return;
+      goto();
+    }
+    head("1hysupz", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Unirse a examen | Procto</title>`);
+      });
+    });
+    $$renderer2.push(`<div class="mx-auto max-w-lg">`);
+    PageHeader($$renderer2, {
       focus: "Supervisión",
       title: "Unirse a un examen",
       subtitle: "Ingresa el código del examen para validar tu acceso antes de iniciar la supervisión."
-    },
-    {},
-    {}
-  )} <section class="card join-card svelte-1hvisi3"><div class="field"><label for="examCode" data-svelte-h="svelte-ji5qeu">Código de examen</label> <input id="examCode" class="join-card__input svelte-1hvisi3" type="text"${add_attribute("value", code, 0)} maxlength="6" placeholder="ABC123" autocomplete="off"></div> <button class="btn btn--primary" type="button" ${""}>${`Verificar código`}</button> ${``} ${``} ${``}</section> </div>`;
-});
+    });
+    $$renderer2.push(`<!----> `);
+    Card($$renderer2, {
+      class: "rounded-xl",
+      children: ($$renderer3) => {
+        Card_content($$renderer3, {
+          class: "space-y-4 pt-6",
+          children: ($$renderer4) => {
+            $$renderer4.push(`<div class="space-y-2">`);
+            Label($$renderer4, {
+              for: "examCode",
+              children: ($$renderer5) => {
+                $$renderer5.push(`<!---->Código de examen`);
+              },
+              $$slots: { default: true }
+            });
+            $$renderer4.push(`<!----> `);
+            Input($$renderer4, {
+              id: "examCode",
+              type: "text",
+              value: code,
+              maxlength: "6",
+              placeholder: "ABC123",
+              autocomplete: "off",
+              class: "h-14 text-center text-2xl font-bold uppercase tracking-[0.2em]"
+            });
+            $$renderer4.push(`<!----></div> `);
+            Button($$renderer4, {
+              type: "button",
+              class: "w-full",
+              onclick: handleVerify,
+              disabled: loading,
+              children: ($$renderer5) => {
+                $$renderer5.push(`<!---->${escape_html(loading ? "Verificando..." : "Verificar código")}`);
+              },
+              $$slots: { default: true }
+            });
+            $$renderer4.push(`<!----> `);
+            if (invalidMessage) {
+              $$renderer4.push("<!--[0-->");
+              Alert($$renderer4, {
+                variant: "destructive",
+                children: ($$renderer5) => {
+                  Alert_description($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html(invalidMessage)}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (notFoundMessage) {
+              $$renderer4.push("<!--[0-->");
+              Alert($$renderer4, {
+                variant: "destructive",
+                children: ($$renderer5) => {
+                  Alert_description($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html(notFoundMessage)}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (finishedMessage) {
+              $$renderer4.push("<!--[0-->");
+              Alert($$renderer4, {
+                children: ($$renderer5) => {
+                  Alert_description($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html(finishedMessage)}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (networkMessage) {
+              $$renderer4.push("<!--[0-->");
+              Alert($$renderer4, {
+                variant: "destructive",
+                children: ($$renderer5) => {
+                  Alert_description($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html(networkMessage)}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (successMessage) {
+              $$renderer4.push("<!--[0-->");
+              Alert($$renderer4, {
+                class: "border-emerald-500/30 bg-emerald-50 text-emerald-900",
+                children: ($$renderer5) => {
+                  Alert_description($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html(successMessage)}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (foundExam) {
+              $$renderer4.push("<!--[0-->");
+              Button($$renderer4, {
+                variant: "secondary",
+                class: "w-full",
+                onclick: startProctoring,
+                children: ($$renderer5) => {
+                  $$renderer5.push(`<!---->Iniciar supervisión`);
+                },
+                $$slots: { default: true }
+              });
+            } else {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]-->`);
+          },
+          $$slots: { default: true }
+        });
+      },
+      $$slots: { default: true }
+    });
+    $$renderer2.push(`<!----></div>`);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

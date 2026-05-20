@@ -1,45 +1,215 @@
-import { c as create_ssr_component, a as subscribe, v as validate_component, b as each, e as escape } from "../../../../../chunks/ssr.js";
-import "@sveltejs/kit/internal";
-import "../../../../../chunks/exports.js";
-import "../../../../../chunks/utils.js";
-import "@sveltejs/kit/internal/server";
-import "../../../../../chunks/state.svelte.js";
+import { j as head, h as ensure_array_like, e as escape_html } from "../../../../../chunks/index2.js";
+import { g as goto } from "../../../../../chunks/client.js";
 import { P as PageHeader } from "../../../../../chunks/PageHeader.js";
-import { a as authStore } from "../../../../../chunks/auth.js";
-const css = {
-  code: ".sessions-page.svelte-1gtnrow.svelte-1gtnrow{max-width:1120px;margin:0 auto}.sessions-info.svelte-1gtnrow.svelte-1gtnrow{color:var(--procto-text-secondary);font-size:0.92rem}.sessions-error.svelte-1gtnrow.svelte-1gtnrow{color:#b42318;margin:0 0 0.75rem;font-size:0.9rem}.table-wrap.svelte-1gtnrow.svelte-1gtnrow{overflow-x:auto}.sessions-table.svelte-1gtnrow.svelte-1gtnrow{width:100%;border-collapse:collapse}.sessions-table.svelte-1gtnrow th.svelte-1gtnrow,.sessions-table.svelte-1gtnrow td.svelte-1gtnrow{border-bottom:1px solid var(--procto-border);text-align:left;padding:0.65rem 0.5rem;font-size:0.9rem}.sessions-table__status.svelte-1gtnrow.svelte-1gtnrow{text-align:right}.badge.svelte-1gtnrow.svelte-1gtnrow{display:inline-flex;align-items:center;justify-content:center;padding:0.15rem 0.55rem;border-radius:999px;font-size:0.78rem;font-weight:600;white-space:nowrap}.badge--student.svelte-1gtnrow.svelte-1gtnrow{background:#ecfdf3;color:#166534}.status-pill.svelte-1gtnrow.svelte-1gtnrow{display:inline-flex;align-items:center;justify-content:center;min-width:92px;padding:0.25rem 0.55rem;border-radius:999px;font-size:0.78rem;font-weight:600}.status-pill--active.svelte-1gtnrow.svelte-1gtnrow{background:#ecfdf3;color:#15803d}.status-pill--ended.svelte-1gtnrow.svelte-1gtnrow{background:#fee2e2;color:#b91c1c;border:none;cursor:pointer}.status-pill--ended.svelte-1gtnrow.svelte-1gtnrow:hover{background:#fecaca}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import { onMount } from 'svelte';\\n  import { get } from 'svelte/store';\\n  import { goto } from '$app/navigation';\\n  import { page } from '$app/stores';\\n  import PageHeader from '$lib/components/PageHeader.svelte';\\n  import { authStore } from '$lib/auth.js';\\n  import { getSessionsByExam } from '$lib/proctoring-api.js';\\n\\n  let loading = false;\\n  let error = '';\\n  let sessions = [];\\n  let examId = '';\\n\\n  function statusValue(status) {\\n    return typeof status === 'string' ? status : status?.value ?? status;\\n  }\\n\\n  function statusLabel(status) {\\n    const value = statusValue(status);\\n    return value === 'active' ? 'Activo' : 'Finalizado';\\n  }\\n\\n  function openReport(sessionId) {\\n    goto(\`/proctoring/report/\${sessionId}\`);\\n  }\\n\\n  function goBack() {\\n    goto('/exams');\\n  }\\n\\n  async function loadSessions() {\\n    loading = true;\\n    error = '';\\n    try {\\n      sessions = await getSessionsByExam(examId);\\n    } catch (e) {\\n      error = e?.message ?? 'No se pudieron cargar las supervisiones';\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  onMount(async () => {\\n    if ($authStore?.role !== 'PROFESSOR') {\\n      goto('/');\\n      return;\\n    }\\n    examId = get(page).params.examId;\\n    await loadSessions();\\n  });\\n<\/script>\\n\\n<svelte:head>\\n  <title>Supervisiones del examen | Procto</title>\\n</svelte:head>\\n\\n<section class=\\"sessions-page\\">\\n  <PageHeader\\n    focus=\\"Supervisión\\"\\n    title=\\"Supervisiones del examen\\"\\n    subtitle={\`Examen: \${examId || '—'}\`}\\n  >\\n    <svelte:fragment slot=\\"actions\\">\\n      <button class=\\"btn btn--ghost btn--sm\\" type=\\"button\\" on:click={goBack}>← Volver a Exámenes</button>\\n    </svelte:fragment>\\n  </PageHeader>\\n\\n  <div class=\\"card\\">\\n    {#if error}\\n      <p class=\\"sessions-error\\">{error}</p>\\n    {/if}\\n\\n    {#if loading}\\n      <p class=\\"sessions-info\\">Cargando supervisiones...</p>\\n    {:else if sessions.length === 0}\\n      <p class=\\"sessions-info\\">Aún no hay supervisiones para este examen.</p>\\n    {:else}\\n      <div class=\\"table-wrap\\">\\n        <table class=\\"sessions-table\\">\\n          <thead>\\n            <tr>\\n              <th>Participante (ID)</th>\\n              <th>Inicio</th>\\n              <th>Fin</th>\\n              <th>Estado</th>\\n            </tr>\\n          </thead>\\n          <tbody>\\n            {#each sessions as session}\\n              <tr>\\n                <td><span class=\\"badge badge--student\\">{session.student_id}</span></td>\\n                <td>{new Date(session.started_at).toLocaleString('es')}</td>\\n                <td>{session.ended_at ? new Date(session.ended_at).toLocaleString('es') : '—'}</td>\\n                <td class=\\"sessions-table__status\\">\\n                  {#if statusValue(session.status) === 'ended' || statusValue(session.status) === 'finalizado'}\\n                    <button class=\\"status-pill status-pill--ended\\" type=\\"button\\" on:click={() => openReport(session.id)}>\\n                      {statusLabel(session.status)}\\n                    </button>\\n                  {:else}\\n                    <span class=\\"status-pill status-pill--active\\">Activo</span>\\n                  {/if}\\n                </td>\\n              </tr>\\n            {/each}\\n          </tbody>\\n        </table>\\n      </div>\\n    {/if}\\n  </div>\\n</section>\\n\\n<style>\\n  .sessions-page {\\n    max-width: 1120px;\\n    margin: 0 auto;\\n  }\\n\\n  .sessions-info {\\n    color: var(--procto-text-secondary);\\n    font-size: 0.92rem;\\n  }\\n\\n  .sessions-error {\\n    color: #b42318;\\n    margin: 0 0 0.75rem;\\n    font-size: 0.9rem;\\n  }\\n\\n  .table-wrap {\\n    overflow-x: auto;\\n  }\\n\\n  .sessions-table {\\n    width: 100%;\\n    border-collapse: collapse;\\n  }\\n\\n  .sessions-table th,\\n  .sessions-table td {\\n    border-bottom: 1px solid var(--procto-border);\\n    text-align: left;\\n    padding: 0.65rem 0.5rem;\\n    font-size: 0.9rem;\\n  }\\n\\n  .sessions-table__status {\\n    text-align: right;\\n  }\\n\\n  .badge {\\n    display: inline-flex;\\n    align-items: center;\\n    justify-content: center;\\n    padding: 0.15rem 0.55rem;\\n    border-radius: 999px;\\n    font-size: 0.78rem;\\n    font-weight: 600;\\n    white-space: nowrap;\\n  }\\n\\n  .badge--student {\\n    background: #ecfdf3;\\n    color: #166534;\\n  }\\n\\n  .status-pill {\\n    display: inline-flex;\\n    align-items: center;\\n    justify-content: center;\\n    min-width: 92px;\\n    padding: 0.25rem 0.55rem;\\n    border-radius: 999px;\\n    font-size: 0.78rem;\\n    font-weight: 600;\\n  }\\n\\n  .status-pill--active {\\n    background: #ecfdf3;\\n    color: #15803d;\\n  }\\n\\n  .status-pill--ended {\\n    background: #fee2e2;\\n    color: #b91c1c;\\n    border: none;\\n    cursor: pointer;\\n  }\\n\\n  .status-pill--ended:hover {\\n    background: #fecaca;\\n  }\\n</style>\\n"],"names":[],"mappings":"AAiHE,4CAAe,CACb,SAAS,CAAE,MAAM,CACjB,MAAM,CAAE,CAAC,CAAC,IACZ,CAEA,4CAAe,CACb,KAAK,CAAE,IAAI,uBAAuB,CAAC,CACnC,SAAS,CAAE,OACb,CAEA,6CAAgB,CACd,KAAK,CAAE,OAAO,CACd,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,OAAO,CACnB,SAAS,CAAE,MACb,CAEA,yCAAY,CACV,UAAU,CAAE,IACd,CAEA,6CAAgB,CACd,KAAK,CAAE,IAAI,CACX,eAAe,CAAE,QACnB,CAEA,8BAAe,CAAC,iBAAE,CAClB,8BAAe,CAAC,iBAAG,CACjB,aAAa,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAAC,CAC7C,UAAU,CAAE,IAAI,CAChB,OAAO,CAAE,OAAO,CAAC,MAAM,CACvB,SAAS,CAAE,MACb,CAEA,qDAAwB,CACtB,UAAU,CAAE,KACd,CAEA,oCAAO,CACL,OAAO,CAAE,WAAW,CACpB,WAAW,CAAE,MAAM,CACnB,eAAe,CAAE,MAAM,CACvB,OAAO,CAAE,OAAO,CAAC,OAAO,CACxB,aAAa,CAAE,KAAK,CACpB,SAAS,CAAE,OAAO,CAClB,WAAW,CAAE,GAAG,CAChB,WAAW,CAAE,MACf,CAEA,6CAAgB,CACd,UAAU,CAAE,OAAO,CACnB,KAAK,CAAE,OACT,CAEA,0CAAa,CACX,OAAO,CAAE,WAAW,CACpB,WAAW,CAAE,MAAM,CACnB,eAAe,CAAE,MAAM,CACvB,SAAS,CAAE,IAAI,CACf,OAAO,CAAE,OAAO,CAAC,OAAO,CACxB,aAAa,CAAE,KAAK,CACpB,SAAS,CAAE,OAAO,CAClB,WAAW,CAAE,GACf,CAEA,kDAAqB,CACnB,UAAU,CAAE,OAAO,CACnB,KAAK,CAAE,OACT,CAEA,iDAAoB,CAClB,UAAU,CAAE,OAAO,CACnB,KAAK,CAAE,OAAO,CACd,MAAM,CAAE,IAAI,CACZ,MAAM,CAAE,OACV,CAEA,iDAAmB,MAAO,CACxB,UAAU,CAAE,OACd"}`
-};
-function statusValue(status) {
-  return typeof status === "string" ? status : status?.value ?? status;
-}
-function statusLabel(status) {
-  const value = statusValue(status);
-  return value === "active" ? "Activo" : "Finalizado";
-}
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $$unsubscribe_authStore;
-  $$unsubscribe_authStore = subscribe(authStore, (value) => value);
-  let sessions = [];
-  $$result.css.add(css);
-  $$unsubscribe_authStore();
-  return `${$$result.head += `<!-- HEAD_svelte-14nkkem_START -->${$$result.title = `<title>Supervisiones del examen | Procto</title>`, ""}<!-- HEAD_svelte-14nkkem_END -->`, ""} <section class="sessions-page svelte-1gtnrow">${validate_component(PageHeader, "PageHeader").$$render(
-    $$result,
-    {
+import { C as Card, a as Card_content } from "../../../../../chunks/card-content.js";
+import "clsx";
+import { T as Table, a as Table_header, b as Table_row, c as Table_head, d as Table_body, e as Table_cell } from "../../../../../chunks/table-row.js";
+import { B as Button } from "../../../../../chunks/button.js";
+import { B as Badge } from "../../../../../chunks/badge.js";
+import "../../../../../chunks/alert.js";
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let sessions = [];
+    function statusValue(status) {
+      return typeof status === "string" ? status : status?.value ?? status;
+    }
+    function statusLabel(status) {
+      const value = statusValue(status);
+      return value === "active" ? "Activo" : "Finalizado";
+    }
+    function openReport(sessionId) {
+      goto();
+    }
+    function goBack() {
+      goto();
+    }
+    head("14vxrsm", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Supervisiones del examen | Procto</title>`);
+      });
+    });
+    PageHeader($$renderer2, {
       focus: "Supervisión",
       title: "Supervisiones del examen",
-      subtitle: `Examen: ${"—"}`
-    },
-    {},
-    {
-      actions: () => {
-        return `<button class="btn btn--ghost btn--sm" type="button" data-svelte-h="svelte-d27ak5">← Volver a Exámenes</button>`;
+      subtitle: "Sesiones de estudiantes vinculadas a este examen.",
+      $$slots: {
+        actions: ($$renderer3) => {
+          {
+            Button($$renderer3, {
+              variant: "outline",
+              size: "sm",
+              onclick: goBack,
+              children: ($$renderer4) => {
+                $$renderer4.push(`<!---->← Volver a exámenes`);
+              },
+              $$slots: { default: true }
+            });
+          }
+        }
       }
-    }
-  )} <div class="card">${``} ${`${sessions.length === 0 ? `<p class="sessions-info svelte-1gtnrow" data-svelte-h="svelte-1exs8el">Aún no hay supervisiones para este examen.</p>` : `<div class="table-wrap svelte-1gtnrow"><table class="sessions-table svelte-1gtnrow"><thead data-svelte-h="svelte-6oh9mb"><tr><th class="svelte-1gtnrow">Participante (ID)</th> <th class="svelte-1gtnrow">Inicio</th> <th class="svelte-1gtnrow">Fin</th> <th class="svelte-1gtnrow">Estado</th></tr></thead> <tbody>${each(sessions, (session) => {
-    return `<tr><td class="svelte-1gtnrow"><span class="badge badge--student svelte-1gtnrow">${escape(session.student_id)}</span></td> <td class="svelte-1gtnrow">${escape(new Date(session.started_at).toLocaleString("es"))}</td> <td class="svelte-1gtnrow">${escape(session.ended_at ? new Date(session.ended_at).toLocaleString("es") : "—")}</td> <td class="sessions-table__status svelte-1gtnrow">${statusValue(session.status) === "ended" || statusValue(session.status) === "finalizado" ? `<button class="status-pill status-pill--ended svelte-1gtnrow" type="button">${escape(statusLabel(session.status))} </button>` : `<span class="status-pill status-pill--active svelte-1gtnrow" data-svelte-h="svelte-um2r61">Activo</span>`}</td> </tr>`;
-  })}</tbody></table></div>`}`}</div> </section>`;
-});
+    });
+    $$renderer2.push(`<!----> `);
+    Card($$renderer2, {
+      class: "rounded-xl",
+      children: ($$renderer3) => {
+        Card_content($$renderer3, {
+          class: "pt-6",
+          children: ($$renderer4) => {
+            {
+              $$renderer4.push("<!--[-1-->");
+            }
+            $$renderer4.push(`<!--]--> `);
+            if (sessions.length === 0) {
+              $$renderer4.push("<!--[1-->");
+              $$renderer4.push(`<p class="text-sm text-muted-foreground">Aún no hay supervisiones para este examen.</p>`);
+            } else {
+              $$renderer4.push("<!--[-1-->");
+              $$renderer4.push(`<div class="overflow-x-auto">`);
+              Table($$renderer4, {
+                children: ($$renderer5) => {
+                  Table_header($$renderer5, {
+                    children: ($$renderer6) => {
+                      Table_row($$renderer6, {
+                        children: ($$renderer7) => {
+                          Table_head($$renderer7, {
+                            children: ($$renderer8) => {
+                              $$renderer8.push(`<!---->Estudiante`);
+                            },
+                            $$slots: { default: true }
+                          });
+                          $$renderer7.push(`<!----> `);
+                          Table_head($$renderer7, {
+                            children: ($$renderer8) => {
+                              $$renderer8.push(`<!---->Email`);
+                            },
+                            $$slots: { default: true }
+                          });
+                          $$renderer7.push(`<!----> `);
+                          Table_head($$renderer7, {
+                            children: ($$renderer8) => {
+                              $$renderer8.push(`<!---->Inicio`);
+                            },
+                            $$slots: { default: true }
+                          });
+                          $$renderer7.push(`<!----> `);
+                          Table_head($$renderer7, {
+                            children: ($$renderer8) => {
+                              $$renderer8.push(`<!---->Fin`);
+                            },
+                            $$slots: { default: true }
+                          });
+                          $$renderer7.push(`<!----> `);
+                          Table_head($$renderer7, {
+                            class: "text-right",
+                            children: ($$renderer8) => {
+                              $$renderer8.push(`<!---->Estado`);
+                            },
+                            $$slots: { default: true }
+                          });
+                          $$renderer7.push(`<!---->`);
+                        },
+                        $$slots: { default: true }
+                      });
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----> `);
+                  Table_body($$renderer5, {
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!--[-->`);
+                      const each_array = ensure_array_like(sessions);
+                      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+                        let session = each_array[$$index];
+                        Table_row($$renderer6, {
+                          children: ($$renderer7) => {
+                            Table_cell($$renderer7, {
+                              children: ($$renderer8) => {
+                                Badge($$renderer8, {
+                                  variant: "secondary",
+                                  children: ($$renderer9) => {
+                                    $$renderer9.push(`<!---->${escape_html(session.student_name ?? session.student_id)}`);
+                                  },
+                                  $$slots: { default: true }
+                                });
+                              },
+                              $$slots: { default: true }
+                            });
+                            $$renderer7.push(`<!----> `);
+                            Table_cell($$renderer7, {
+                              class: "text-muted-foreground",
+                              children: ($$renderer8) => {
+                                $$renderer8.push(`<!---->${escape_html(session.student_email ?? "—")}`);
+                              },
+                              $$slots: { default: true }
+                            });
+                            $$renderer7.push(`<!----> `);
+                            Table_cell($$renderer7, {
+                              children: ($$renderer8) => {
+                                $$renderer8.push(`<!---->${escape_html(new Date(session.started_at).toLocaleString("es"))}`);
+                              },
+                              $$slots: { default: true }
+                            });
+                            $$renderer7.push(`<!----> `);
+                            Table_cell($$renderer7, {
+                              children: ($$renderer8) => {
+                                $$renderer8.push(`<!---->${escape_html(session.ended_at ? new Date(session.ended_at).toLocaleString("es") : "—")}`);
+                              },
+                              $$slots: { default: true }
+                            });
+                            $$renderer7.push(`<!----> `);
+                            Table_cell($$renderer7, {
+                              class: "text-right",
+                              children: ($$renderer8) => {
+                                if (statusValue(session.status) === "ended" || statusValue(session.status) === "finalizado") {
+                                  $$renderer8.push("<!--[0-->");
+                                  Button($$renderer8, {
+                                    variant: "outline",
+                                    size: "sm",
+                                    onclick: () => openReport(session.id),
+                                    children: ($$renderer9) => {
+                                      $$renderer9.push(`<!---->${escape_html(statusLabel(session.status))} · Ver reporte`);
+                                    },
+                                    $$slots: { default: true }
+                                  });
+                                } else {
+                                  $$renderer8.push("<!--[-1-->");
+                                  Badge($$renderer8, {
+                                    class: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
+                                    children: ($$renderer9) => {
+                                      $$renderer9.push(`<!---->Activo`);
+                                    },
+                                    $$slots: { default: true }
+                                  });
+                                }
+                                $$renderer8.push(`<!--]-->`);
+                              },
+                              $$slots: { default: true }
+                            });
+                            $$renderer7.push(`<!---->`);
+                          },
+                          $$slots: { default: true }
+                        });
+                      }
+                      $$renderer6.push(`<!--]-->`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!---->`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer4.push(`<!----></div>`);
+            }
+            $$renderer4.push(`<!--]-->`);
+          },
+          $$slots: { default: true }
+        });
+      },
+      $$slots: { default: true }
+    });
+    $$renderer2.push(`<!---->`);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

@@ -3,15 +3,19 @@
   import { get } from 'svelte/store';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { authStore } from '$lib/auth.js';
+  import CameraCapture from '$lib/components/CameraCapture.svelte';
+  import * as Card from '$lib/components/ui/card';
+  import { Label } from '$lib/components/ui/label';
+  import { Badge } from '$lib/components/ui/badge';
+  import { Separator } from '$lib/components/ui/separator';
+  import { Skeleton } from '$lib/components/ui/skeleton';
+  import * as Alert from '$lib/components/ui/alert';
 
   const API_BASE = '/api/v1';
 
   let user = null;
   let loading = true;
   let loadError = '';
-  let capturing = false;
-  let videoEl;
-  let stream;
   let uploadMsg = '';
 
   async function loadProfile() {
@@ -39,34 +43,16 @@
     }
   }
 
-  async function startCapture() {
-    capturing = true;
+  async function uploadBlob(blob) {
     uploadMsg = '';
-    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    videoEl.srcObject = stream;
-    await videoEl.play();
-  }
-
-  async function takePhoto() {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    canvas.getContext('2d').drawImage(videoEl, 0, 0);
-
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-    }
-    capturing = false;
-
     const token = get(authStore)?.token;
-    const blob = await new Promise((resolve) =>
-      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92)
-    );
-    if (!blob || !token) return;
+    if (!token) {
+      uploadMsg = '✗ No hay sesión activa.';
+      return;
+    }
 
     const fd = new FormData();
     fd.append('file', blob, 'profile.jpg');
-
     const res = await fetch(`${API_BASE}/users/me/photo`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
@@ -76,11 +62,17 @@
     if (res.ok) {
       const data = await res.json();
       user = { ...user, photo_url: data.photo_url };
-      uploadMsg = '✓ Foto guardada como referencia';
+      uploadMsg = '✓ Foto guardada';
     } else {
       const data = await res.json().catch(() => ({}));
       uploadMsg = `✗ ${data?.detail || 'Error al guardar la foto'}`;
     }
+  }
+
+  function onCapture(e) {
+    const blob = e?.detail?.blob;
+    if (!blob) return;
+    void uploadBlob(blob);
   }
 
   onMount(loadProfile);
@@ -90,7 +82,7 @@
   <title>Mi perfil | Procto</title>
 </svelte:head>
 
-<div class="profile-page">
+<div class="mx-auto max-w-lg">
   <PageHeader
     focus="Cuenta"
     title="Mi perfil"
@@ -98,120 +90,61 @@
   />
 
   {#if loading}
-    <p class="profile-page__info">Cargando perfil…</p>
+    <div class="space-y-3">
+      <Skeleton class="h-8 w-3/4" />
+      <Skeleton class="h-24 w-full" />
+    </div>
   {:else if loadError}
-    <p class="profile-page__error">{loadError}</p>
+    <Alert.Root variant="destructive">
+      <Alert.Title>Error</Alert.Title>
+      <Alert.Description>{loadError}</Alert.Description>
+    </Alert.Root>
   {:else if user}
-    <section class="card profile-card">
-      <div class="field">
-        <label for="ro-name">Nombre completo</label>
-        <p id="ro-name" class="profile-card__value">{user.full_name}</p>
-      </div>
-      <div class="field">
-        <label for="ro-email">Correo electrónico</label>
-        <p id="ro-email" class="profile-card__value">{user.email}</p>
-      </div>
-      <div class="field">
-        <label for="ro-role">Rol</label>
-        <p id="ro-role" class="profile-card__value">
-          {user.role === 'STUDENT' ? 'Estudiante' : 'Profesor'}
-        </p>
-      </div>
+    <Card.Root class="rounded-xl">
+      <Card.Content class="space-y-4 pt-6">
+        <div class="space-y-1">
+          <Label>Nombre completo</Label>
+          <p class="text-sm font-medium">{user.full_name}</p>
+        </div>
+        <div class="space-y-1">
+          <Label>Correo electrónico</Label>
+          <p class="text-sm font-medium">{user.email}</p>
+        </div>
+        <div class="space-y-1">
+          <Label>Rol</Label>
+          <Badge variant="secondary">{user.role === 'STUDENT' ? 'Estudiante' : 'Profesor'}</Badge>
+        </div>
 
-      {#if user.role === 'STUDENT'}
-        <hr class="profile-card__rule" />
+        <Separator />
 
-        <h2 class="profile-card__section-title">Foto de referencia</h2>
-
-        {#if user.photo_url}
-          <img
-            class="profile-card__avatar"
-            src={user.photo_url}
-            alt="Foto de referencia"
-            width="120"
-            height="120"
+        <div class="space-y-3">
+          <h2 class="text-sm font-semibold">Foto</h2>
+          {#if user.photo_url}
+            <img
+              class="size-28 rounded-full object-cover ring-2 ring-border"
+              src={user.photo_url}
+              alt="Foto de perfil"
+              width="112"
+              height="112"
+            />
+          {:else}
+            <p class="text-sm text-muted-foreground">Sin foto aún.</p>
+          {/if}
+          <p class="text-sm text-muted-foreground">
+            {user.role === 'STUDENT'
+              ? 'Esta foto se usa como referencia para validar tu identidad durante los exámenes.'
+              : 'La foto no es obligatoria para profesores.'}
+          </p>
+          <CameraCapture
+            required={user.role === 'STUDENT'}
+            label={user.role === 'STUDENT' ? 'Foto de referencia' : 'Foto de perfil'}
+            on:capture={onCapture}
           />
-        {:else}
-          <p class="profile-page__hint">Sin foto de referencia aún.</p>
-        {/if}
-
-        {#if capturing}
-          <!-- svelte-ignore a11y-media-has-caption -->
-          <video bind:this={videoEl} class="profile-card__video" muted playsinline />
-          <button class="btn btn--primary" type="button" on:click={takePhoto}>📸 Tomar foto</button>
-        {:else}
-          <button class="btn btn--secondary" type="button" on:click={startCapture}>
-            {user.photo_url ? '🔄 Actualizar foto' : '📷 Capturar foto de referencia'}
-          </button>
-        {/if}
-
-        {#if uploadMsg}
-          <p class="profile-card__upload-msg">{uploadMsg}</p>
-        {/if}
-      {/if}
-    </section>
+          {#if uploadMsg}
+            <p class="text-sm text-muted-foreground">{uploadMsg}</p>
+          {/if}
+        </div>
+      </Card.Content>
+    </Card.Root>
   {/if}
 </div>
-
-<style>
-  .profile-page {
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  .profile-page__info {
-    color: var(--procto-text-secondary);
-    font-size: 0.95rem;
-  }
-
-  .profile-page__error {
-    color: #b42318;
-    font-size: 0.9rem;
-  }
-
-  .profile-page__hint {
-    color: var(--procto-text-secondary);
-    font-size: 0.85rem;
-    margin-bottom: 1rem;
-  }
-
-  .profile-card__value {
-    margin: 0;
-    font-size: 0.95rem;
-    color: var(--procto-text);
-  }
-
-  .profile-card__rule {
-    margin: 1.25rem 0;
-    border: none;
-    border-top: 1px solid var(--procto-border);
-  }
-
-  .profile-card__section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 1rem;
-    color: var(--procto-text);
-  }
-
-  .profile-card__avatar {
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-    margin-bottom: 1rem;
-  }
-
-  .profile-card__video {
-    width: 100%;
-    border-radius: var(--procto-radius-sm);
-    margin-bottom: 0.75rem;
-    background: #111;
-    aspect-ratio: 4 / 3;
-  }
-
-  .profile-card__upload-msg {
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    color: var(--procto-text-secondary);
-  }
-</style>

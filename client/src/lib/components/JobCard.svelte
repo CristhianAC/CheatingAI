@@ -20,7 +20,11 @@
   })();
 </script>
 
-<div class="job-card" class:selected class:completed={job.status === 'completed'}>
+<div
+  class="job-card mb-3 cursor-pointer rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md {selected ? 'ring-2 ring-primary' : ''} {job.status === 'completed' ? 'hover:border-primary/40' : ''}"
+  class:selected
+  class:completed={job.status === 'completed'}
+>
   <div class="job-top">
     <div class="job-left">
       <span class="job-icon">{STATUS_ICON[job.status]}</span>

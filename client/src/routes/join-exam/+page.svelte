@@ -6,6 +6,11 @@
   import { verifyExamCode } from '$lib/exams-api.js';
   import { authStore } from '$lib/auth.js';
   import { examStore } from '$lib/exam-store.js';
+  import * as Card from '$lib/components/ui/card';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+  import * as Alert from '$lib/components/ui/alert';
 
   let code = '';
   let loading = false;
@@ -55,7 +60,7 @@
         code: exam.code,
         expired_at: null,
       });
-      successMessage = `✓ Examen encontrado: ${exam.name}`;
+      successMessage = `Examen encontrado: ${exam.name}`;
     } catch (e) {
       const msg = e?.message ?? '';
       if (msg.includes('CODE_NOT_FOUND')) {
@@ -93,98 +98,54 @@
   <title>Unirse a examen | Procto</title>
 </svelte:head>
 
-<div class="join-page">
+<div class="mx-auto max-w-lg">
   <PageHeader
     focus="Supervisión"
     title="Unirse a un examen"
     subtitle="Ingresa el código del examen para validar tu acceso antes de iniciar la supervisión."
   />
 
-  <section class="card join-card">
-    <div class="field">
-      <label for="examCode">Código de examen</label>
-      <input
-        id="examCode"
-        class="join-card__input"
-        type="text"
-        value={code}
-        on:input={handleCodeInput}
-        maxlength="6"
-        placeholder="ABC123"
-        autocomplete="off"
-      />
-    </div>
+  <Card.Root class="rounded-xl">
+    <Card.Content class="space-y-4 pt-6">
+      <div class="space-y-2">
+        <Label for="examCode">Código de examen</Label>
+        <Input
+          id="examCode"
+          type="text"
+          value={code}
+          on:input={handleCodeInput}
+          maxlength="6"
+          placeholder="ABC123"
+          autocomplete="off"
+          class="h-14 text-center text-2xl font-bold uppercase tracking-[0.2em]"
+        />
+      </div>
 
-    <button class="btn btn--primary" type="button" on:click={handleVerify} disabled={loading}>
-      {#if loading}
-        Verificando...
-      {:else}
-        Verificar código
+      <Button type="button" class="w-full" onclick={handleVerify} disabled={loading}>
+        {loading ? 'Verificando...' : 'Verificar código'}
+      </Button>
+
+      {#if invalidMessage}
+        <Alert.Root variant="destructive"><Alert.Description>{invalidMessage}</Alert.Description></Alert.Root>
       {/if}
-    </button>
+      {#if notFoundMessage}
+        <Alert.Root variant="destructive"><Alert.Description>{notFoundMessage}</Alert.Description></Alert.Root>
+      {/if}
+      {#if finishedMessage}
+        <Alert.Root><Alert.Description>{finishedMessage}</Alert.Description></Alert.Root>
+      {/if}
+      {#if networkMessage}
+        <Alert.Root variant="destructive"><Alert.Description>{networkMessage}</Alert.Description></Alert.Root>
+      {/if}
+      {#if successMessage}
+        <Alert.Root class="border-emerald-500/30 bg-emerald-50 text-emerald-900">
+          <Alert.Description>{successMessage}</Alert.Description>
+        </Alert.Root>
+      {/if}
 
-    {#if invalidMessage}
-      <p class="join-card__feedback join-card__feedback--error">⚠ {invalidMessage}</p>
-    {/if}
-
-    {#if notFoundMessage}
-      <p class="join-card__feedback join-card__feedback--error">🔎 {notFoundMessage}</p>
-    {/if}
-
-    {#if finishedMessage}
-      <p class="join-card__feedback join-card__feedback--finished">⏱ {finishedMessage}</p>
-    {/if}
-
-    {#if networkMessage}
-      <p class="join-card__feedback join-card__feedback--error">✗ {networkMessage}</p>
-    {/if}
-
-    {#if successMessage}
-      <p class="join-card__feedback join-card__feedback--success">{successMessage}</p>
-    {/if}
-
-    {#if foundExam}
-      <button class="btn btn--secondary" type="button" on:click={startProctoring}>
-        Iniciar supervisión
-      </button>
-    {/if}
-  </section>
+      {#if foundExam}
+        <Button variant="secondary" class="w-full" onclick={startProctoring}>Iniciar supervisión</Button>
+      {/if}
+    </Card.Content>
+  </Card.Root>
 </div>
-
-<style>
-  .join-page {
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  .join-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    max-width: 520px;
-  }
-
-  .join-card__input {
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-  }
-
-  .join-card__feedback {
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  .join-card__feedback--error {
-    color: #b91c1c;
-  }
-
-  .join-card__feedback--success {
-    color: #15803d;
-  }
-
-  .join-card__feedback--finished {
-    color: #92400e;
-  }
-</style>

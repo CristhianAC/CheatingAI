@@ -32,7 +32,7 @@
   $: pct   = result ? Math.round(result.similarity_score * 100) : 0;
 </script>
 
-<div class="card">
+<div class="rounded-xl border border-border bg-card p-6 shadow-sm">
   <h2 class="card__title">🔍 Análisis Par a Par <span class="badge-sync">Síncrono</span></h2>
   <p class="card__desc">Compara dos submissions específicas y obtén el resultado inmediatamente.</p>
 

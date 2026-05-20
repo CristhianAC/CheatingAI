@@ -1,29 +1,394 @@
-import { c as create_ssr_component, a as subscribe, e as escape, b as each } from "../../../chunks/ssr.js";
-import "@sveltejs/kit/internal";
-import "../../../chunks/exports.js";
-import "../../../chunks/utils.js";
-import "@sveltejs/kit/internal/server";
-import "../../../chunks/state.svelte.js";
+import { j as head, s as store_get, e as escape_html, h as ensure_array_like, u as unsubscribe_stores } from "../../../chunks/index2.js";
+import { g as goto } from "../../../chunks/client.js";
 import { a as authStore } from "../../../chunks/auth.js";
-const css = {
-  code: ".exams-page__top.svelte-1n9ld7u.svelte-1n9ld7u{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}.exams-form.svelte-1n9ld7u.svelte-1n9ld7u{border:1px solid var(--procto-border);border-radius:var(--procto-radius-sm);padding:1rem;margin-bottom:1rem}.exams-form__actions.svelte-1n9ld7u.svelte-1n9ld7u{margin-top:0.75rem}.table-wrap.svelte-1n9ld7u.svelte-1n9ld7u{overflow-x:auto}.exams-table.svelte-1n9ld7u.svelte-1n9ld7u{width:100%;border-collapse:collapse}.exams-table.svelte-1n9ld7u th.svelte-1n9ld7u,.exams-table.svelte-1n9ld7u td.svelte-1n9ld7u{border-bottom:1px solid var(--procto-border);text-align:left;padding:0.65rem 0.5rem;font-size:0.9rem}.code-badge.svelte-1n9ld7u.svelte-1n9ld7u{display:inline-block;background:var(--procto-accent-muted);color:var(--procto-accent);border:1px solid rgba(0, 113, 227, 0.25);border-radius:999px;padding:0.2rem 0.55rem;font-weight:700;letter-spacing:0.06em}.exams-error.svelte-1n9ld7u.svelte-1n9ld7u{color:#b42318;margin:0 0 0.75rem}.exams-page__restricted.svelte-1n9ld7u p.svelte-1n9ld7u{margin-bottom:0.75rem}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import { onMount } from 'svelte';\\n  import { goto } from '$app/navigation';\\n  import { authStore } from '$lib/auth.js';\\n  import { createExam, listExams } from '$lib/exams-api.js';\\n\\n  let loading = false;\\n  let saving = false;\\n  let error = '';\\n  let exams = [];\\n  let showCreate = false;\\n\\n  let name = '';\\n  let description = '';\\n  let durationMinutes = '';\\n  let scheduledAt = '';\\n\\n  async function loadExams() {\\n    loading = true;\\n    error = '';\\n    try {\\n      exams = await listExams();\\n    } catch (e) {\\n      error = e?.message ?? 'No se pudieron cargar los exámenes';\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  async function submitCreate() {\\n    saving = true;\\n    error = '';\\n    try {\\n      await createExam({\\n        name,\\n        description: description || null,\\n        duration_minutes: durationMinutes ? Number(durationMinutes) : null,\\n        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null\\n      });\\n      name = '';\\n      description = '';\\n      durationMinutes = '';\\n      scheduledAt = '';\\n      showCreate = false;\\n      await loadExams();\\n    } catch (e) {\\n      error = e?.message ?? 'No se pudo crear el examen';\\n    } finally {\\n      saving = false;\\n    }\\n  }\\n\\n  function fmtDate(value) {\\n    if (!value) return '—';\\n    return new Date(value).toLocaleString('es');\\n  }\\n\\n  function openSessions(examId) {\\n    goto(\`/exams/\${examId}/sessions\`);\\n  }\\n\\n  onMount(async () => {\\n    if ($authStore?.role === 'PROFESSOR') {\\n      await loadExams();\\n    }\\n  });\\n<\/script>\\n\\n<svelte:head>\\n  <title>Exámenes | Procto</title>\\n</svelte:head>\\n\\n{#if $authStore?.role !== 'PROFESSOR'}\\n  <section class=\\"card exams-page__restricted\\">\\n    <h1 class=\\"card__title\\">Acceso restringido</h1>\\n    <p>Solo los profesores pueden gestionar exámenes.</p>\\n    <button class=\\"btn btn--secondary\\" type=\\"button\\" on:click={() => goto('/')}>Volver</button>\\n  </section>\\n{:else}\\n  <section class=\\"card exams-page\\">\\n    <div class=\\"exams-page__top\\">\\n      <h1 class=\\"card__title\\">Gestión de exámenes</h1>\\n      <button class=\\"btn btn--primary\\" type=\\"button\\" on:click={() => (showCreate = !showCreate)}>\\n        {showCreate ? 'Cancelar' : 'Crear Examen'}\\n      </button>\\n    </div>\\n\\n    {#if showCreate}\\n      <form class=\\"exams-form\\" on:submit|preventDefault={submitCreate}>\\n        <label class=\\"field\\">\\n          <span>Nombre</span>\\n          <input type=\\"text\\" bind:value={name} required />\\n        </label>\\n\\n        <label class=\\"field\\">\\n          <span>Descripción</span>\\n          <textarea rows=\\"3\\" bind:value={description}></textarea>\\n        </label>\\n\\n        <label class=\\"field\\">\\n          <span>Duración (min)</span>\\n          <input type=\\"number\\" min=\\"1\\" bind:value={durationMinutes} />\\n        </label>\\n\\n        <label class=\\"field\\">\\n          <span>Fecha programada</span>\\n          <input type=\\"datetime-local\\" bind:value={scheduledAt} />\\n        </label>\\n\\n        <div class=\\"exams-form__actions\\">\\n          <button class=\\"btn btn--primary\\" type=\\"submit\\" disabled={saving}>\\n            {saving ? 'Creando...' : 'Guardar examen'}\\n          </button>\\n        </div>\\n      </form>\\n    {/if}\\n\\n    {#if error}\\n      <p class=\\"exams-error\\">{error}</p>\\n    {/if}\\n\\n    {#if loading}\\n      <p>Cargando exámenes...</p>\\n    {:else if exams.length === 0}\\n      <p>No tienes exámenes creados todavía.</p>\\n    {:else}\\n      <div class=\\"table-wrap\\">\\n        <table class=\\"exams-table\\">\\n          <thead>\\n            <tr>\\n              <th>Nombre</th>\\n              <th>Código</th>\\n              <th>Descripción</th>\\n              <th>Duración</th>\\n              <th>Fecha</th>\\n              <th>Supervisiones</th>\\n            </tr>\\n          </thead>\\n          <tbody>\\n            {#each exams as exam}\\n              <tr>\\n                <td>{exam.name}</td>\\n                <td><span class=\\"code-badge\\">{exam.code}</span></td>\\n                <td>{exam.description ?? '—'}</td>\\n                <td>{exam.duration_minutes ? \`\${exam.duration_minutes} min\` : '—'}</td>\\n                <td>{fmtDate(exam.scheduled_at)}</td>\\n                <td>\\n                  <button class=\\"btn btn--ghost btn--sm\\" type=\\"button\\" on:click={() => openSessions(exam.id)}>\\n                    Ver →\\n                  </button>\\n                </td>\\n              </tr>\\n            {/each}\\n          </tbody>\\n        </table>\\n      </div>\\n    {/if}\\n  </section>\\n{/if}\\n\\n<style>\\n  .exams-page__top {\\n    display: flex;\\n    align-items: center;\\n    justify-content: space-between;\\n    gap: 1rem;\\n    margin-bottom: 1rem;\\n  }\\n  .exams-form {\\n    border: 1px solid var(--procto-border);\\n    border-radius: var(--procto-radius-sm);\\n    padding: 1rem;\\n    margin-bottom: 1rem;\\n  }\\n  .exams-form__actions {\\n    margin-top: 0.75rem;\\n  }\\n  .table-wrap {\\n    overflow-x: auto;\\n  }\\n  .exams-table {\\n    width: 100%;\\n    border-collapse: collapse;\\n  }\\n  .exams-table th,\\n  .exams-table td {\\n    border-bottom: 1px solid var(--procto-border);\\n    text-align: left;\\n    padding: 0.65rem 0.5rem;\\n    font-size: 0.9rem;\\n  }\\n  .code-badge {\\n    display: inline-block;\\n    background: var(--procto-accent-muted);\\n    color: var(--procto-accent);\\n    border: 1px solid rgba(0, 113, 227, 0.25);\\n    border-radius: 999px;\\n    padding: 0.2rem 0.55rem;\\n    font-weight: 700;\\n    letter-spacing: 0.06em;\\n  }\\n  .exams-error {\\n    color: #b42318;\\n    margin: 0 0 0.75rem;\\n  }\\n  .exams-page__restricted p {\\n    margin-bottom: 0.75rem;\\n  }\\n</style>\\n"],"names":[],"mappings":"AAiKE,8CAAiB,CACf,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,MAAM,CACnB,eAAe,CAAE,aAAa,CAC9B,GAAG,CAAE,IAAI,CACT,aAAa,CAAE,IACjB,CACA,yCAAY,CACV,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAAC,CACtC,aAAa,CAAE,IAAI,kBAAkB,CAAC,CACtC,OAAO,CAAE,IAAI,CACb,aAAa,CAAE,IACjB,CACA,kDAAqB,CACnB,UAAU,CAAE,OACd,CACA,yCAAY,CACV,UAAU,CAAE,IACd,CACA,0CAAa,CACX,KAAK,CAAE,IAAI,CACX,eAAe,CAAE,QACnB,CACA,2BAAY,CAAC,iBAAE,CACf,2BAAY,CAAC,iBAAG,CACd,aAAa,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAAC,CAC7C,UAAU,CAAE,IAAI,CAChB,OAAO,CAAE,OAAO,CAAC,MAAM,CACvB,SAAS,CAAE,MACb,CACA,yCAAY,CACV,OAAO,CAAE,YAAY,CACrB,UAAU,CAAE,IAAI,qBAAqB,CAAC,CACtC,KAAK,CAAE,IAAI,eAAe,CAAC,CAC3B,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,KAAK,CAAC,CAAC,CAAC,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,IAAI,CAAC,CACzC,aAAa,CAAE,KAAK,CACpB,OAAO,CAAE,MAAM,CAAC,OAAO,CACvB,WAAW,CAAE,GAAG,CAChB,cAAc,CAAE,MAClB,CACA,0CAAa,CACX,KAAK,CAAE,OAAO,CACd,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,OACd,CACA,sCAAuB,CAAC,gBAAE,CACxB,aAAa,CAAE,OACjB"}`
-};
-function fmtDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("es");
+import { P as PageHeader } from "../../../chunks/PageHeader.js";
+import { C as Card, a as Card_content } from "../../../chunks/card-content.js";
+import { C as Card_header, a as Card_title, b as Card_description, c as Card_footer } from "../../../chunks/card-title.js";
+import "clsx";
+import { T as Table, a as Table_header, b as Table_row, c as Table_head, d as Table_body, e as Table_cell } from "../../../chunks/table-row.js";
+import { B as Button } from "../../../chunks/button.js";
+import { L as Label, I as Input } from "../../../chunks/label.js";
+import { B as Badge } from "../../../chunks/badge.js";
+import "../../../chunks/alert.js";
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    var $$store_subs;
+    let saving = false;
+    let exams = [];
+    let showCreate = false;
+    let name = "";
+    let description = "";
+    let durationMinutes = "";
+    let scheduledAt = "";
+    function fmtDate(value) {
+      if (!value) return "—";
+      return new Date(value).toLocaleString("es");
+    }
+    function openSessions(examId) {
+      goto();
+    }
+    let $$settled = true;
+    let $$inner_renderer;
+    function $$render_inner($$renderer3) {
+      head("xt3a3", $$renderer3, ($$renderer4) => {
+        $$renderer4.title(($$renderer5) => {
+          $$renderer5.push(`<title>Exámenes | Procto</title>`);
+        });
+      });
+      if (store_get($$store_subs ??= {}, "$authStore", authStore)?.role !== "PROFESSOR") {
+        $$renderer3.push("<!--[0-->");
+        Card($$renderer3, {
+          class: "rounded-xl",
+          children: ($$renderer4) => {
+            Card_header($$renderer4, {
+              children: ($$renderer5) => {
+                Card_title($$renderer5, {
+                  children: ($$renderer6) => {
+                    $$renderer6.push(`<!---->Acceso restringido`);
+                  },
+                  $$slots: { default: true }
+                });
+                $$renderer5.push(`<!----> `);
+                Card_description($$renderer5, {
+                  children: ($$renderer6) => {
+                    $$renderer6.push(`<!---->Solo los profesores pueden gestionar exámenes.`);
+                  },
+                  $$slots: { default: true }
+                });
+                $$renderer5.push(`<!---->`);
+              },
+              $$slots: { default: true }
+            });
+            $$renderer4.push(`<!----> `);
+            Card_footer($$renderer4, {
+              children: ($$renderer5) => {
+                Button($$renderer5, {
+                  variant: "secondary",
+                  onclick: () => goto(),
+                  children: ($$renderer6) => {
+                    $$renderer6.push(`<!---->Volver`);
+                  },
+                  $$slots: { default: true }
+                });
+              },
+              $$slots: { default: true }
+            });
+            $$renderer4.push(`<!---->`);
+          },
+          $$slots: { default: true }
+        });
+      } else {
+        $$renderer3.push("<!--[-1-->");
+        PageHeader($$renderer3, {
+          focus: "Docencia",
+          title: "Gestión de exámenes",
+          subtitle: "Crea exámenes y revisa las supervisiones de cada uno.",
+          $$slots: {
+            actions: ($$renderer4) => {
+              {
+                Button($$renderer4, {
+                  onclick: () => showCreate = !showCreate,
+                  children: ($$renderer5) => {
+                    $$renderer5.push(`<!---->${escape_html(showCreate ? "Cancelar" : "Crear examen")}`);
+                  },
+                  $$slots: { default: true }
+                });
+              }
+            }
+          }
+        });
+        $$renderer3.push(`<!----> `);
+        if (showCreate) {
+          $$renderer3.push("<!--[0-->");
+          Card($$renderer3, {
+            class: "mb-6 rounded-xl",
+            children: ($$renderer4) => {
+              Card_header($$renderer4, {
+                children: ($$renderer5) => {
+                  Card_title($$renderer5, {
+                    class: "text-base",
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->Nuevo examen`);
+                    },
+                    $$slots: { default: true }
+                  });
+                },
+                $$slots: { default: true }
+              });
+              $$renderer4.push(`<!----> `);
+              Card_content($$renderer4, {
+                children: ($$renderer5) => {
+                  $$renderer5.push(`<form class="grid gap-4 sm:grid-cols-2"><div class="space-y-2 sm:col-span-2">`);
+                  Label($$renderer5, {
+                    for: "name",
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->Nombre`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----> `);
+                  Input($$renderer5, {
+                    id: "name",
+                    type: "text",
+                    required: true,
+                    get value() {
+                      return name;
+                    },
+                    set value($$value) {
+                      name = $$value;
+                      $$settled = false;
+                    }
+                  });
+                  $$renderer5.push(`<!----></div> <div class="space-y-2 sm:col-span-2">`);
+                  Label($$renderer5, {
+                    for: "desc",
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->Descripción`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----> <textarea id="desc" rows="3" class="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">`);
+                  const $$body = escape_html(description);
+                  if ($$body) {
+                    $$renderer5.push(`${$$body}`);
+                  }
+                  $$renderer5.push(`</textarea></div> <div class="space-y-2">`);
+                  Label($$renderer5, {
+                    for: "dur",
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->Duración (min)`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----> `);
+                  Input($$renderer5, {
+                    id: "dur",
+                    type: "number",
+                    min: "1",
+                    get value() {
+                      return durationMinutes;
+                    },
+                    set value($$value) {
+                      durationMinutes = $$value;
+                      $$settled = false;
+                    }
+                  });
+                  $$renderer5.push(`<!----></div> <div class="space-y-2">`);
+                  Label($$renderer5, {
+                    for: "sched",
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->Fecha programada`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----> `);
+                  Input($$renderer5, {
+                    id: "sched",
+                    type: "datetime-local",
+                    get value() {
+                      return scheduledAt;
+                    },
+                    set value($$value) {
+                      scheduledAt = $$value;
+                      $$settled = false;
+                    }
+                  });
+                  $$renderer5.push(`<!----></div> <div class="sm:col-span-2">`);
+                  Button($$renderer5, {
+                    type: "submit",
+                    disabled: saving,
+                    children: ($$renderer6) => {
+                      $$renderer6.push(`<!---->${escape_html("Guardar examen")}`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----></div></form>`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer4.push(`<!---->`);
+            },
+            $$slots: { default: true }
+          });
+        } else {
+          $$renderer3.push("<!--[-1-->");
+        }
+        $$renderer3.push(`<!--]--> `);
+        {
+          $$renderer3.push("<!--[-1-->");
+        }
+        $$renderer3.push(`<!--]--> `);
+        Card($$renderer3, {
+          class: "rounded-xl",
+          children: ($$renderer4) => {
+            Card_content($$renderer4, {
+              class: "pt-6",
+              children: ($$renderer5) => {
+                if (exams.length === 0) {
+                  $$renderer5.push("<!--[1-->");
+                  $$renderer5.push(`<p class="text-sm text-muted-foreground">No tienes exámenes creados todavía.</p>`);
+                } else {
+                  $$renderer5.push("<!--[-1-->");
+                  $$renderer5.push(`<div class="overflow-x-auto">`);
+                  Table($$renderer5, {
+                    children: ($$renderer6) => {
+                      Table_header($$renderer6, {
+                        children: ($$renderer7) => {
+                          Table_row($$renderer7, {
+                            children: ($$renderer8) => {
+                              Table_head($$renderer8, {
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Nombre`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!----> `);
+                              Table_head($$renderer8, {
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Código`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!----> `);
+                              Table_head($$renderer8, {
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Descripción`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!----> `);
+                              Table_head($$renderer8, {
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Duración`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!----> `);
+                              Table_head($$renderer8, {
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Fecha`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!----> `);
+                              Table_head($$renderer8, {
+                                class: "text-right",
+                                children: ($$renderer9) => {
+                                  $$renderer9.push(`<!---->Acciones`);
+                                },
+                                $$slots: { default: true }
+                              });
+                              $$renderer8.push(`<!---->`);
+                            },
+                            $$slots: { default: true }
+                          });
+                        },
+                        $$slots: { default: true }
+                      });
+                      $$renderer6.push(`<!----> `);
+                      Table_body($$renderer6, {
+                        children: ($$renderer7) => {
+                          $$renderer7.push(`<!--[-->`);
+                          const each_array = ensure_array_like(exams);
+                          for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+                            let exam = each_array[$$index];
+                            Table_row($$renderer7, {
+                              children: ($$renderer8) => {
+                                Table_cell($$renderer8, {
+                                  class: "font-medium",
+                                  children: ($$renderer9) => {
+                                    $$renderer9.push(`<!---->${escape_html(exam.name)}`);
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!----> `);
+                                Table_cell($$renderer8, {
+                                  children: ($$renderer9) => {
+                                    Badge($$renderer9, {
+                                      variant: "outline",
+                                      class: "font-mono tracking-wider",
+                                      children: ($$renderer10) => {
+                                        $$renderer10.push(`<!---->${escape_html(exam.code)}`);
+                                      },
+                                      $$slots: { default: true }
+                                    });
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!----> `);
+                                Table_cell($$renderer8, {
+                                  class: "max-w-[200px] truncate text-muted-foreground",
+                                  children: ($$renderer9) => {
+                                    $$renderer9.push(`<!---->${escape_html(exam.description ?? "—")}`);
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!----> `);
+                                Table_cell($$renderer8, {
+                                  children: ($$renderer9) => {
+                                    $$renderer9.push(`<!---->${escape_html(exam.duration_minutes ? `${exam.duration_minutes} min` : "—")}`);
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!----> `);
+                                Table_cell($$renderer8, {
+                                  class: "text-muted-foreground",
+                                  children: ($$renderer9) => {
+                                    $$renderer9.push(`<!---->${escape_html(fmtDate(exam.scheduled_at))}`);
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!----> `);
+                                Table_cell($$renderer8, {
+                                  class: "text-right",
+                                  children: ($$renderer9) => {
+                                    Button($$renderer9, {
+                                      variant: "ghost",
+                                      size: "sm",
+                                      onclick: () => openSessions(exam.id),
+                                      children: ($$renderer10) => {
+                                        $$renderer10.push(`<!---->Supervisiones →`);
+                                      },
+                                      $$slots: { default: true }
+                                    });
+                                  },
+                                  $$slots: { default: true }
+                                });
+                                $$renderer8.push(`<!---->`);
+                              },
+                              $$slots: { default: true }
+                            });
+                          }
+                          $$renderer7.push(`<!--]-->`);
+                        },
+                        $$slots: { default: true }
+                      });
+                      $$renderer6.push(`<!---->`);
+                    },
+                    $$slots: { default: true }
+                  });
+                  $$renderer5.push(`<!----></div>`);
+                }
+                $$renderer5.push(`<!--]-->`);
+              },
+              $$slots: { default: true }
+            });
+          },
+          $$slots: { default: true }
+        });
+        $$renderer3.push(`<!---->`);
+      }
+      $$renderer3.push(`<!--]-->`);
+    }
+    do {
+      $$settled = true;
+      $$inner_renderer = $$renderer2.copy();
+      $$render_inner($$inner_renderer);
+    } while (!$$settled);
+    $$renderer2.subsume($$inner_renderer);
+    if ($$store_subs) unsubscribe_stores($$store_subs);
+  });
 }
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $authStore, $$unsubscribe_authStore;
-  $$unsubscribe_authStore = subscribe(authStore, (value) => $authStore = value);
-  let exams = [];
-  $$result.css.add(css);
-  $$unsubscribe_authStore();
-  return `${$$result.head += `<!-- HEAD_svelte-wi8yvk_START -->${$$result.title = `<title>Exámenes | Procto</title>`, ""}<!-- HEAD_svelte-wi8yvk_END -->`, ""} ${$authStore?.role !== "PROFESSOR" ? `<section class="card exams-page__restricted svelte-1n9ld7u"><h1 class="card__title" data-svelte-h="svelte-1cbl25t">Acceso restringido</h1> <p class="svelte-1n9ld7u" data-svelte-h="svelte-8164i0">Solo los profesores pueden gestionar exámenes.</p> <button class="btn btn--secondary" type="button" data-svelte-h="svelte-11949bx">Volver</button></section>` : `<section class="card exams-page"><div class="exams-page__top svelte-1n9ld7u"><h1 class="card__title" data-svelte-h="svelte-1oa3zqp">Gestión de exámenes</h1> <button class="btn btn--primary" type="button">${escape("Crear Examen")}</button></div> ${``} ${``} ${`${exams.length === 0 ? `<p data-svelte-h="svelte-1ehajnk">No tienes exámenes creados todavía.</p>` : `<div class="table-wrap svelte-1n9ld7u"><table class="exams-table svelte-1n9ld7u"><thead data-svelte-h="svelte-drafxh"><tr><th class="svelte-1n9ld7u">Nombre</th> <th class="svelte-1n9ld7u">Código</th> <th class="svelte-1n9ld7u">Descripción</th> <th class="svelte-1n9ld7u">Duración</th> <th class="svelte-1n9ld7u">Fecha</th> <th class="svelte-1n9ld7u">Supervisiones</th></tr></thead> <tbody>${each(exams, (exam) => {
-    return `<tr><td class="svelte-1n9ld7u">${escape(exam.name)}</td> <td class="svelte-1n9ld7u"><span class="code-badge svelte-1n9ld7u">${escape(exam.code)}</span></td> <td class="svelte-1n9ld7u">${escape(exam.description ?? "—")}</td> <td class="svelte-1n9ld7u">${escape(exam.duration_minutes ? `${exam.duration_minutes} min` : "—")}</td> <td class="svelte-1n9ld7u">${escape(fmtDate(exam.scheduled_at))}</td> <td class="svelte-1n9ld7u"><button class="btn btn--ghost btn--sm" type="button" data-svelte-h="svelte-1mei02k">Ver →
-                  </button></td> </tr>`;
-  })}</tbody></table></div>`}`}</section>`}`;
-});
 export {
-  Page as default
+  _page as default
 };

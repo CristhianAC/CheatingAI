@@ -9,8 +9,9 @@ from app.config import get_settings
 from app.dependencies import get_db
 from app.models.violation import ViolationType
 from app.schemas.frame import DetectedViolation, FrameAnalysisRequest, FrameAnalysisResponse
+from app.services.frame_persistence import persist_frame_analysis, reset_absent_streak
 from app.services.session_service import SessionService
-from app.services.storage import upload_violation_frame
+from app.services.storage import upload_identity_violation_capture
 from app.services.vision.identity_verifier import IdentityVerifier
 from app.services.violation_service import ViolationService
 
@@ -43,33 +44,42 @@ def analyze_frame(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-    response_violations: list[DetectedViolation] = [
-        DetectedViolation(
-            violation_type=v.violation_type,
-            confidence=v.confidence,
-            description=v.description,
-        )
-        for v in result.violations
-    ]
-
+    response_violations: list[DetectedViolation] = []
     violations_persisted = False
-    if payload.session_id and result.violations:
+
+    if payload.session_id:
         session = SessionService(db).get_by_id(payload.session_id)
         if session and session.status.value == "active":
-            frame_snapshot_url = upload_violation_frame(
+            frame_bgr = _decode_frame_to_bgr(payload.frame_base64)
+            student_id = payload.student_id or session.student_id
+            persisted = persist_frame_analysis(
+                db,
                 payload.session_id,
+                student_id,
                 frame_bytes,
-                content_type="image/jpeg",
+                frame_bgr,
+                result,
             )
-            violation_svc = ViolationService(db)
-            for v in result.violations:
-                violation_svc.record(
-                    session_id=payload.session_id,
+            response_violations = [
+                DetectedViolation(
                     violation_type=v.violation_type,
                     confidence=v.confidence,
-                    frame_snapshot=frame_snapshot_url,
+                    description=v.description,
                 )
-            violations_persisted = True
+                for v in persisted
+            ]
+            violations_persisted = len(persisted) > 0
+
+    if not response_violations:
+        response_violations = [
+            DetectedViolation(
+                violation_type=v.violation_type,
+                confidence=v.confidence,
+                description=v.description,
+            )
+            for v in result.violations
+            if v.violation_type.value != "no_person"
+        ]
 
     return FrameAnalysisResponse(
         person_count=result.person_count,
@@ -252,11 +262,13 @@ def check_identity(
     violation_recorded = False
 
     if not is_same:
+        frame_bytes = IdentityRequest._decode(payload.frame_base64)
+        capture_url = upload_identity_violation_capture(payload.session_id, frame_bytes)
         ViolationService(db).record(
             session_id=payload.session_id,
             violation_type=ViolationType.IDENTITY_MISMATCH,
             confidence=round(1.0 - similarity, 4),
-            frame_snapshot=None,
+            frame_snapshot=capture_url,
         )
         violation_recorded = True
 

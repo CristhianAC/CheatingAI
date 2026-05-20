@@ -36,6 +36,36 @@ Para probar solo el flujo de **supervisión por cámara** y el frontend SvelteKi
 
 El archivo `docker-compose.yml` puede incluir también **Redis, worker Celery, Flower y la API de plagio** (puerto 8000); no son necesarios para el demo anterior de solo proctoring.
 
+**Stack completo (auth, exámenes, proctoring):**
+
+```bash
+docker compose up --build redis api proctoring
+cd client && npm install && npm run dev
+```
+
+Comprueba que la API responde: `curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/docs` (debe ser `200`).
+
+### Troubleshooting — `tenant/user postgres.xxx not found`
+
+Si en los logs de Docker aparece:
+
+```text
+FATAL: (ENOTFOUND) tenant/user postgres.[PROJECT-REF] not found
+Application startup failed
+```
+
+**No es un bug de la aplicación.** Significa que `DATABASE_URL` en tu `.env` no coincide con el proyecto Supabase (URI del pooler mal copiada, `PROJECT-REF` incorrecto, región distinta, o proyecto pausado).
+
+Qué hacer:
+
+1. Supabase Dashboard → **Settings → Database** → copia de nuevo la cadena de conexión (directa o pooler según el modo que elijas).
+2. Para desarrollo, suele ser más simple la conexión **directa**: host `db.[ref].supabase.co`, usuario `postgres`, puerto `5432`.
+3. Si usas **pooler**, el usuario debe ser `postgres.[PROJECT-REF]` y el host/puerto deben ser los del dashboard (Session = 5432, Transaction = 6543).
+4. Reinicia: `docker compose down` y `docker compose up --build redis api proctoring`.
+5. Alternativa local sin Supabase: en `.env`, `DATABASE_URL=sqlite:///./data/cheating_ai.db` (datos distintos a la nube).
+
+Si el frontend muestra errores de conexión al hacer login mientras la API está caída, revisa primero que los contenedores `cheating_ai_api` muestren `Application startup complete`.
+
 ### Pruebas automáticas del servicio de proctoring
 
 Con un entorno virtual que tenga instaladas las dependencias de `proctoring_service/requirements.txt` y `proctoring_service/requirements-dev.txt`:

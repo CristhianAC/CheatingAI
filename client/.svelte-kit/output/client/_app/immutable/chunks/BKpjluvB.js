@@ -1,0 +1,1 @@
+import{w as r}from"./DvAvf9oM.js";const t="procto_exam";function n(){if(typeof window>"u")return null;const e=sessionStorage.getItem(t);if(!e)return null;try{return JSON.parse(e)}catch{return sessionStorage.removeItem(t),null}}const o=r(n());typeof window<"u"&&o.subscribe(e=>{if(!e){sessionStorage.removeItem(t);return}sessionStorage.setItem(t,JSON.stringify(e))});export{o as e};

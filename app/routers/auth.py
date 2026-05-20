@@ -33,6 +33,23 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
+    pwd = payload.password or ""
+    special_re = r"""[!@#$%^&*()_\+\-=\[\]{}|;':",\.\/<>?]"""
+    if (
+        len(pwd) < 8
+        or not any(c.isupper() for c in pwd)
+        or not any(c.islower() for c in pwd)
+        or not any(c.isdigit() for c in pwd)
+        or not __import__("re").search(special_re, pwd)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "La contraseña debe tener mínimo 8 caracteres e incluir: "
+                "mayúscula, minúscula, número y carácter especial."
+            ),
+        )
+
     user = User(
         email=payload.email,
         password_hash=pwd_context.hash(payload.password),

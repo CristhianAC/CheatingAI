@@ -5,11 +5,13 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import String, cast, func
 from sqlalchemy.orm import Session
 
 from app.models.session import ProctoringSession, SessionStatus
 from app.models.violation import ViolationEvent
+from app.models.user import User
+from app.models.exam import Exam
 from app.schemas.session import (
     ExamSessionListItem,
     ExamSummary,
@@ -127,13 +129,33 @@ class SessionService:
         return summaries
 
     def list_by_exam(self, exam_id: str) -> list[ExamSessionListItem]:
-        sessions = (
-            self.db.query(ProctoringSession)
+        rows = (
+            self.db.query(
+                ProctoringSession,
+                User.full_name.label("student_name"),
+                User.email.label("student_email"),
+            )
+            .outerjoin(User, cast(User.id, String) == ProctoringSession.student_id)
             .filter(ProctoringSession.exam_id == exam_id)
             .order_by(ProctoringSession.started_at.desc())
             .all()
         )
-        return [ExamSessionListItem.model_validate(s) for s in sessions]
+
+        out: list[ExamSessionListItem] = []
+        for session, student_name, student_email in rows:
+            out.append(
+                ExamSessionListItem(
+                    id=session.id,
+                    exam_id=session.exam_id,
+                    student_id=session.student_id,
+                    student_name=student_name or session.student_id,
+                    student_email=student_email,
+                    status=session.status,
+                    started_at=session.started_at,
+                    ended_at=session.ended_at,
+                )
+            )
+        return out
 
     def get_report(self, session_id: str) -> SessionReport:
         session = self.get_by_id_or_404(session_id)
@@ -187,10 +209,26 @@ class SessionService:
             behavioral_notes=assessment.behavioral_notes,
         )
 
+        # Enriquecer con datos legibles (fallback a IDs si legacy)
+        student = (
+            self.db.query(User)
+            .filter(cast(User.id, String) == session.student_id)
+            .first()
+        )
+        exam = (
+            self.db.query(Exam)
+            .filter(cast(Exam.id, String) == session.exam_id)
+            .first()
+        )
+
         return SessionReport(
             id=session.id,
             exam_id=session.exam_id,
             student_id=session.student_id,
+            student_name=(student.full_name if student else session.student_id),
+            student_email=(student.email if student else None),
+            exam_name=(exam.name if exam else session.exam_id),
+            exam_code=(exam.code if exam else None),
             status=session.status,
             started_at=session.started_at,
             ended_at=session.ended_at,

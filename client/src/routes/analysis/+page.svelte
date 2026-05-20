@@ -31,12 +31,12 @@
 />
 
 {#if $submissions.length === 0}
-  <div class="alert-info card">
-    No hay entregas cargadas. Ve a <a href="/submissions">Entregas</a> para crear algunas primero.
+  <div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
+    No hay entregas cargadas. Ve a <a href="/submissions" class="font-semibold text-primary hover:underline">Entregas</a> para crear algunas primero.
   </div>
 {/if}
 
-<div class="analysis-grid">
+<div class="analysis-grid grid gap-6 lg:grid-cols-2">
   <PairwiseForm />
   <BatchForm on:completed={goToJobs} on:goToJobs={goToJobs} />
 </div>

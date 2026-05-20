@@ -81,6 +81,8 @@ class ExamSessionListItem(BaseModel):
     id: str
     exam_id: str
     student_id: str
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
     status: SessionStatus
     started_at: datetime
     ended_at: Optional[datetime] = None
@@ -92,6 +94,10 @@ class SessionReport(BaseModel):
     id: str
     exam_id: str
     student_id: str
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
+    exam_name: Optional[str] = None
+    exam_code: Optional[str] = None
     status: SessionStatus
     started_at: datetime
     ended_at: Optional[datetime] = None

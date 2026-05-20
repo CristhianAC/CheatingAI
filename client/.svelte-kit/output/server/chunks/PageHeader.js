@@ -1,19 +1,35 @@
-import { c as create_ssr_component, e as escape, j as compute_slots } from "./ssr.js";
-const css = {
-  code: ".page-header.svelte-1kh9dvo{display:flex;align-items:flex-start;justify-content:space-between;gap:1.25rem;margin-bottom:2.25rem;flex-wrap:wrap;padding-bottom:1.25rem;border-bottom:1px solid var(--procto-border, rgba(0, 0, 0, 0.08))}.page-header__focus.svelte-1kh9dvo{flex:1;min-width:min(100%, 280px);border-left:4px solid var(--procto-accent, #0071e3);padding-left:1.125rem;margin-left:2px}.page-header__eyebrow.svelte-1kh9dvo{margin:0 0 0.5rem;font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--procto-accent, #0071e3)}.page-header__title.svelte-1kh9dvo{font-size:clamp(1.75rem, 4vw, 2.125rem);font-weight:700;letter-spacing:-0.045em;color:var(--procto-text, #1d1d1f);margin:0 0 0.5rem;line-height:1.08}.page-header__subtitle.svelte-1kh9dvo{margin:0;font-size:1rem;line-height:1.5;color:var(--procto-text-secondary, #6e6e73);max-width:40rem}.page-header__actions.svelte-1kh9dvo{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;padding-top:0.15rem}",
-  map: `{"version":3,"file":"PageHeader.svelte","sources":["PageHeader.svelte"],"sourcesContent":["<script>\\n  /** Título de página alineado al sistema visual Procto */\\n  export let title = '';\\n  /** Subtítulo opcional */\\n  export let subtitle = '';\\n  /**\\n   * Etiqueta corta que ancla el foco del contexto (ej. área del producto).\\n   */\\n  export let focus = '';\\n<\/script>\\n\\n<header class=\\"page-header\\">\\n  <div class=\\"page-header__focus\\">\\n    {#if focus}\\n      <p class=\\"page-header__eyebrow\\">{focus}</p>\\n    {/if}\\n    <h1 class=\\"page-header__title\\">{title}</h1>\\n    {#if subtitle}\\n      <p class=\\"page-header__subtitle\\">{subtitle}</p>\\n    {/if}\\n  </div>\\n  {#if $$slots.actions}\\n    <div class=\\"page-header__actions\\">\\n      <slot name=\\"actions\\" />\\n    </div>\\n  {/if}\\n</header>\\n\\n<style>\\n  .page-header {\\n    display: flex;\\n    align-items: flex-start;\\n    justify-content: space-between;\\n    gap: 1.25rem;\\n    margin-bottom: 2.25rem;\\n    flex-wrap: wrap;\\n    padding-bottom: 1.25rem;\\n    border-bottom: 1px solid var(--procto-border, rgba(0, 0, 0, 0.08));\\n  }\\n\\n  .page-header__focus {\\n    flex: 1;\\n    min-width: min(100%, 280px);\\n    border-left: 4px solid var(--procto-accent, #0071e3);\\n    padding-left: 1.125rem;\\n    margin-left: 2px;\\n  }\\n\\n  .page-header__eyebrow {\\n    margin: 0 0 0.5rem;\\n    font-size: 0.6875rem;\\n    font-weight: 600;\\n    text-transform: uppercase;\\n    letter-spacing: 0.14em;\\n    color: var(--procto-accent, #0071e3);\\n  }\\n\\n  .page-header__title {\\n    font-size: clamp(1.75rem, 4vw, 2.125rem);\\n    font-weight: 700;\\n    letter-spacing: -0.045em;\\n    color: var(--procto-text, #1d1d1f);\\n    margin: 0 0 0.5rem;\\n    line-height: 1.08;\\n  }\\n\\n  .page-header__subtitle {\\n    margin: 0;\\n    font-size: 1rem;\\n    line-height: 1.5;\\n    color: var(--procto-text-secondary, #6e6e73);\\n    max-width: 40rem;\\n  }\\n\\n  .page-header__actions {\\n    display: flex;\\n    align-items: center;\\n    gap: 0.5rem;\\n    flex-shrink: 0;\\n    padding-top: 0.15rem;\\n  }\\n</style>\\n"],"names":[],"mappings":"AA6BE,2BAAa,CACX,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,UAAU,CACvB,eAAe,CAAE,aAAa,CAC9B,GAAG,CAAE,OAAO,CACZ,aAAa,CAAE,OAAO,CACtB,SAAS,CAAE,IAAI,CACf,cAAc,CAAE,OAAO,CACvB,aAAa,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAAC,oBAAoB,CACnE,CAEA,kCAAoB,CAClB,IAAI,CAAE,CAAC,CACP,SAAS,CAAE,IAAI,IAAI,CAAC,CAAC,KAAK,CAAC,CAC3B,WAAW,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAAC,QAAQ,CAAC,CACpD,YAAY,CAAE,QAAQ,CACtB,WAAW,CAAE,GACf,CAEA,oCAAsB,CACpB,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,MAAM,CAClB,SAAS,CAAE,SAAS,CACpB,WAAW,CAAE,GAAG,CAChB,cAAc,CAAE,SAAS,CACzB,cAAc,CAAE,MAAM,CACtB,KAAK,CAAE,IAAI,eAAe,CAAC,QAAQ,CACrC,CAEA,kCAAoB,CAClB,SAAS,CAAE,MAAM,OAAO,CAAC,CAAC,GAAG,CAAC,CAAC,QAAQ,CAAC,CACxC,WAAW,CAAE,GAAG,CAChB,cAAc,CAAE,QAAQ,CACxB,KAAK,CAAE,IAAI,aAAa,CAAC,QAAQ,CAAC,CAClC,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,MAAM,CAClB,WAAW,CAAE,IACf,CAEA,qCAAuB,CACrB,MAAM,CAAE,CAAC,CACT,SAAS,CAAE,IAAI,CACf,WAAW,CAAE,GAAG,CAChB,KAAK,CAAE,IAAI,uBAAuB,CAAC,QAAQ,CAAC,CAC5C,SAAS,CAAE,KACb,CAEA,oCAAsB,CACpB,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,MAAM,CACnB,GAAG,CAAE,MAAM,CACX,WAAW,CAAE,CAAC,CACd,WAAW,CAAE,OACf"}`
-};
-const PageHeader = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $$slots = compute_slots(slots);
-  let { title = "" } = $$props;
-  let { subtitle = "" } = $$props;
-  let { focus = "" } = $$props;
-  if ($$props.title === void 0 && $$bindings.title && title !== void 0) $$bindings.title(title);
-  if ($$props.subtitle === void 0 && $$bindings.subtitle && subtitle !== void 0) $$bindings.subtitle(subtitle);
-  if ($$props.focus === void 0 && $$bindings.focus && focus !== void 0) $$bindings.focus(focus);
-  $$result.css.add(css);
-  return `<header class="page-header svelte-1kh9dvo"><div class="page-header__focus svelte-1kh9dvo">${focus ? `<p class="page-header__eyebrow svelte-1kh9dvo">${escape(focus)}</p>` : ``} <h1 class="page-header__title svelte-1kh9dvo">${escape(title)}</h1> ${subtitle ? `<p class="page-header__subtitle svelte-1kh9dvo">${escape(subtitle)}</p>` : ``}</div> ${$$slots.actions ? `<div class="page-header__actions svelte-1kh9dvo">${slots.actions ? slots.actions({}) : ``}</div>` : ``} </header>`;
-});
+import { ao as sanitize_slots, k as fallback, e as escape_html, f as slot, b as bind_props } from "./index2.js";
+function PageHeader($$renderer, $$props) {
+  const $$slots = sanitize_slots($$props);
+  let title = fallback($$props["title"], "");
+  let subtitle = fallback($$props["subtitle"], "");
+  let focus = fallback($$props["focus"], "");
+  $$renderer.push(`<header class="mb-8 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6"><div class="min-w-[min(100%,280px)] flex-1 border-l-4 border-primary pl-4">`);
+  if (focus) {
+    $$renderer.push("<!--[0-->");
+    $$renderer.push(`<p class="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">${escape_html(focus)}</p>`);
+  } else {
+    $$renderer.push("<!--[-1-->");
+  }
+  $$renderer.push(`<!--]--> <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">${escape_html(title)}</h1> `);
+  if (subtitle) {
+    $$renderer.push("<!--[0-->");
+    $$renderer.push(`<p class="mt-2 max-w-2xl text-base text-muted-foreground">${escape_html(subtitle)}</p>`);
+  } else {
+    $$renderer.push("<!--[-1-->");
+  }
+  $$renderer.push(`<!--]--></div> `);
+  if ($$slots.actions) {
+    $$renderer.push("<!--[0-->");
+    $$renderer.push(`<div class="flex shrink-0 items-center gap-2 pt-1"><!--[-->`);
+    slot($$renderer, $$props, "actions", {});
+    $$renderer.push(`<!--]--></div>`);
+  } else {
+    $$renderer.push("<!--[-1-->");
+  }
+  $$renderer.push(`<!--]--></header>`);
+  bind_props($$props, { title, subtitle, focus });
+}
 export {
   PageHeader as P
 };

@@ -1,12 +1,14 @@
-import { c as create_ssr_component } from "../../chunks/ssr.js";
+import "clsx";
 import "@sveltejs/kit/internal";
 import "../../chunks/exports.js";
 import "../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
+import "../../chunks/root.js";
 import "../../chunks/state.svelte.js";
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return ``;
-});
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+  });
+}
 export {
-  Page as default
+  _page as default
 };

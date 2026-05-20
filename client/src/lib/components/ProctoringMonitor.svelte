@@ -1,7 +1,9 @@
 <script>
   import { onDestroy, createEventDispatcher } from 'svelte';
-  import { startSession, endSession, analyzeFrame, getSessionStats, calibrateFrame, reportBrowserEvent, registerIdentity, checkIdentity } from '$lib/proctoring-api.js';
+  import { startSession, endSession, analyzeFrame, getSessionStats, calibrateFrame, reportBrowserEvent, registerIdentity } from '$lib/proctoring-api.js';
   import { showToast, showError } from '$lib/stores.js';
+  import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/components/ui/badge';
 
   export let examId = '';
   export let studentId = '';
@@ -22,8 +24,6 @@
   let identityStatus = 'none';
   let identityError = '';
   let identityRegistering = false;
-  let lastIdentityCheck = 0;
-  const IDENTITY_CHECK_INTERVAL_MS = 30_000;
   /** Registro automático de identidad ~2.5 s tras iniciar (si no hay violaciones graves). */
   const IDENTITY_AUTO_DELAY_MS = 2500;
   /** Un segundo intento automático si el primero se pospuso por señales bloqueantes. */
@@ -147,27 +147,11 @@
       if (calibMode) {
         calibData = await calibrateFrame(videoEl);
       } else {
-        const result = await analyzeFrame(videoEl, sessionId, 0.7);
+        const result = await analyzeFrame(videoEl, sessionId, 0.7, studentId);
         latestResult = result;
         if (result.violations.length > 0) {
           recentViolations = [...result.violations, ...recentViolations].slice(0, 20);
           dispatch('violation', { violations: result.violations });
-        }
-
-        // Periodic identity check (every 30s, only when identity is registered)
-        if (identityStatus === 'registered' && Date.now() - lastIdentityCheck >= IDENTITY_CHECK_INTERVAL_MS) {
-          lastIdentityCheck = Date.now();
-          checkIdentity(videoEl, sessionId).then(res => {
-            if (!res.identity_verified) {
-              const violation = {
-                violation_type: 'identity_mismatch',
-                confidence: res.similarity != null ? 1 - res.similarity : 1,
-                description: res.message,
-              };
-              recentViolations = [violation, ...recentViolations].slice(0, 20);
-              dispatch('violation', { violations: [violation] });
-            }
-          }).catch(() => {});
         }
       }
     } catch (e) {
@@ -254,9 +238,9 @@
   });
 </script>
 
-<div class="proctor-card">
-  <div class="proctor-card__header">
-    <h2 class="proctor-card__title">Supervisión por cámara</h2>
+<div class="proctor-card rounded-xl border border-border bg-card p-5 shadow-sm">
+  <div class="proctor-card__header mb-4 flex flex-wrap items-center justify-between gap-3">
+    <h2 class="proctor-card__title text-lg font-semibold">Supervisión por cámara</h2>
     {#if isActive}
       <label class="toggle">
         <input type="checkbox" bind:checked={calibMode} />
@@ -266,21 +250,13 @@
   </div>
 
   <!-- svelte-ignore a11y-media-has-caption -->
-  <video bind:this={videoEl} class="webcam" muted playsinline></video>
+  <video bind:this={videoEl} class="webcam mb-4 aspect-video w-full rounded-lg bg-zinc-900 object-cover" muted playsinline></video>
 
-  <div class="controls">
+  <div class="controls mb-4 flex gap-2">
     {#if !isActive}
-      <button
-        class="btn btn--primary"
-        on:click={startProctoring}
-        disabled={!examId || !studentId}
-      >
-        Iniciar Supervisión
-      </button>
+      <Button onclick={startProctoring} disabled={!examId || !studentId}>Iniciar supervisión</Button>
     {:else}
-      <button class="btn btn--danger" on:click={stopProctoring}>
-        Detener Supervisión
-      </button>
+      <Button variant="destructive" onclick={stopProctoring}>Detener supervisión</Button>
     {/if}
   </div>
 
@@ -385,10 +361,10 @@
   {/if}
 
   {#if recentViolations.length > 0 && !calibMode}
-    <div class="violations">
-      <h3 class="violations__title">Señales recientes</h3>
+    <div class="violations space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+      <h3 class="violations__title mb-2 text-sm font-semibold">Señales recientes</h3>
       {#each recentViolations.slice(0, 8) as v}
-        <div class="violation violation--{v.violation_type}">
+        <div class="violation violation--{v.violation_type} rounded-lg border border-border bg-card p-3 text-sm">
           <strong class="violation__type">{violationLabel(v.violation_type)}</strong>
           <span class="violation__conf">{(v.confidence * 100).toFixed(0)}% confianza</span>
           <span class="violation__desc">{v.description}</span>

@@ -118,7 +118,7 @@ export function checkIdentity(videoEl, sessionId) {
  * @param {string|null} sessionId - Active session ID or null (no persistence)
  * @param {number} quality - JPEG quality 0.0-1.0 (default 0.7)
  */
-export async function analyzeFrame(videoEl, sessionId = null, quality = 0.7) {
+export async function analyzeFrame(videoEl, sessionId = null, quality = 0.7, studentId = null) {
   const canvas = document.createElement('canvas');
   canvas.width = videoEl.videoWidth || 640;
   canvas.height = videoEl.videoHeight || 480;
@@ -132,6 +132,7 @@ export async function analyzeFrame(videoEl, sessionId = null, quality = 0.7) {
 
   return request('POST', `${PROCTOR_BASE}/analyze-frame`, {
     session_id: sessionId,
+    student_id: studentId || null,
     frame_base64: base64,
   });
 }

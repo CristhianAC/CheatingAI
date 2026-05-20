@@ -2,6 +2,7 @@
   import JobCard from '$lib/components/JobCard.svelte';
   import ResultsTable from '$lib/components/ResultsTable.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import { Button } from '$lib/components/ui/button';
   import { listJobs, getJobStatus } from '$lib/api.js';
   import { showError } from '$lib/stores.js';
   import { onMount, onDestroy } from 'svelte';
@@ -63,25 +64,25 @@
   title="Trabajos en cola"
   subtitle="Historial de análisis por lotes. Elige un trabajo finalizado para ver el detalle de resultados."
 >
-  <div slot="actions">
-    <button class="btn btn--secondary" type="button" on:click={loadJobs} disabled={loading}>
+  <svelte:fragment slot="actions">
+    <Button variant="outline" size="sm" onclick={loadJobs} disabled={loading}>
       {loading ? 'Cargando…' : 'Actualizar'}
-    </button>
-  </div>
+    </Button>
+  </svelte:fragment>
 </PageHeader>
 
 {#if hasRunning}
-  <div class="alert-running card">
+  <div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
     Hay análisis en progreso. Esta vista se actualiza sola cada pocos segundos.
   </div>
 {/if}
 
 {#if jobs.length === 0 && !loading}
-  <div class="card empty">
-    No hay trabajos todavía. Ve a <a href="/analysis">Análisis</a> para lanzar uno.
+  <div class="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">
+    No hay trabajos todavía. Ve a <a href="/analysis" class="font-semibold text-primary hover:underline">Análisis</a> para lanzar uno.
   </div>
 {:else}
-  <div class="jobs-layout">
+  <div class="jobs-layout grid gap-6 lg:grid-cols-[380px_1fr]">
     <div class="jobs-list">
       {#each jobs as job (job.id)}
         <div
@@ -97,12 +98,12 @@
 
     <div class="results-panel">
       {#if selectedJobId}
-        <div class="card">
-          <h2 class="card__title">Resultados</h2>
+        <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h2 class="mb-4 text-lg font-semibold">Resultados</h2>
           <ResultsTable bind:this={resultsRef} jobId={selectedJobId} />
         </div>
       {:else}
-        <div class="card select-hint">
+        <div class="rounded-xl border border-dashed border-border bg-muted/20 p-12 text-center text-sm text-muted-foreground">
           <p>Selecciona un trabajo completado en la lista para ver sus resultados.</p>
         </div>
       {/if}

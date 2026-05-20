@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
 from app.database import Base, engine
@@ -30,6 +31,12 @@ def _apply_migrations(db_engine) -> None:
 
 settings = get_settings()
 
+_DB_STARTUP_HINT = (
+    "No se pudo conectar a la base de datos. Revisa DATABASE_URL en .env "
+    "(Supabase: conexión directa db.[ref].supabase.co o pooler con usuario "
+    "postgres.[ref] y host/puerto del dashboard). Ver README troubleshooting."
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,11 +47,12 @@ async def lifespan(app: FastAPI):
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
-    # Crear todas las tablas al arrancar
-    Base.metadata.create_all(bind=engine)
-
-    # Migración incremental: añadir columnas nuevas si la tabla ya existía
-    _apply_migrations(engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        _apply_migrations(engine)
+    except OperationalError as exc:
+        logger.error("%s Detalle: %s", _DB_STARTUP_HINT, exc)
+        raise
 
     # Inicializar VisionDetector una sola vez (carga de modelos MediaPipe es costosa)
     app.state.detector = VisionDetector()

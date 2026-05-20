@@ -1,22 +1,51 @@
-import { c as create_ssr_component, v as validate_component } from "../../../chunks/ssr.js";
+import { a as attributes, c as clsx, b as bind_props, j as head } from "../../../chunks/index2.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-const css = {
-  code: ".profile-page.svelte-10o94en{max-width:520px;margin:0 auto}.profile-page__info.svelte-10o94en{color:var(--procto-text-secondary);font-size:0.95rem}.profile-page__error.svelte-10o94en{color:#b42318;font-size:0.9rem}.profile-page__hint.svelte-10o94en{color:var(--procto-text-secondary);font-size:0.85rem;margin-bottom:1rem}.profile-card__value.svelte-10o94en{margin:0;font-size:0.95rem;color:var(--procto-text)}.profile-card__rule.svelte-10o94en{margin:1.25rem 0;border:none;border-top:1px solid var(--procto-border)}.profile-card__section-title.svelte-10o94en{font-size:0.95rem;font-weight:600;margin:0 0 1rem;color:var(--procto-text)}.profile-card__avatar.svelte-10o94en{border-radius:50%;object-fit:cover;display:block;margin-bottom:1rem}.profile-card__video.svelte-10o94en{width:100%;border-radius:var(--procto-radius-sm);margin-bottom:0.75rem;background:#111;aspect-ratio:4 / 3}.profile-card__upload-msg.svelte-10o94en{margin-top:0.75rem;font-size:0.85rem;color:var(--procto-text-secondary)}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import { onMount } from 'svelte';\\n  import { get } from 'svelte/store';\\n  import PageHeader from '$lib/components/PageHeader.svelte';\\n  import { authStore } from '$lib/auth.js';\\n\\n  const API_BASE = '/api/v1';\\n\\n  let user = null;\\n  let loading = true;\\n  let loadError = '';\\n  let capturing = false;\\n  let videoEl;\\n  let stream;\\n  let uploadMsg = '';\\n\\n  async function loadProfile() {\\n    loading = true;\\n    loadError = '';\\n    const token = get(authStore)?.token;\\n    if (!token) {\\n      loadError = 'No hay sesión activa.';\\n      loading = false;\\n      return;\\n    }\\n    try {\\n      const res = await fetch(\`\${API_BASE}/users/me\`, {\\n        headers: { Authorization: \`Bearer \${token}\` },\\n      });\\n      if (!res.ok) {\\n        const data = await res.json().catch(() => ({}));\\n        throw new Error(data?.detail || \`Error \${res.status}\`);\\n      }\\n      user = await res.json();\\n    } catch (e) {\\n      loadError = e?.message ?? 'No se pudo cargar el perfil';\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n\\n  async function startCapture() {\\n    capturing = true;\\n    uploadMsg = '';\\n    stream = await navigator.mediaDevices.getUserMedia({ video: true });\\n    videoEl.srcObject = stream;\\n    await videoEl.play();\\n  }\\n\\n  async function takePhoto() {\\n    const canvas = document.createElement('canvas');\\n    canvas.width = videoEl.videoWidth;\\n    canvas.height = videoEl.videoHeight;\\n    canvas.getContext('2d').drawImage(videoEl, 0, 0);\\n\\n    if (stream) {\\n      stream.getTracks().forEach((t) => t.stop());\\n    }\\n    capturing = false;\\n\\n    const token = get(authStore)?.token;\\n    const blob = await new Promise((resolve) =>\\n      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92)\\n    );\\n    if (!blob || !token) return;\\n\\n    const fd = new FormData();\\n    fd.append('file', blob, 'profile.jpg');\\n\\n    const res = await fetch(\`\${API_BASE}/users/me/photo\`, {\\n      method: 'POST',\\n      headers: { Authorization: \`Bearer \${token}\` },\\n      body: fd,\\n    });\\n\\n    if (res.ok) {\\n      const data = await res.json();\\n      user = { ...user, photo_url: data.photo_url };\\n      uploadMsg = '✓ Foto guardada como referencia';\\n    } else {\\n      const data = await res.json().catch(() => ({}));\\n      uploadMsg = \`✗ \${data?.detail || 'Error al guardar la foto'}\`;\\n    }\\n  }\\n\\n  onMount(loadProfile);\\n<\/script>\\n\\n<svelte:head>\\n  <title>Mi perfil | Procto</title>\\n</svelte:head>\\n\\n<div class=\\"profile-page\\">\\n  <PageHeader\\n    focus=\\"Cuenta\\"\\n    title=\\"Mi perfil\\"\\n    subtitle=\\"Datos de tu cuenta y foto de referencia para supervisión.\\"\\n  />\\n\\n  {#if loading}\\n    <p class=\\"profile-page__info\\">Cargando perfil…</p>\\n  {:else if loadError}\\n    <p class=\\"profile-page__error\\">{loadError}</p>\\n  {:else if user}\\n    <section class=\\"card profile-card\\">\\n      <div class=\\"field\\">\\n        <label for=\\"ro-name\\">Nombre completo</label>\\n        <p id=\\"ro-name\\" class=\\"profile-card__value\\">{user.full_name}</p>\\n      </div>\\n      <div class=\\"field\\">\\n        <label for=\\"ro-email\\">Correo electrónico</label>\\n        <p id=\\"ro-email\\" class=\\"profile-card__value\\">{user.email}</p>\\n      </div>\\n      <div class=\\"field\\">\\n        <label for=\\"ro-role\\">Rol</label>\\n        <p id=\\"ro-role\\" class=\\"profile-card__value\\">\\n          {user.role === 'STUDENT' ? 'Estudiante' : 'Profesor'}\\n        </p>\\n      </div>\\n\\n      {#if user.role === 'STUDENT'}\\n        <hr class=\\"profile-card__rule\\" />\\n\\n        <h2 class=\\"profile-card__section-title\\">Foto de referencia</h2>\\n\\n        {#if user.photo_url}\\n          <img\\n            class=\\"profile-card__avatar\\"\\n            src={user.photo_url}\\n            alt=\\"Foto de referencia\\"\\n            width=\\"120\\"\\n            height=\\"120\\"\\n          />\\n        {:else}\\n          <p class=\\"profile-page__hint\\">Sin foto de referencia aún.</p>\\n        {/if}\\n\\n        {#if capturing}\\n          <!-- svelte-ignore a11y-media-has-caption -->\\n          <video bind:this={videoEl} class=\\"profile-card__video\\" muted playsinline />\\n          <button class=\\"btn btn--primary\\" type=\\"button\\" on:click={takePhoto}>📸 Tomar foto</button>\\n        {:else}\\n          <button class=\\"btn btn--secondary\\" type=\\"button\\" on:click={startCapture}>\\n            {user.photo_url ? '🔄 Actualizar foto' : '📷 Capturar foto de referencia'}\\n          </button>\\n        {/if}\\n\\n        {#if uploadMsg}\\n          <p class=\\"profile-card__upload-msg\\">{uploadMsg}</p>\\n        {/if}\\n      {/if}\\n    </section>\\n  {/if}\\n</div>\\n\\n<style>\\n  .profile-page {\\n    max-width: 520px;\\n    margin: 0 auto;\\n  }\\n\\n  .profile-page__info {\\n    color: var(--procto-text-secondary);\\n    font-size: 0.95rem;\\n  }\\n\\n  .profile-page__error {\\n    color: #b42318;\\n    font-size: 0.9rem;\\n  }\\n\\n  .profile-page__hint {\\n    color: var(--procto-text-secondary);\\n    font-size: 0.85rem;\\n    margin-bottom: 1rem;\\n  }\\n\\n  .profile-card__value {\\n    margin: 0;\\n    font-size: 0.95rem;\\n    color: var(--procto-text);\\n  }\\n\\n  .profile-card__rule {\\n    margin: 1.25rem 0;\\n    border: none;\\n    border-top: 1px solid var(--procto-border);\\n  }\\n\\n  .profile-card__section-title {\\n    font-size: 0.95rem;\\n    font-weight: 600;\\n    margin: 0 0 1rem;\\n    color: var(--procto-text);\\n  }\\n\\n  .profile-card__avatar {\\n    border-radius: 50%;\\n    object-fit: cover;\\n    display: block;\\n    margin-bottom: 1rem;\\n  }\\n\\n  .profile-card__video {\\n    width: 100%;\\n    border-radius: var(--procto-radius-sm);\\n    margin-bottom: 0.75rem;\\n    background: #111;\\n    aspect-ratio: 4 / 3;\\n  }\\n\\n  .profile-card__upload-msg {\\n    margin-top: 0.75rem;\\n    font-size: 0.85rem;\\n    color: var(--procto-text-secondary);\\n  }\\n</style>\\n"],"names":[],"mappings":"AA4JE,4BAAc,CACZ,SAAS,CAAE,KAAK,CAChB,MAAM,CAAE,CAAC,CAAC,IACZ,CAEA,kCAAoB,CAClB,KAAK,CAAE,IAAI,uBAAuB,CAAC,CACnC,SAAS,CAAE,OACb,CAEA,mCAAqB,CACnB,KAAK,CAAE,OAAO,CACd,SAAS,CAAE,MACb,CAEA,kCAAoB,CAClB,KAAK,CAAE,IAAI,uBAAuB,CAAC,CACnC,SAAS,CAAE,OAAO,CAClB,aAAa,CAAE,IACjB,CAEA,mCAAqB,CACnB,MAAM,CAAE,CAAC,CACT,SAAS,CAAE,OAAO,CAClB,KAAK,CAAE,IAAI,aAAa,CAC1B,CAEA,kCAAoB,CAClB,MAAM,CAAE,OAAO,CAAC,CAAC,CACjB,MAAM,CAAE,IAAI,CACZ,UAAU,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,eAAe,CAC3C,CAEA,2CAA6B,CAC3B,SAAS,CAAE,OAAO,CAClB,WAAW,CAAE,GAAG,CAChB,MAAM,CAAE,CAAC,CAAC,CAAC,CAAC,IAAI,CAChB,KAAK,CAAE,IAAI,aAAa,CAC1B,CAEA,oCAAsB,CACpB,aAAa,CAAE,GAAG,CAClB,UAAU,CAAE,KAAK,CACjB,OAAO,CAAE,KAAK,CACd,aAAa,CAAE,IACjB,CAEA,mCAAqB,CACnB,KAAK,CAAE,IAAI,CACX,aAAa,CAAE,IAAI,kBAAkB,CAAC,CACtC,aAAa,CAAE,OAAO,CACtB,UAAU,CAAE,IAAI,CAChB,YAAY,CAAE,CAAC,CAAC,CAAC,CAAC,CACpB,CAEA,wCAA0B,CACxB,UAAU,CAAE,OAAO,CACnB,SAAS,CAAE,OAAO,CAClB,KAAK,CAAE,IAAI,uBAAuB,CACpC"}`
-};
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  $$result.css.add(css);
-  return `${$$result.head += `<!-- HEAD_svelte-1azg06m_START -->${$$result.title = `<title>Mi perfil | Procto</title>`, ""}<!-- HEAD_svelte-1azg06m_END -->`, ""} <div class="profile-page svelte-10o94en">${validate_component(PageHeader, "PageHeader").$$render(
-    $$result,
-    {
+import { c as cn } from "../../../chunks/button.js";
+import "clsx";
+import "../../../chunks/badge.js";
+import "../../../chunks/alert.js";
+function Skeleton($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let {
+      ref = null,
+      class: className,
+      $$slots,
+      $$events,
+      ...restProps
+    } = $$props;
+    $$renderer2.push(`<div${attributes({
+      "data-slot": "skeleton",
+      class: clsx(cn("bg-muted rounded-md animate-pulse", className)),
+      ...restProps
+    })}></div>`);
+    bind_props($$props, { ref });
+  });
+}
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    head("maq4gq", $$renderer2, ($$renderer3) => {
+      $$renderer3.title(($$renderer4) => {
+        $$renderer4.push(`<title>Mi perfil | Procto</title>`);
+      });
+    });
+    $$renderer2.push(`<div class="mx-auto max-w-lg">`);
+    PageHeader($$renderer2, {
       focus: "Cuenta",
       title: "Mi perfil",
       subtitle: "Datos de tu cuenta y foto de referencia para supervisión."
-    },
-    {},
-    {}
-  )} ${`<p class="profile-page__info svelte-10o94en" data-svelte-h="svelte-jsq4qx">Cargando perfil…</p>`} </div>`;
-});
+    });
+    $$renderer2.push(`<!----> `);
+    {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<div class="space-y-3">`);
+      Skeleton($$renderer2, { class: "h-8 w-3/4" });
+      $$renderer2.push(`<!----> `);
+      Skeleton($$renderer2, { class: "h-24 w-full" });
+      $$renderer2.push(`<!----></div>`);
+    }
+    $$renderer2.push(`<!--]--></div>`);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

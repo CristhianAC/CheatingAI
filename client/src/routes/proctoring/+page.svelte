@@ -1,4 +1,5 @@
 <script>
+  import { browser } from '$app/environment';
   import { onMount, onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
@@ -9,6 +10,20 @@
   import { examStore } from '$lib/exam-store.js';
   import { endSession, getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
 
+  // Guard síncrono pre-render (evita flash antes de onMount)
+  if (browser) {
+    const auth = get(authStore);
+    if (!auth?.token) {
+      goto('/login');
+    } else if (auth.role === 'PROFESSOR') {
+      goto('/exams');
+    } else if (auth.role === 'STUDENT') {
+      const exam = get(examStore);
+      if (!exam?.id) goto('/join-exam');
+    }
+  }
+
+  let resolving = true;
   let examId = '';
   let studentId = '';
   let selectedExam = null;
@@ -182,6 +197,7 @@
     examId = exam.id;
 
     pollHandle = setInterval(tickPolling, 5000);
+    resolving = false;
   });
 
   onDestroy(() => {
@@ -193,96 +209,95 @@
   <title>Supervisión | Procto</title>
 </svelte:head>
 
-<div class="page">
-  <PageHeader
-    focus="Supervisión"
-    title="Examen supervisado"
-    subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
-  />
+{#if !resolving}
+  <div class="page space-y-6">
+    <PageHeader
+      focus="Supervisión"
+      title="Examen supervisado"
+      subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
+    />
 
-  {#if !isProfessor && selectedExam?.ends_at}
-    <div class="countdown-wrap" aria-label="Tiempo restante">
-      <ExamCountdown endsAt={selectedExam.ends_at} onExpired={handleExpired} />
-    </div>
-  {/if}
+    {#if !isProfessor && selectedExam?.ends_at}
+      <div class="countdown-wrap" aria-label="Tiempo restante">
+        <ExamCountdown endsAt={selectedExam.ends_at} onExpired={handleExpired} />
+      </div>
+    {/if}
 
-  <div class="layout">
-    <!-- Left: Config + Monitor -->
-    <div class="layout__left">
-      <div class="config-card">
-        <h2 class="config-card__title">Configuración de sesión</h2>
-        {#if isProfessor}
-          <label class="field">
-            <span class="field__label">Código de examen</span>
-            <input
-              class="field__input"
-              type="text"
-              bind:value={examId}
-              placeholder="ej. ABC123"
-            />
-          </label>
-          <label class="field">
-            <span class="field__label">Identificador del participante</span>
-            <input
-              class="field__input"
-              type="text"
-              bind:value={studentId}
-              placeholder="Tu nombre o email"
-            />
-          </label>
-        {:else}
-          <div class="field">
-            <span class="field__label">Examen seleccionado</span>
-            <p class="field__readonly">
-              {selectedExam?.name ?? 'Sin examen'} · Código {selectedExam?.code ?? '—'}
+    <div class="layout grid gap-6 lg:grid-cols-[1fr_340px]">
+      <!-- Left: Config + Monitor -->
+      <div class="layout__left space-y-4">
+        <div class="config-card rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h2 class="config-card__title">Configuración de sesión</h2>
+          {#if isProfessor}
+            <label class="field">
+              <span class="field__label">Código de examen</span>
+              <input
+                class="field__input"
+                type="text"
+                bind:value={examId}
+                placeholder="ej. ABC123"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Identificador del participante</span>
+              <input
+                class="field__input"
+                type="text"
+                bind:value={studentId}
+                placeholder="Tu nombre o email"
+              />
+            </label>
+          {:else}
+            <div class="field">
+              <span class="field__label">Examen seleccionado</span>
+              <p class="field__readonly">
+                {selectedExam?.name ?? 'Sin examen'} · Código {selectedExam?.code ?? '—'}
+              </p>
+            </div>
+            <div class="field">
+              <span class="field__label">Participante</span>
+              <p class="field__readonly">{studentId || 'No identificado'}</p>
+            </div>
+          {/if}
+        </div>
+
+        {#if hasExpired}
+          <section class="card finished-card">
+            <h2 class="card__title">Examen finalizado</h2>
+            <p class="finished-card__meta">
+              <strong>{selectedExam?.name ?? 'Examen'}</strong>
+              {#if expiredAt}
+                · Finalizado: {new Date(expiredAt).toLocaleString()}
+              {/if}
             </p>
-          </div>
-          <div class="field">
-            <span class="field__label">Participante</span>
-            <p class="field__readonly">{studentId || 'No identificado'}</p>
-          </div>
+            <p class="finished-card__hint">
+              El tiempo de la prueba se agotó. Esta sesión quedó cerrada y ya no es posible continuar.
+            </p>
+          </section>
+        {:else}
+          <ProctoringMonitor
+            {examId}
+            {studentId}
+            on:started={handleStarted}
+            on:violation={handleViolation}
+            on:ended={handleEnded}
+          />
         {/if}
       </div>
 
-      {#if hasExpired}
-        <section class="card finished-card">
-          <h2 class="card__title">Examen finalizado</h2>
-          <p class="finished-card__meta">
-            <strong>{selectedExam?.name ?? 'Examen'}</strong>
-            {#if expiredAt}
-              · Finalizado: {new Date(expiredAt).toLocaleString()}
-            {/if}
-          </p>
-          <p class="finished-card__hint">
-            El tiempo de la prueba se agotó. Esta sesión quedó cerrada y ya no es posible continuar.
-          </p>
-        </section>
-      {:else}
-        <ProctoringMonitor
-          {examId}
-          {studentId}
-          on:started={handleStarted}
-          on:violation={handleViolation}
-          on:ended={handleEnded}
-        />
-      {/if}
-    </div>
-
     <!-- Right: Monitor / Activities -->
-    <div class="layout__right">
+    <div class="layout__right space-y-4">
       {#if isProfessor}
-        <div class="tabs">
+        <div class="tabs flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
           <button
-            class="tabs__tab"
-            class:tabs__tab--active={activeTab === 'monitor'}
+            class="tabs__tab flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {activeTab === 'monitor' ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
             type="button"
             on:click={() => switchTab('monitor')}
           >
             Monitor en vivo
           </button>
           <button
-            class="tabs__tab"
-            class:tabs__tab--active={activeTab === 'activities'}
+            class="tabs__tab flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {activeTab === 'activities' ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
             type="button"
             on:click={() => switchTab('activities')}
           >
@@ -510,11 +525,16 @@
         {/if}
       {/if}
     </div>
+    </div>
   </div>
-</div>
+{:else}
+  <div class="proctoring-skeleton"></div>
+{/if}
 
 <style>
   .page { max-width: 1200px; margin: 0 auto; padding: 0 0 2rem; }
+
+  .proctoring-skeleton { height: 1px; }
 
   .countdown-wrap {
     display: flex;

@@ -53,8 +53,8 @@
   }
 </script>
 
-<form class="card" on:submit|preventDefault={handleSubmit}>
-  <h2 class="card__title">Nueva Submission</h2>
+<form class="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm" on:submit|preventDefault={handleSubmit}>
+  <h2 class="mb-4 text-lg font-semibold">Nueva entrega</h2>
 
   <div class="grid-2">
     <div class="field">

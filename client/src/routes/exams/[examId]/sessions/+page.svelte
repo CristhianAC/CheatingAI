@@ -6,6 +6,12 @@
   import PageHeader from '$lib/components/PageHeader.svelte';
   import { authStore } from '$lib/auth.js';
   import { getSessionsByExam } from '$lib/proctoring-api.js';
+  import * as Card from '$lib/components/ui/card';
+  import * as Table from '$lib/components/ui/table';
+  import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/components/ui/badge';
+  import * as Alert from '$lib/components/ui/alert';
+  import { Skeleton } from '$lib/components/ui/skeleton';
 
   let loading = false;
   let error = '';
@@ -55,139 +61,65 @@
   <title>Supervisiones del examen | Procto</title>
 </svelte:head>
 
-<section class="sessions-page">
-  <PageHeader
-    focus="Supervisión"
-    title="Supervisiones del examen"
-    subtitle={`Examen: ${examId || '—'}`}
-  >
-    <svelte:fragment slot="actions">
-      <button class="btn btn--ghost btn--sm" type="button" on:click={goBack}>← Volver a Exámenes</button>
-    </svelte:fragment>
-  </PageHeader>
+<PageHeader
+  focus="Supervisión"
+  title="Supervisiones del examen"
+  subtitle="Sesiones de estudiantes vinculadas a este examen."
+>
+  <svelte:fragment slot="actions">
+    <Button variant="outline" size="sm" onclick={goBack}>← Volver a exámenes</Button>
+  </svelte:fragment>
+</PageHeader>
 
-  <div class="card">
+<Card.Root class="rounded-xl">
+  <Card.Content class="pt-6">
     {#if error}
-      <p class="sessions-error">{error}</p>
+      <Alert.Root variant="destructive" class="mb-4">
+        <Alert.Description>{error}</Alert.Description>
+      </Alert.Root>
     {/if}
-
     {#if loading}
-      <p class="sessions-info">Cargando supervisiones...</p>
+      <div class="space-y-2">
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+      </div>
     {:else if sessions.length === 0}
-      <p class="sessions-info">Aún no hay supervisiones para este examen.</p>
+      <p class="text-sm text-muted-foreground">Aún no hay supervisiones para este examen.</p>
     {:else}
-      <div class="table-wrap">
-        <table class="sessions-table">
-          <thead>
-            <tr>
-              <th>Participante (ID)</th>
-              <th>Inicio</th>
-              <th>Fin</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div class="overflow-x-auto">
+        <Table.Root>
+          <Table.Header>
+            <Table.Row>
+              <Table.Head>Estudiante</Table.Head>
+              <Table.Head>Email</Table.Head>
+              <Table.Head>Inicio</Table.Head>
+              <Table.Head>Fin</Table.Head>
+              <Table.Head class="text-right">Estado</Table.Head>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {#each sessions as session}
-              <tr>
-                <td><span class="badge badge--student">{session.student_id}</span></td>
-                <td>{new Date(session.started_at).toLocaleString('es')}</td>
-                <td>{session.ended_at ? new Date(session.ended_at).toLocaleString('es') : '—'}</td>
-                <td class="sessions-table__status">
+              <Table.Row>
+                <Table.Cell>
+                  <Badge variant="secondary">{session.student_name ?? session.student_id}</Badge>
+                </Table.Cell>
+                <Table.Cell class="text-muted-foreground">{session.student_email ?? '—'}</Table.Cell>
+                <Table.Cell>{new Date(session.started_at).toLocaleString('es')}</Table.Cell>
+                <Table.Cell>{session.ended_at ? new Date(session.ended_at).toLocaleString('es') : '—'}</Table.Cell>
+                <Table.Cell class="text-right">
                   {#if statusValue(session.status) === 'ended' || statusValue(session.status) === 'finalizado'}
-                    <button class="status-pill status-pill--ended" type="button" on:click={() => openReport(session.id)}>
-                      {statusLabel(session.status)}
-                    </button>
+                    <Button variant="outline" size="sm" onclick={() => openReport(session.id)}>
+                      {statusLabel(session.status)} · Ver reporte
+                    </Button>
                   {:else}
-                    <span class="status-pill status-pill--active">Activo</span>
+                    <Badge class="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Activo</Badge>
                   {/if}
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             {/each}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
     {/if}
-  </div>
-</section>
-
-<style>
-  .sessions-page {
-    max-width: 1120px;
-    margin: 0 auto;
-  }
-
-  .sessions-info {
-    color: var(--procto-text-secondary);
-    font-size: 0.92rem;
-  }
-
-  .sessions-error {
-    color: #b42318;
-    margin: 0 0 0.75rem;
-    font-size: 0.9rem;
-  }
-
-  .table-wrap {
-    overflow-x: auto;
-  }
-
-  .sessions-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .sessions-table th,
-  .sessions-table td {
-    border-bottom: 1px solid var(--procto-border);
-    text-align: left;
-    padding: 0.65rem 0.5rem;
-    font-size: 0.9rem;
-  }
-
-  .sessions-table__status {
-    text-align: right;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .badge--student {
-    background: #ecfdf3;
-    color: #166534;
-  }
-
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 92px;
-    padding: 0.25rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
-  }
-
-  .status-pill--active {
-    background: #ecfdf3;
-    color: #15803d;
-  }
-
-  .status-pill--ended {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: none;
-    cursor: pointer;
-  }
-
-  .status-pill--ended:hover {
-    background: #fecaca;
-  }
-</style>
+  </Card.Content>
+</Card.Root>

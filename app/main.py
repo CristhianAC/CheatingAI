@@ -1,8 +1,10 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
 from app.database import Base, engine
@@ -11,6 +13,13 @@ from app.models.user import User  # noqa: F401
 from app.routers import analysis, auth, exams, jobs, submissions, users
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
+
+_DB_STARTUP_HINT = (
+    "No se pudo conectar a la base de datos. Revisa DATABASE_URL en .env "
+    "(Supabase: conexión directa db.[ref].supabase.co o pooler con usuario "
+    "postgres.[ref] y host/puerto del dashboard). Ver README troubleshooting."
+)
 
 
 @asynccontextmanager
@@ -22,8 +31,11 @@ async def lifespan(app: FastAPI):
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
 
-    # Crear todas las tablas al arrancar
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError as exc:
+        logger.error("%s Detalle: %s", _DB_STARTUP_HINT, exc)
+        raise
     yield
 
 

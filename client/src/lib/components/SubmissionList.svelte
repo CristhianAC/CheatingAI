@@ -65,7 +65,7 @@
 
 <svelte:window on:keydown={onModalKeydown} />
 
-<div class="card">
+<div class="rounded-xl border border-border bg-card p-6 shadow-sm">
   <div class="filters">
     <input bind:value={filters.problem_id} placeholder="Filtrar por problem_id" />
     <input bind:value={filters.exam_id} placeholder="Filtrar por exam_id" />

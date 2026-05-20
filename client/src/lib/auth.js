@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { networkErrorMessage, parseJsonResponse } from '$lib/http.js';
 
 const BASE = '/api/v1';
 const STORAGE_KEY = 'procto_auth';
@@ -26,29 +27,35 @@ function setAuthFromTokenResponse(data) {
 }
 
 export async function login(email, password) {
-  const res = await fetch(`${BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.detail || 'No se pudo iniciar sesión');
+  try {
+    const res = await fetch(`${BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await parseJsonResponse(res);
+    return setAuthFromTokenResponse(data);
+  } catch (e) {
+    if (e instanceof TypeError) throw new Error(networkErrorMessage(e));
+    if (e instanceof Error) throw e;
+    throw new Error(networkErrorMessage(e));
   }
-  return setAuthFromTokenResponse(data);
 }
 
 export async function register(email, password, full_name, role = 'STUDENT') {
-  const res = await fetch(`${BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, full_name, role })
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.detail || 'No se pudo registrar la cuenta');
+  try {
+    const res = await fetch(`${BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name, role })
+    });
+    const data = await parseJsonResponse(res);
+    return setAuthFromTokenResponse(data);
+  } catch (e) {
+    if (e instanceof TypeError) throw new Error(networkErrorMessage(e));
+    if (e instanceof Error) throw e;
+    throw new Error(networkErrorMessage(e));
   }
-  return setAuthFromTokenResponse(data);
 }
 
 export function logout() {

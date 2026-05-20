@@ -1,45 +1,185 @@
-import { c as create_ssr_component, a as subscribe, e as escape, v as validate_component } from "../../chunks/ssr.js";
+import { a as attributes, c as clsx, b as bind_props, s as store_get, e as escape_html, u as unsubscribe_stores, g as getContext, d as attr_class, f as slot } from "../../chunks/index2.js";
+import { g as goto } from "../../chunks/client.js";
+import { t as toast } from "../../chunks/stores.js";
+import { A as Alert } from "../../chunks/alert.js";
+import { A as Alert_description } from "../../chunks/alert-description.js";
+import { c as cn, B as Button } from "../../chunks/button.js";
+import { l as logout, a as authStore } from "../../chunks/auth.js";
+import "clsx";
 import "@sveltejs/kit/internal";
 import "../../chunks/exports.js";
 import "../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
+import "../../chunks/root.js";
 import "../../chunks/state.svelte.js";
-import { t as toast } from "../../chunks/stores.js";
-import { a as authStore } from "../../chunks/auth.js";
-import { p as page } from "../../chunks/stores2.js";
-const css$1 = {
-  code: ".toast.svelte-1jkxxre{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;align-items:center;gap:0.6rem;padding:0.85rem 1.25rem;border-radius:10px;font-size:0.9rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:1000;animation:svelte-1jkxxre-slideIn 0.25s ease;max-width:380px}.toast--success.svelte-1jkxxre{background:#d1fae5;color:#065f46;border-left:4px solid #10b981}.toast--error.svelte-1jkxxre{background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444}.toast--info.svelte-1jkxxre{background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6}@keyframes svelte-1jkxxre-slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}",
-  map: `{"version":3,"file":"Toast.svelte","sources":["Toast.svelte"],"sourcesContent":["<script>\\n  import { toast } from '$lib/stores.js';\\n<\/script>\\n\\n{#if $toast}\\n  <div class=\\"toast toast--{$toast.type}\\" role=\\"alert\\">\\n    <span class=\\"toast__icon\\">\\n      {#if $toast.type === 'success'}✅{:else if $toast.type === 'error'}❌{:else}ℹ️{/if}\\n    </span>\\n    <span class=\\"toast__message\\">{$toast.message}</span>\\n  </div>\\n{/if}\\n\\n<style>\\n  .toast {\\n    position: fixed;\\n    bottom: 1.5rem;\\n    right: 1.5rem;\\n    display: flex;\\n    align-items: center;\\n    gap: 0.6rem;\\n    padding: 0.85rem 1.25rem;\\n    border-radius: 10px;\\n    font-size: 0.9rem;\\n    font-weight: 500;\\n    box-shadow: 0 4px 20px rgba(0,0,0,0.15);\\n    z-index: 1000;\\n    animation: slideIn 0.25s ease;\\n    max-width: 380px;\\n  }\\n  .toast--success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }\\n  .toast--error   { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }\\n  .toast--info    { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }\\n\\n  @keyframes slideIn {\\n    from { transform: translateX(120%); opacity: 0; }\\n    to   { transform: translateX(0);    opacity: 1; }\\n  }\\n</style>\\n"],"names":[],"mappings":"AAcE,qBAAO,CACL,QAAQ,CAAE,KAAK,CACf,MAAM,CAAE,MAAM,CACd,KAAK,CAAE,MAAM,CACb,OAAO,CAAE,IAAI,CACb,WAAW,CAAE,MAAM,CACnB,GAAG,CAAE,MAAM,CACX,OAAO,CAAE,OAAO,CAAC,OAAO,CACxB,aAAa,CAAE,IAAI,CACnB,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GAAG,CAChB,UAAU,CAAE,CAAC,CAAC,GAAG,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,CACvC,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,sBAAO,CAAC,KAAK,CAAC,IAAI,CAC7B,SAAS,CAAE,KACb,CACA,8BAAgB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAO,CAAE,WAAW,CAAE,GAAG,CAAC,KAAK,CAAC,OAAS,CACvF,4BAAgB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAO,CAAE,WAAW,CAAE,GAAG,CAAC,KAAK,CAAC,OAAS,CACvF,2BAAgB,CAAE,UAAU,CAAE,OAAO,CAAE,KAAK,CAAE,OAAO,CAAE,WAAW,CAAE,GAAG,CAAC,KAAK,CAAC,OAAS,CAEvF,WAAW,sBAAQ,CACjB,IAAK,CAAE,SAAS,CAAE,WAAW,IAAI,CAAC,CAAE,OAAO,CAAE,CAAG,CAChD,EAAK,CAAE,SAAS,CAAE,WAAW,CAAC,CAAC,CAAK,OAAO,CAAE,CAAG,CAClD"}`
+function Alert_title($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let {
+      ref = null,
+      class: className,
+      children,
+      $$slots,
+      $$events,
+      ...restProps
+    } = $$props;
+    $$renderer2.push(`<div${attributes({
+      "data-slot": "alert-title",
+      class: clsx(cn("font-medium group-has-[>svg]/alert:col-start-2 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3", className)),
+      ...restProps
+    })}>`);
+    children?.($$renderer2);
+    $$renderer2.push(`<!----></div>`);
+    bind_props($$props, { ref });
+  });
+}
+function Toast($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    var $$store_subs;
+    const variantClass = {
+      success: "border-emerald-500/40 bg-emerald-50 text-emerald-900",
+      error: "border-destructive/40 bg-destructive/10 text-destructive",
+      info: "border-primary/30 bg-primary/5 text-foreground"
+    };
+    if (store_get($$store_subs ??= {}, "$toast", toast)) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<div class="pointer-events-none fixed bottom-6 right-6 z-[1000] max-w-sm animate-in slide-in-from-right-4">`);
+      Alert($$renderer2, {
+        class: cn("pointer-events-auto shadow-lg", variantClass[store_get($$store_subs ??= {}, "$toast", toast).type] ?? variantClass.info),
+        children: ($$renderer3) => {
+          Alert_title($$renderer3, {
+            class: "text-sm font-semibold",
+            children: ($$renderer4) => {
+              if (store_get($$store_subs ??= {}, "$toast", toast).type === "success") {
+                $$renderer4.push("<!--[0-->");
+                $$renderer4.push(`Éxito`);
+              } else if (store_get($$store_subs ??= {}, "$toast", toast).type === "error") {
+                $$renderer4.push("<!--[1-->");
+                $$renderer4.push(`Error`);
+              } else {
+                $$renderer4.push("<!--[-1-->");
+                $$renderer4.push(`Aviso`);
+              }
+              $$renderer4.push(`<!--]-->`);
+            },
+            $$slots: { default: true }
+          });
+          $$renderer3.push(`<!----> `);
+          Alert_description($$renderer3, {
+            children: ($$renderer4) => {
+              $$renderer4.push(`<!---->${escape_html(store_get($$store_subs ??= {}, "$toast", toast).message)}`);
+            },
+            $$slots: { default: true }
+          });
+          $$renderer3.push(`<!---->`);
+        },
+        $$slots: { default: true }
+      });
+      $$renderer2.push(`<!----></div>`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]-->`);
+    if ($$store_subs) unsubscribe_stores($$store_subs);
+  });
+}
+const getStores = () => {
+  const stores$1 = getContext("__svelte__");
+  return {
+    /** @type {typeof page} */
+    page: {
+      subscribe: stores$1.page.subscribe
+    },
+    /** @type {typeof navigating} */
+    navigating: {
+      subscribe: stores$1.navigating.subscribe
+    },
+    /** @type {typeof updated} */
+    updated: stores$1.updated
+  };
 };
-const Toast = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $toast, $$unsubscribe_toast;
-  $$unsubscribe_toast = subscribe(toast, (value) => $toast = value);
-  $$result.css.add(css$1);
-  $$unsubscribe_toast();
-  return `${$toast ? `<div class="${"toast toast--" + escape($toast.type, true) + " svelte-1jkxxre"}" role="alert"><span class="toast__icon">${$toast.type === "success" ? `✅` : `${$toast.type === "error" ? `❌` : `ℹ️`}`}</span> <span class="toast__message">${escape($toast.message)}</span></div>` : ``}`;
-});
-const css = {
-  code: ":root{--procto-bg:#f5f5f7;--procto-surface:#ffffff;--procto-text:#1d1d1f;--procto-text-secondary:#6e6e73;--procto-border:rgba(0, 0, 0, 0.08);--procto-border-strong:rgba(0, 0, 0, 0.12);--procto-accent:#0071e3;--procto-accent-hover:#0077ed;--procto-accent-muted:rgba(0, 113, 227, 0.12);--procto-radius:12px;--procto-radius-sm:8px;--procto-shadow-card:0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.06);--procto-font:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;--procto-header-h:76px}*, *::before, *::after{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--procto-font);background:var(--procto-bg);color:var(--procto-text);line-height:1.5;-webkit-font-smoothing:antialiased}input:not([type='range']):not([type='checkbox']),select,textarea{width:100%;padding:0.5rem 0.75rem;border:1px solid var(--procto-border-strong);border-radius:var(--procto-radius-sm);font-size:0.9rem;font-family:inherit;background:var(--procto-surface);transition:border-color 0.18s ease, box-shadow 0.18s ease;color:var(--procto-text)}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--procto-accent);box-shadow:0 0 0 3px var(--procto-accent-muted)}textarea{resize:vertical}label{display:block;font-size:0.83rem;font-weight:600;color:#424245;margin-bottom:0.35rem}.field{display:flex;flex-direction:column;margin-bottom:0.85rem}.card{background:var(--procto-surface);border-radius:var(--procto-radius);padding:1.5rem;box-shadow:var(--procto-shadow-card);border:1px solid var(--procto-border);margin-bottom:1.5rem}.card__title{font-size:1.05rem;font-weight:600;color:var(--procto-text);margin-bottom:1.1rem;display:flex;align-items:center;gap:0.4rem;letter-spacing:-0.02em}.btn{display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.5rem 1.1rem;border-radius:var(--procto-radius-sm);font-size:0.88rem;font-weight:600;cursor:pointer;border:none;transition:background 0.18s ease, color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;text-decoration:none}.btn:disabled{opacity:0.5;cursor:not-allowed}.btn--primary{background:var(--procto-accent);color:#fff}.btn--primary:hover:not(:disabled){background:var(--procto-accent-hover)}.btn--secondary{background:#e8e8ed;color:var(--procto-text)}.btn--secondary:hover:not(:disabled){background:#d2d2d7}.btn--ghost{background:transparent;color:var(--procto-text-secondary);border:1px solid var(--procto-border-strong)}.btn--ghost:hover:not(:disabled){background:rgba(0, 0, 0, 0.04);color:var(--procto-text)}.btn--danger{background:#ff3b30;color:#fff}.btn--danger:hover:not(:disabled){background:#e6352b}.btn--sm{padding:0.3rem 0.75rem;font-size:0.8rem}.header.svelte-zh2bqy{background:rgba(255, 255, 255, 0.82);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--procto-border);position:sticky;top:0;z-index:100}.header-inner.svelte-zh2bqy{max-width:1120px;margin:0 auto;padding:0 1.25rem;display:flex;align-items:center;gap:1.25rem;height:var(--procto-header-h)}.brand-lockup.svelte-zh2bqy{display:flex;align-items:center;gap:0.85rem;text-decoration:none;flex-shrink:0;padding-right:1.15rem;margin-right:0.35rem;border-right:1px solid var(--procto-border);min-height:calc(var(--procto-header-h) - 16px)}.brand-lockup__mark.svelte-zh2bqy{display:flex;align-items:center;justify-content:center;flex-shrink:0}.logo-img.svelte-zh2bqy{height:56px;width:56px;object-fit:contain;display:block}.brand-lockup__wordmark.svelte-zh2bqy{font-size:1.5rem;font-weight:700;letter-spacing:-0.042em;color:var(--procto-text);font-family:var(--procto-font);line-height:1}.nav.svelte-zh2bqy{display:flex;gap:0.2rem;flex:1;justify-content:center;flex-wrap:wrap}.nav-link.svelte-zh2bqy{padding:0.4rem 0.75rem;border-radius:999px;font-size:0.8125rem;font-weight:500;color:var(--procto-text-secondary);text-decoration:none;transition:color 0.18s ease, background 0.18s ease}.nav-link.svelte-zh2bqy:hover{background:rgba(0, 0, 0, 0.05);color:var(--procto-text)}.nav-link.active.svelte-zh2bqy{background:rgba(0, 0, 0, 0.07);color:var(--procto-text);font-weight:600}.main.svelte-zh2bqy{max-width:1120px;margin:0 auto;padding:2.25rem 1.5rem 3rem}.user-chip.svelte-zh2bqy{display:flex;align-items:center;gap:0.35rem;flex-shrink:0;margin-left:auto}.user-chip__name.svelte-zh2bqy{font-size:0.8125rem;font-weight:500;color:var(--procto-text-secondary);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;text-decoration:none}.user-chip__name.svelte-zh2bqy:hover{color:var(--procto-text)}.user-chip__sep.svelte-zh2bqy{font-size:0.8125rem;color:var(--procto-text-secondary);opacity:0.5}.user-chip__logout.svelte-zh2bqy{font-size:0.8125rem;font-weight:500;color:var(--procto-text-secondary);background:none;border:none;cursor:pointer;padding:0.25rem 0.4rem;border-radius:6px;transition:color 0.18s ease, background 0.18s ease;white-space:nowrap;font-family:inherit}.user-chip__logout.svelte-zh2bqy:hover{color:var(--procto-text);background:rgba(0, 0, 0, 0.05)}",
-  map: `{"version":3,"file":"+layout.svelte","sources":["+layout.svelte"],"sourcesContent":["<script>\\n  import { onMount } from 'svelte';\\n  import { goto } from '$app/navigation';\\n  import { get } from 'svelte/store';\\n  import Toast from '$lib/components/Toast.svelte';\\n  import { authStore, initAuth, logout } from '$lib/auth.js';\\n  import { page } from '$app/stores';\\n\\n  function isPublicAuthPath(pathname) {\\n    return pathname === '/login' || pathname === '/register';\\n  }\\n\\n  function handleLogout() {\\n    logout();\\n    goto('/login');\\n  }\\n\\n  $: isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register';\\n\\n  onMount(() => {\\n    initAuth();\\n\\n    // Redirigir usuario autenticado fuera de páginas públicas\\n    const currentPath = $page.url.pathname;\\n    const currentToken = get(authStore)?.token ?? null;\\n    if (isPublicAuthPath(currentPath) && currentToken) {\\n      goto('/');\\n    }\\n\\n    const enforceAuth = (token) => {\\n      const pathname = $page.url.pathname;\\n      if (!isPublicAuthPath(pathname) && !token) {\\n        goto('/login');\\n      }\\n    };\\n\\n    enforceAuth(get(authStore)?.token ?? null);\\n    const unsubscribe = authStore.subscribe((value) => enforceAuth(value?.token ?? null));\\n    return unsubscribe;\\n  });\\n<\/script>\\n\\n<div class=\\"app-shell\\">\\n  <header class=\\"header\\">\\n    <div class=\\"header-inner\\">\\n      <a href=\\"/\\" class=\\"brand-lockup\\" aria-label=\\"Procto, inicio\\">\\n        <span class=\\"brand-lockup__mark\\" aria-hidden=\\"true\\">\\n          <img\\n            class=\\"logo-img\\"\\n            src=\\"/roble_amarillo.png\\"\\n            alt=\\"\\"\\n            width=\\"56\\"\\n            height=\\"56\\"\\n            decoding=\\"async\\"\\n          />\\n        </span>\\n        <span class=\\"brand-lockup__wordmark\\">Procto</span>\\n      </a>\\n\\n      {#if !isAuthPage}\\n        <nav class=\\"nav\\" aria-label=\\"Principal\\">\\n          {#if $authStore?.role === 'PROFESSOR'}\\n            <a href=\\"/exams\\" class=\\"nav-link\\" class:active={$page.url.pathname.startsWith('/exams')}>\\n              Exámenes\\n            </a>\\n          {/if}\\n          {#if $authStore?.role === 'STUDENT'}\\n            <a href=\\"/join-exam\\" class=\\"nav-link\\" class:active={$page.url.pathname.startsWith('/join-exam')}>\\n              Unirse a examen\\n            </a>\\n          {/if}\\n        </nav>\\n\\n        {#if $authStore?.user}\\n          <div class=\\"user-chip\\">\\n            <a href=\\"/profile\\" class=\\"user-chip__name\\">{$authStore.user.full_name}</a>\\n            <span class=\\"user-chip__sep\\" aria-hidden=\\"true\\">·</span>\\n            <button class=\\"user-chip__logout\\" on:click={handleLogout}>Salir</button>\\n          </div>\\n        {/if}\\n      {/if}\\n    </div>\\n  </header>\\n\\n  <main class=\\"main\\">\\n    <slot />\\n  </main>\\n\\n  <Toast />\\n</div>\\n\\n<style>\\n  /* Tokens Procto: referencia var(--procto-*) en páginas y componentes */\\n  :global(:root) {\\n    --procto-bg: #f5f5f7;\\n    --procto-surface: #ffffff;\\n    --procto-text: #1d1d1f;\\n    --procto-text-secondary: #6e6e73;\\n    --procto-border: rgba(0, 0, 0, 0.08);\\n    --procto-border-strong: rgba(0, 0, 0, 0.12);\\n    --procto-accent: #0071e3;\\n    --procto-accent-hover: #0077ed;\\n    --procto-accent-muted: rgba(0, 113, 227, 0.12);\\n    --procto-radius: 12px;\\n    --procto-radius-sm: 8px;\\n    --procto-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.06);\\n    --procto-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\\n    --procto-header-h: 76px;\\n  }\\n\\n  :global(*, *::before, *::after) {\\n    box-sizing: border-box;\\n    margin: 0;\\n    padding: 0;\\n  }\\n\\n  :global(body) {\\n    font-family: var(--procto-font);\\n    background: var(--procto-bg);\\n    color: var(--procto-text);\\n    line-height: 1.5;\\n    -webkit-font-smoothing: antialiased;\\n  }\\n\\n  /* Inputs, selects, textareas globales */\\n  :global(input:not([type='range']):not([type='checkbox'])),\\n  :global(select),\\n  :global(textarea) {\\n    width: 100%;\\n    padding: 0.5rem 0.75rem;\\n    border: 1px solid var(--procto-border-strong);\\n    border-radius: var(--procto-radius-sm);\\n    font-size: 0.9rem;\\n    font-family: inherit;\\n    background: var(--procto-surface);\\n    transition: border-color 0.18s ease, box-shadow 0.18s ease;\\n    color: var(--procto-text);\\n  }\\n  :global(input:focus),\\n  :global(select:focus),\\n  :global(textarea:focus) {\\n    outline: none;\\n    border-color: var(--procto-accent);\\n    box-shadow: 0 0 0 3px var(--procto-accent-muted);\\n  }\\n  :global(textarea) {\\n    resize: vertical;\\n  }\\n\\n  /* Labels globales */\\n  :global(label) {\\n    display: block;\\n    font-size: 0.83rem;\\n    font-weight: 600;\\n    color: #424245;\\n    margin-bottom: 0.35rem;\\n  }\\n\\n  :global(.field) {\\n    display: flex;\\n    flex-direction: column;\\n    margin-bottom: 0.85rem;\\n  }\\n\\n  /* Cards */\\n  :global(.card) {\\n    background: var(--procto-surface);\\n    border-radius: var(--procto-radius);\\n    padding: 1.5rem;\\n    box-shadow: var(--procto-shadow-card);\\n    border: 1px solid var(--procto-border);\\n    margin-bottom: 1.5rem;\\n  }\\n  :global(.card__title) {\\n    font-size: 1.05rem;\\n    font-weight: 600;\\n    color: var(--procto-text);\\n    margin-bottom: 1.1rem;\\n    display: flex;\\n    align-items: center;\\n    gap: 0.4rem;\\n    letter-spacing: -0.02em;\\n  }\\n\\n  /* Botones */\\n  :global(.btn) {\\n    display: inline-flex;\\n    align-items: center;\\n    justify-content: center;\\n    gap: 0.4rem;\\n    padding: 0.5rem 1.1rem;\\n    border-radius: var(--procto-radius-sm);\\n    font-size: 0.88rem;\\n    font-weight: 600;\\n    cursor: pointer;\\n    border: none;\\n    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;\\n    text-decoration: none;\\n  }\\n  :global(.btn:disabled) {\\n    opacity: 0.5;\\n    cursor: not-allowed;\\n  }\\n  :global(.btn--primary) {\\n    background: var(--procto-accent);\\n    color: #fff;\\n  }\\n  :global(.btn--primary:hover:not(:disabled)) {\\n    background: var(--procto-accent-hover);\\n  }\\n  :global(.btn--secondary) {\\n    background: #e8e8ed;\\n    color: var(--procto-text);\\n  }\\n  :global(.btn--secondary:hover:not(:disabled)) {\\n    background: #d2d2d7;\\n  }\\n  :global(.btn--ghost) {\\n    background: transparent;\\n    color: var(--procto-text-secondary);\\n    border: 1px solid var(--procto-border-strong);\\n  }\\n  :global(.btn--ghost:hover:not(:disabled)) {\\n    background: rgba(0, 0, 0, 0.04);\\n    color: var(--procto-text);\\n  }\\n  :global(.btn--danger) {\\n    background: #ff3b30;\\n    color: #fff;\\n  }\\n  :global(.btn--danger:hover:not(:disabled)) {\\n    background: #e6352b;\\n  }\\n  :global(.btn--sm) {\\n    padding: 0.3rem 0.75rem;\\n    font-size: 0.8rem;\\n  }\\n\\n  /* Header */\\n  .header {\\n    background: rgba(255, 255, 255, 0.82);\\n    backdrop-filter: saturate(180%) blur(16px);\\n    -webkit-backdrop-filter: saturate(180%) blur(16px);\\n    border-bottom: 1px solid var(--procto-border);\\n    position: sticky;\\n    top: 0;\\n    z-index: 100;\\n  }\\n  .header-inner {\\n    max-width: 1120px;\\n    margin: 0 auto;\\n    padding: 0 1.25rem;\\n    display: flex;\\n    align-items: center;\\n    gap: 1.25rem;\\n    height: var(--procto-header-h);\\n  }\\n\\n  .brand-lockup {\\n    display: flex;\\n    align-items: center;\\n    gap: 0.85rem;\\n    text-decoration: none;\\n    flex-shrink: 0;\\n    padding-right: 1.15rem;\\n    margin-right: 0.35rem;\\n    border-right: 1px solid var(--procto-border);\\n    min-height: calc(var(--procto-header-h) - 16px);\\n  }\\n  .brand-lockup__mark {\\n    display: flex;\\n    align-items: center;\\n    justify-content: center;\\n    flex-shrink: 0;\\n  }\\n  .logo-img {\\n    height: 56px;\\n    width: 56px;\\n    object-fit: contain;\\n    display: block;\\n  }\\n  .brand-lockup__wordmark {\\n    font-size: 1.5rem;\\n    font-weight: 700;\\n    letter-spacing: -0.042em;\\n    color: var(--procto-text);\\n    font-family: var(--procto-font);\\n    line-height: 1;\\n  }\\n\\n  .nav {\\n    display: flex;\\n    gap: 0.2rem;\\n    flex: 1;\\n    justify-content: center;\\n    flex-wrap: wrap;\\n  }\\n  .nav-link {\\n    padding: 0.4rem 0.75rem;\\n    border-radius: 999px;\\n    font-size: 0.8125rem;\\n    font-weight: 500;\\n    color: var(--procto-text-secondary);\\n    text-decoration: none;\\n    transition: color 0.18s ease, background 0.18s ease;\\n  }\\n  .nav-link:hover {\\n    background: rgba(0, 0, 0, 0.05);\\n    color: var(--procto-text);\\n  }\\n  .nav-link.active {\\n    background: rgba(0, 0, 0, 0.07);\\n    color: var(--procto-text);\\n    font-weight: 600;\\n  }\\n\\n  .main {\\n    max-width: 1120px;\\n    margin: 0 auto;\\n    padding: 2.25rem 1.5rem 3rem;\\n  }\\n\\n  /* User chip */\\n  .user-chip {\\n    display: flex;\\n    align-items: center;\\n    gap: 0.35rem;\\n    flex-shrink: 0;\\n    margin-left: auto;\\n  }\\n  .user-chip__name {\\n    font-size: 0.8125rem;\\n    font-weight: 500;\\n    color: var(--procto-text-secondary);\\n    white-space: nowrap;\\n    max-width: 160px;\\n    overflow: hidden;\\n    text-overflow: ellipsis;\\n    text-decoration: none;\\n  }\\n  .user-chip__name:hover {\\n    color: var(--procto-text);\\n  }\\n  .user-chip__sep {\\n    font-size: 0.8125rem;\\n    color: var(--procto-text-secondary);\\n    opacity: 0.5;\\n  }\\n  .user-chip__logout {\\n    font-size: 0.8125rem;\\n    font-weight: 500;\\n    color: var(--procto-text-secondary);\\n    background: none;\\n    border: none;\\n    cursor: pointer;\\n    padding: 0.25rem 0.4rem;\\n    border-radius: 6px;\\n    transition: color 0.18s ease, background 0.18s ease;\\n    white-space: nowrap;\\n    font-family: inherit;\\n  }\\n  .user-chip__logout:hover {\\n    color: var(--procto-text);\\n    background: rgba(0, 0, 0, 0.05);\\n  }\\n</style>\\n"],"names":[],"mappings":"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"}`
+const page = {
+  subscribe(fn) {
+    const store = getStores().page;
+    return store.subscribe(fn);
+  }
 };
-const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let isAuthPage;
-  let $page, $$unsubscribe_page;
-  let $authStore, $$unsubscribe_authStore;
-  $$unsubscribe_page = subscribe(page, (value) => $page = value);
-  $$unsubscribe_authStore = subscribe(authStore, (value) => $authStore = value);
-  $$result.css.add(css);
-  isAuthPage = $page.url.pathname === "/login" || $page.url.pathname === "/register";
-  $$unsubscribe_page();
-  $$unsubscribe_authStore();
-  return `<div class="app-shell"><header class="header svelte-zh2bqy"><div class="header-inner svelte-zh2bqy"><a href="/" class="brand-lockup svelte-zh2bqy" aria-label="Procto, inicio" data-svelte-h="svelte-1azqd8b"><span class="brand-lockup__mark svelte-zh2bqy" aria-hidden="true"><img class="logo-img svelte-zh2bqy" src="/roble_amarillo.png" alt="" width="56" height="56" decoding="async"></span> <span class="brand-lockup__wordmark svelte-zh2bqy">Procto</span></a> ${!isAuthPage ? `<nav class="nav svelte-zh2bqy" aria-label="Principal">${$authStore?.role === "PROFESSOR" ? `<a href="/exams" class="${[
-    "nav-link svelte-zh2bqy",
-    $page.url.pathname.startsWith("/exams") ? "active" : ""
-  ].join(" ").trim()}" data-svelte-h="svelte-i154j2">Exámenes</a>` : ``} ${$authStore?.role === "STUDENT" ? `<a href="/join-exam" class="${[
-    "nav-link svelte-zh2bqy",
-    $page.url.pathname.startsWith("/join-exam") ? "active" : ""
-  ].join(" ").trim()}" data-svelte-h="svelte-1j6m27f">Unirse a examen</a>` : ``}</nav> ${$authStore?.user ? `<div class="user-chip svelte-zh2bqy"><a href="/profile" class="user-chip__name svelte-zh2bqy">${escape($authStore.user.full_name)}</a> <span class="user-chip__sep svelte-zh2bqy" aria-hidden="true" data-svelte-h="svelte-1w9vi35">·</span> <button class="user-chip__logout svelte-zh2bqy" data-svelte-h="svelte-1wv2186">Salir</button></div>` : ``}` : ``}</div></header> <main class="main svelte-zh2bqy">${slots.default ? slots.default({}) : ``}</main> ${validate_component(Toast, "Toast").$$render($$result, {}, {}, {})} </div>`;
-});
+function _layout($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    var $$store_subs;
+    let isAuthPage, path;
+    function handleLogout() {
+      logout();
+      goto();
+    }
+    function navClass(active) {
+      return cn("rounded-full px-3 py-1.5 text-sm font-medium transition-colors", active ? "bg-foreground/8 text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground");
+    }
+    isAuthPage = store_get($$store_subs ??= {}, "$page", page).url.pathname === "/login" || store_get($$store_subs ??= {}, "$page", page).url.pathname === "/register";
+    path = store_get($$store_subs ??= {}, "$page", page).url.pathname;
+    $$renderer2.push(`<div class="min-h-screen bg-background"><header class="sticky top-0 z-50 border-b border-border/80 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/70"><div class="mx-auto flex h-[var(--procto-header-h)] max-w-6xl items-center gap-4 px-4 sm:px-6"><a href="/" class="flex shrink-0 items-center gap-3 border-r border-border pr-4" aria-label="Procto, inicio"><img src="/roble_amarillo.png" alt="" width="48" height="48" class="size-12 object-contain" decoding="async"/> <span class="text-2xl font-bold tracking-tight text-foreground">Procto</span></a> `);
+    if (!isAuthPage) {
+      $$renderer2.push("<!--[0-->");
+      $$renderer2.push(`<nav class="flex flex-1 flex-wrap items-center justify-center gap-1 overflow-x-auto max-sm:justify-start max-sm:pb-1" aria-label="Principal">`);
+      if (store_get($$store_subs ??= {}, "$authStore", authStore)?.role === "PROFESSOR") {
+        $$renderer2.push("<!--[0-->");
+        $$renderer2.push(`<a href="/exams"${attr_class(clsx(navClass(path.startsWith("/exams"))))}>Exámenes</a>`);
+      } else {
+        $$renderer2.push("<!--[-1-->");
+      }
+      $$renderer2.push(`<!--]--> `);
+      if (store_get($$store_subs ??= {}, "$authStore", authStore)?.role === "STUDENT") {
+        $$renderer2.push("<!--[0-->");
+        $$renderer2.push(`<a href="/join-exam"${attr_class(clsx(navClass(path.startsWith("/join-exam"))))}>Unirse a examen</a>`);
+      } else {
+        $$renderer2.push("<!--[-1-->");
+      }
+      $$renderer2.push(`<!--]--> `);
+      if (store_get($$store_subs ??= {}, "$authStore", authStore)?.user) {
+        $$renderer2.push("<!--[0-->");
+        $$renderer2.push(`<a href="/submissions"${attr_class(clsx(navClass(path.startsWith("/submissions"))))}>Entregas</a> <a href="/analysis"${attr_class(clsx(navClass(path.startsWith("/analysis"))))}>Análisis</a> <a href="/jobs"${attr_class(clsx(navClass(path.startsWith("/jobs"))))}>Trabajos</a>`);
+      } else {
+        $$renderer2.push("<!--[-1-->");
+      }
+      $$renderer2.push(`<!--]--></nav> `);
+      if (store_get($$store_subs ??= {}, "$authStore", authStore)?.user) {
+        $$renderer2.push("<!--[0-->");
+        $$renderer2.push(`<div class="ml-auto flex shrink-0 items-center gap-2">`);
+        Button($$renderer2, {
+          variant: "ghost",
+          size: "sm",
+          href: "/profile",
+          class: "max-w-[10rem] truncate font-medium",
+          children: ($$renderer3) => {
+            $$renderer3.push(`<!---->${escape_html(store_get($$store_subs ??= {}, "$authStore", authStore).user.full_name)}`);
+          },
+          $$slots: { default: true }
+        });
+        $$renderer2.push(`<!----> `);
+        Button($$renderer2, {
+          variant: "outline",
+          size: "sm",
+          onclick: handleLogout,
+          children: ($$renderer3) => {
+            $$renderer3.push(`<!---->Salir`);
+          },
+          $$slots: { default: true }
+        });
+        $$renderer2.push(`<!----></div>`);
+      } else {
+        $$renderer2.push("<!--[-1-->");
+      }
+      $$renderer2.push(`<!--]-->`);
+    } else {
+      $$renderer2.push("<!--[-1-->");
+    }
+    $$renderer2.push(`<!--]--></div></header> <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10"><!--[-->`);
+    slot($$renderer2, $$props, "default", {});
+    $$renderer2.push(`<!--]--></main> `);
+    Toast($$renderer2);
+    $$renderer2.push(`<!----></div>`);
+    if ($$store_subs) unsubscribe_stores($$store_subs);
+  });
+}
 export {
-  Layout as default
+  _layout as default
 };

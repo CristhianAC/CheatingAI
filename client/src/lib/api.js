@@ -1,6 +1,7 @@
 const BASE = '/api/v1';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/auth.js';
+import { networkErrorMessage, parseJsonResponse } from '$lib/http.js';
 
 export async function request(method, path, body = null) {
   const auth = get(authStore);
@@ -15,16 +16,15 @@ export async function request(method, path, body = null) {
   };
   if (body !== null) opts.body = JSON.stringify(body);
 
-  const res = await fetch(`${BASE}${path}`, opts);
-
-  if (res.status === 204) return null;
-
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = data?.detail || `Error ${res.status}`;
-    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  try {
+    const res = await fetch(`${BASE}${path}`, opts);
+    if (res.status === 204) return null;
+    return await parseJsonResponse(res);
+  } catch (e) {
+    if (e instanceof TypeError) throw new Error(networkErrorMessage(e));
+    if (e instanceof Error) throw e;
+    throw new Error(networkErrorMessage(e));
   }
-  return data;
 }
 
 // ── Submissions ───────────────────────────────────────────────────────────────

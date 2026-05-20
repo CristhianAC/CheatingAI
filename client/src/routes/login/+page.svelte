@@ -1,6 +1,11 @@
 <script>
   import { goto } from '$app/navigation';
   import { login } from '$lib/auth.js';
+  import * as Card from '$lib/components/ui/card';
+  import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+  import * as Alert from '$lib/components/ui/alert';
 
   let email = '';
   let password = '';
@@ -25,51 +30,35 @@
   <title>Iniciar sesión | Procto</title>
 </svelte:head>
 
-<section class="card auth-card">
-  <h1 class="card__title">Iniciar sesión</h1>
-
-  <form on:submit|preventDefault={onSubmit} class="auth-form">
-    <label class="field">
-      <span>Email</span>
-      <input type="email" bind:value={email} required />
-    </label>
-
-    <label class="field">
-      <span>Contraseña</span>
-      <input type="password" bind:value={password} required />
-    </label>
-
-    {#if error}
-      <p class="error">{error}</p>
-    {/if}
-
-    <button class="btn btn--primary" type="submit" disabled={loading}>
-      {loading ? 'Ingresando...' : 'Iniciar sesión'}
-    </button>
-  </form>
-
-  <p class="auth-link">
-    ¿No tienes cuenta? <a href="/register">Regístrate</a>
-  </p>
-</section>
-
-<style>
-  .auth-card {
-    max-width: 460px;
-    margin: 2rem auto;
-  }
-  .auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-  }
-  .error {
-    color: #b42318;
-    font-size: 0.9rem;
-  }
-  .auth-link {
-    margin-top: 0.9rem;
-    font-size: 0.9rem;
-    color: var(--procto-text-secondary);
-  }
-</style>
+<div class="mx-auto max-w-md py-8">
+  <Card.Root class="rounded-xl shadow-sm">
+    <Card.Header>
+      <Card.Title class="text-xl">Iniciar sesión</Card.Title>
+      <Card.Description>Accede a tu cuenta de Procto</Card.Description>
+    </Card.Header>
+    <Card.Content>
+      <form on:submit|preventDefault={onSubmit} class="flex flex-col gap-4">
+        <div class="space-y-2">
+          <Label for="email">Email</Label>
+          <Input id="email" type="email" bind:value={email} required autocomplete="email" />
+        </div>
+        <div class="space-y-2">
+          <Label for="password">Contraseña</Label>
+          <Input id="password" type="password" bind:value={password} required autocomplete="current-password" />
+        </div>
+        {#if error}
+          <Alert.Root variant="destructive">
+            <Alert.Title>Error</Alert.Title>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Root>
+        {/if}
+        <Button type="submit" class="w-full" disabled={loading}>
+          {loading ? 'Ingresando...' : 'Iniciar sesión'}
+        </Button>
+      </form>
+    </Card.Content>
+    <Card.Footer class="text-sm text-muted-foreground">
+      ¿No tienes cuenta? <a href="/register" class="font-medium text-primary hover:underline">Regístrate</a>
+    </Card.Footer>
+  </Card.Root>
+</div>

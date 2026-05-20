@@ -1,19 +1,140 @@
-import { c as create_ssr_component, d as add_attribute, e as escape } from "../../../chunks/ssr.js";
+import { j as head, e as escape_html } from "../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../chunks/exports.js";
 import "../../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
+import "../../../chunks/root.js";
 import "../../../chunks/state.svelte.js";
-const css = {
-  code: ".auth-card.svelte-atffv9{max-width:460px;margin:2rem auto}.auth-form.svelte-atffv9{display:flex;flex-direction:column;gap:0.85rem}.error.svelte-atffv9{color:#b42318;font-size:0.9rem}.auth-link.svelte-atffv9{margin-top:0.9rem;font-size:0.9rem;color:var(--procto-text-secondary)}",
-  map: `{"version":3,"file":"+page.svelte","sources":["+page.svelte"],"sourcesContent":["<script>\\n  import { goto } from '$app/navigation';\\n  import { login } from '$lib/auth.js';\\n\\n  let email = '';\\n  let password = '';\\n  let loading = false;\\n  let error = '';\\n\\n  async function onSubmit() {\\n    error = '';\\n    loading = true;\\n    try {\\n      await login(email, password);\\n      goto('/');\\n    } catch (e) {\\n      error = e?.message ?? 'No se pudo iniciar sesión';\\n    } finally {\\n      loading = false;\\n    }\\n  }\\n<\/script>\\n\\n<svelte:head>\\n  <title>Iniciar sesión | Procto</title>\\n</svelte:head>\\n\\n<section class=\\"card auth-card\\">\\n  <h1 class=\\"card__title\\">Iniciar sesión</h1>\\n\\n  <form on:submit|preventDefault={onSubmit} class=\\"auth-form\\">\\n    <label class=\\"field\\">\\n      <span>Email</span>\\n      <input type=\\"email\\" bind:value={email} required />\\n    </label>\\n\\n    <label class=\\"field\\">\\n      <span>Contraseña</span>\\n      <input type=\\"password\\" bind:value={password} required />\\n    </label>\\n\\n    {#if error}\\n      <p class=\\"error\\">{error}</p>\\n    {/if}\\n\\n    <button class=\\"btn btn--primary\\" type=\\"submit\\" disabled={loading}>\\n      {loading ? 'Ingresando...' : 'Iniciar sesión'}\\n    </button>\\n  </form>\\n\\n  <p class=\\"auth-link\\">\\n    ¿No tienes cuenta? <a href=\\"/register\\">Regístrate</a>\\n  </p>\\n</section>\\n\\n<style>\\n  .auth-card {\\n    max-width: 460px;\\n    margin: 2rem auto;\\n  }\\n  .auth-form {\\n    display: flex;\\n    flex-direction: column;\\n    gap: 0.85rem;\\n  }\\n  .error {\\n    color: #b42318;\\n    font-size: 0.9rem;\\n  }\\n  .auth-link {\\n    margin-top: 0.9rem;\\n    font-size: 0.9rem;\\n    color: var(--procto-text-secondary);\\n  }\\n</style>\\n"],"names":[],"mappings":"AAwDE,wBAAW,CACT,SAAS,CAAE,KAAK,CAChB,MAAM,CAAE,IAAI,CAAC,IACf,CACA,wBAAW,CACT,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,GAAG,CAAE,OACP,CACA,oBAAO,CACL,KAAK,CAAE,OAAO,CACd,SAAS,CAAE,MACb,CACA,wBAAW,CACT,UAAU,CAAE,MAAM,CAClB,SAAS,CAAE,MAAM,CACjB,KAAK,CAAE,IAAI,uBAAuB,CACpC"}`
-};
-const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let email = "";
-  let password = "";
-  $$result.css.add(css);
-  return `${$$result.head += `<!-- HEAD_svelte-1f8jizq_START -->${$$result.title = `<title>Iniciar sesión | Procto</title>`, ""}<!-- HEAD_svelte-1f8jizq_END -->`, ""} <section class="card auth-card svelte-atffv9"><h1 class="card__title" data-svelte-h="svelte-1dgy8qv">Iniciar sesión</h1> <form class="auth-form svelte-atffv9"><label class="field"><span data-svelte-h="svelte-1bg9cgq">Email</span> <input type="email" required${add_attribute("value", email, 0)}></label> <label class="field"><span data-svelte-h="svelte-17ch52x">Contraseña</span> <input type="password" required${add_attribute("value", password, 0)}></label> ${``} <button class="btn btn--primary" type="submit" ${""}>${escape("Iniciar sesión")}</button></form> <p class="auth-link svelte-atffv9" data-svelte-h="svelte-xjq8vw">¿No tienes cuenta? <a href="/register">Regístrate</a></p> </section>`;
-});
+import { C as Card, a as Card_content } from "../../../chunks/card-content.js";
+import { C as Card_header, a as Card_title, b as Card_description, c as Card_footer } from "../../../chunks/card-title.js";
+import "clsx";
+import { B as Button } from "../../../chunks/button.js";
+import { L as Label, I as Input } from "../../../chunks/label.js";
+import "../../../chunks/alert.js";
+function _page($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let email = "";
+    let password = "";
+    let loading = false;
+    let $$settled = true;
+    let $$inner_renderer;
+    function $$render_inner($$renderer3) {
+      head("1x05zx6", $$renderer3, ($$renderer4) => {
+        $$renderer4.title(($$renderer5) => {
+          $$renderer5.push(`<title>Iniciar sesión | Procto</title>`);
+        });
+      });
+      $$renderer3.push(`<div class="mx-auto max-w-md py-8">`);
+      Card($$renderer3, {
+        class: "rounded-xl shadow-sm",
+        children: ($$renderer4) => {
+          Card_header($$renderer4, {
+            children: ($$renderer5) => {
+              Card_title($$renderer5, {
+                class: "text-xl",
+                children: ($$renderer6) => {
+                  $$renderer6.push(`<!---->Iniciar sesión`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer5.push(`<!----> `);
+              Card_description($$renderer5, {
+                children: ($$renderer6) => {
+                  $$renderer6.push(`<!---->Accede a tu cuenta de Procto`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer5.push(`<!---->`);
+            },
+            $$slots: { default: true }
+          });
+          $$renderer4.push(`<!----> `);
+          Card_content($$renderer4, {
+            children: ($$renderer5) => {
+              $$renderer5.push(`<form class="flex flex-col gap-4"><div class="space-y-2">`);
+              Label($$renderer5, {
+                for: "email",
+                children: ($$renderer6) => {
+                  $$renderer6.push(`<!---->Email`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer5.push(`<!----> `);
+              Input($$renderer5, {
+                id: "email",
+                type: "email",
+                required: true,
+                autocomplete: "email",
+                get value() {
+                  return email;
+                },
+                set value($$value) {
+                  email = $$value;
+                  $$settled = false;
+                }
+              });
+              $$renderer5.push(`<!----></div> <div class="space-y-2">`);
+              Label($$renderer5, {
+                for: "password",
+                children: ($$renderer6) => {
+                  $$renderer6.push(`<!---->Contraseña`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer5.push(`<!----> `);
+              Input($$renderer5, {
+                id: "password",
+                type: "password",
+                required: true,
+                autocomplete: "current-password",
+                get value() {
+                  return password;
+                },
+                set value($$value) {
+                  password = $$value;
+                  $$settled = false;
+                }
+              });
+              $$renderer5.push(`<!----></div> `);
+              {
+                $$renderer5.push("<!--[-1-->");
+              }
+              $$renderer5.push(`<!--]--> `);
+              Button($$renderer5, {
+                type: "submit",
+                class: "w-full",
+                disabled: loading,
+                children: ($$renderer6) => {
+                  $$renderer6.push(`<!---->${escape_html("Iniciar sesión")}`);
+                },
+                $$slots: { default: true }
+              });
+              $$renderer5.push(`<!----></form>`);
+            },
+            $$slots: { default: true }
+          });
+          $$renderer4.push(`<!----> `);
+          Card_footer($$renderer4, {
+            class: "text-sm text-muted-foreground",
+            children: ($$renderer5) => {
+              $$renderer5.push(`<!---->¿No tienes cuenta? <a href="/register" class="font-medium text-primary hover:underline">Regístrate</a>`);
+            },
+            $$slots: { default: true }
+          });
+          $$renderer4.push(`<!---->`);
+        },
+        $$slots: { default: true }
+      });
+      $$renderer3.push(`<!----></div>`);
+    }
+    do {
+      $$settled = true;
+      $$inner_renderer = $$renderer2.copy();
+      $$render_inner($$inner_renderer);
+    } while (!$$settled);
+    $$renderer2.subsume($$inner_renderer);
+  });
+}
 export {
-  Page as default
+  _page as default
 };

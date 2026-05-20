@@ -37,18 +37,12 @@ def get_my_profile(
     return _to_profile(user)
 
 
-@router.post("/me/photo", response_model=PhotoUploadResponse, summary="Subir foto de referencia (solo estudiantes)")
+@router.post("/me/photo", response_model=PhotoUploadResponse, summary="Subir foto de perfil/referencia")
 async def upload_my_profile_photo(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     file: UploadFile = File(...),
 ):
-    if current_user.get("role") != "STUDENT":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo estudiantes pueden subir foto de referencia",
-        )
-
     try:
         uid = uuid.UUID(str(current_user["sub"]))
     except ValueError as exc:
