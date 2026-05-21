@@ -8,7 +8,7 @@ La evaluación académica en modalidad virtual se ha consolidado como una altern
 
 El prototipo entregado es funcional de extremo a extremo: autenticación por roles (profesor y estudiante), gestión de exámenes, unión por código, sesión de supervisión en tiempo real, reportes docentes con puntuación 0–100 y capturas en Supabase Storage, además del flujo de entregas, análisis y trabajos en cola para plagio. La arquitectura sigue un enfoque **API-first** (FastAPI en los puertos 8000 y 8001, cliente SvelteKit 5 con diseño shadcn-svelte), desplegable con Docker Compose y base de datos configurable (SQLite en desarrollo o PostgreSQL/Supabase en entornos gestionados).
 
-El valor para la institución y el docente consiste en convertir señales dispersas en **evidencia con marca de tiempo**, alertas interpretables y un score de riesgo que prioriza la revisión humana — sin sustituir la decisión académica ni almacenar video completo de los participantes. La documentación detallada del diseño, instalación y desarrollo se encuentra en los archivos enlazados a continuación.
+El valor para la institución y el docente consiste en convertir señales dispersas en **evidencia con marca de tiempo**, alertas interpretables y un score de riesgo que prioriza la revisión humana sin sustituir la decisión académica ni almacenar video completo de los participantes. La documentación detallada del diseño, instalación y desarrollo se encuentra en los archivos enlazados a continuación.
 
 ## Documentación del repositorio
 
