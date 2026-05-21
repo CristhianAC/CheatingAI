@@ -25,7 +25,7 @@ El valor para la institución y el docente consiste en convertir señales disper
 | Nombre | GitHub |
 |---|---|
 | Cristhian Agamez Cervantes | [@CristhianAC](https://github.com/CristhianAC) |
-| Mateo Guerrero Escobar | [MateoGE01](https://github.com/MateoGE01) |
+| Mateo Guerrero Escobar | [@MateoGE01](https://github.com/MateoGE01) |
 
 ## Tutores
 
