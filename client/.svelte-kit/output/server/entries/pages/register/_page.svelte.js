@@ -1,14 +1,13 @@
-import { k as fallback, e as escape_html, h as ensure_array_like, d as attr_class, b as bind_props, j as head, c as clsx } from "../../../chunks/index2.js";
+import { q as fallback, i as escape_html, e as ensure_array_like, a as attr_class, p as bind_props, o as head, c as clsx } from "../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../chunks/exports.js";
 import "../../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
 import "../../../chunks/root.js";
 import "../../../chunks/state.svelte.js";
-import { o as onDestroy, t as tick } from "../../../chunks/index-server.js";
+import { o as onDestroy, t as tick } from "../../../chunks/index-server2.js";
 import { B as Button } from "../../../chunks/button.js";
-import { L as Label, I as Input } from "../../../chunks/label.js";
-import { C as Card, a as Card_content } from "../../../chunks/card-content.js";
+import { L as Label, C as Card, a as Card_content, I as Input } from "../../../chunks/label.js";
 import { C as Card_header, a as Card_title, b as Card_description, c as Card_footer } from "../../../chunks/card-title.js";
 import "clsx";
 import { B as Badge } from "../../../chunks/badge.js";
@@ -295,9 +294,9 @@ function _page($$renderer, $$props) {
           $$renderer5.push(`<title>Registro | Procto</title>`);
         });
       });
-      $$renderer3.push(`<div class="mx-auto max-w-md py-8">`);
+      $$renderer3.push(`<div class="mx-auto w-full max-w-md">`);
       Card($$renderer3, {
-        class: "rounded-xl shadow-sm",
+        class: "rounded-xl border-border/80 shadow-sm",
         children: ($$renderer4) => {
           Card_header($$renderer4, {
             children: ($$renderer5) => {

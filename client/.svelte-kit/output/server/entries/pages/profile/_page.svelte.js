@@ -1,26 +1,10 @@
-import { a as attributes, c as clsx, b as bind_props, j as head } from "../../../chunks/index2.js";
+import { o as head } from "../../../chunks/index2.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
-import { c as cn } from "../../../chunks/button.js";
+import "../../../chunks/button.js";
 import "clsx";
 import "../../../chunks/badge.js";
+import { S as Skeleton } from "../../../chunks/skeleton.js";
 import "../../../chunks/alert.js";
-function Skeleton($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref = null,
-      class: className,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    $$renderer2.push(`<div${attributes({
-      "data-slot": "skeleton",
-      class: clsx(cn("bg-muted rounded-md animate-pulse", className)),
-      ...restProps
-    })}></div>`);
-    bind_props($$props, { ref });
-  });
-}
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     head("maq4gq", $$renderer2, ($$renderer3) => {

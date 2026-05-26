@@ -1,4 +1,4 @@
-import { a as attributes, c as clsx, b as bind_props } from "./index2.js";
+import { l as attributes, c as clsx, p as bind_props } from "./index2.js";
 import { c as cn } from "./button.js";
 function Alert_description($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {

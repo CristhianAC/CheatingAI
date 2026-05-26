@@ -49,7 +49,7 @@ Copiar `.env.example` a `.env` en la **raíz del repositorio** (junto a `docker-
 | `SUPABASE_URL` | Para Storage | URL del proyecto Supabase |
 | `SUPABASE_SERVICE_KEY` | Para Storage | Clave `service_role` (secreto) |
 | `SUPABASE_PROFILE_BUCKET` | Recomendada | p. ej. `profile-photos` |
-| `SUPABASE_VIOLATION_CAPTURES_BUCKET` | Recomendada | p. ej. `violation-captures` |
+| `SUPABASE_VIOLATION_CAPTURES_BUCKET` | Recomendada | `proctoring-violations` (mismo bucket que capturas generales en Procto) |
 | `REDIS_URL` | Sí (plagio) | En compose: `redis://redis:6379/0` |
 | `WINNOWING_K`, `WINNOWING_W`, `DEFAULT_THRESHOLD` | No | Parámetros algoritmo plagio |
 

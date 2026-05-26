@@ -54,6 +54,8 @@ class SessionResponse(BaseModel):
     status: SessionStatus
     started_at: datetime
     ended_at: Optional[datetime] = None
+    resumed: bool = False
+    identity_registered: bool = False
 
     model_config = {"from_attributes": True}
 

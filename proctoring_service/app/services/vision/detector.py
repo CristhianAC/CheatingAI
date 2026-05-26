@@ -50,6 +50,11 @@ class VisionDetector:
             logging.getLogger(__name__).warning("Phone detector disabled: %s", e)
             self._phone_detector = None
 
+    @property
+    def face_detector(self) -> FaceDetector:
+        """MediaPipe face detector (compartido con registro de identidad)."""
+        return self._face_detector
+
     def analyze_frame(self, frame_bytes: bytes) -> AnalysisResult:
         start = time.perf_counter()
 
@@ -94,7 +99,7 @@ class VisionDetector:
                     direction = "derecha" if gaze_result.yaw > 0 else "izquierda"
                     # Confidence scales with how far past the threshold the yaw is
                     excess = abs(gaze_result.yaw) - settings.GAZE_YAW_THRESHOLD
-                    confidence = min(0.6 + (excess / settings.GAZE_YAW_THRESHOLD) * 0.35, 0.98)
+                    confidence = min(0.70 + (excess / settings.GAZE_YAW_THRESHOLD) * 0.30, 0.98)
                     violations.append(ViolationDetected(
                         violation_type=ViolationType.LOOKING_AWAY,
                         confidence=round(confidence, 2),

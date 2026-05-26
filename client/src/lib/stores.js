@@ -1,9 +1,10 @@
 import { writable } from 'svelte/store';
+import { toast as sonnerToast } from 'svelte-sonner';
 
 // Lista de submissions cargadas (usada por dropdowns en Analysis)
 export const submissions = writable([]);
 
-// Notificación toast global: { message, type: 'success'|'error'|'info' }
+/** @deprecated Legacy store; toasts usan svelte-sonner. */
 export const toast = writable(null);
 
 // Job batch activo en progreso (para polling)
@@ -12,14 +13,13 @@ export const selectedExamStore = writable(null);
 // Estructura esperada:
 // { id: string, code: string, name: string, professor_id: string }
 
-// ── Helpers de toast ──────────────────────────────────────────────────────────
-
-let toastTimer;
+// ── Helpers de toast (svelte-sonner) ─────────────────────────────────────────
 
 export function showToast(message, type = 'success', duration = 3500) {
-  clearTimeout(toastTimer);
-  toast.set({ message, type });
-  toastTimer = setTimeout(() => toast.set(null), duration);
+  const options = { duration };
+  if (type === 'error') sonnerToast.error(message, options);
+  else if (type === 'info') sonnerToast.info(message, options);
+  else sonnerToast.success(message, options);
 }
 
 export function showError(message) {

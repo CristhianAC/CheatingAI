@@ -26,6 +26,13 @@ async function parseJsonResponse(res) {
   }
   if (!res.ok) {
     const detail = data?.detail;
+    if (detail && typeof detail === "object" && detail.message) {
+      const err = new Error(detail.message);
+      err.code = detail.code;
+      err.scheduledAt = detail.scheduled_at;
+      err.status = res.status;
+      throw err;
+    }
     const msg = typeof detail === "string" ? detail : detail != null ? JSON.stringify(detail) : `Error ${res.status}`;
     throw new Error(msg);
   }

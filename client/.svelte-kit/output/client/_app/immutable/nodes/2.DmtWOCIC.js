@@ -1,1 +1,0 @@
-import"../chunks/CWj6FrbW.js";import{i as s}from"../chunks/RMs7xmCO.js";import{p,o as a,a as i}from"../chunks/DvAvf9oM.js";import{g as t}from"../chunks/SZSQluHJ.js";function u(m,o){p(o,!1),a(()=>t("/submissions")),s(),i()}export{u as component};

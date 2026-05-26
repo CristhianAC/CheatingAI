@@ -1,7 +1,7 @@
-import { i as attr, e as escape_html, h as ensure_array_like, d as attr_class, l as stringify, b as bind_props, j as head } from "../../../chunks/index2.js";
-import { c as createEventDispatcher } from "../../../chunks/index-server.js";
+import { b as attr, i as escape_html, e as ensure_array_like, a as attr_class, k as stringify, p as bind_props, o as head } from "../../../chunks/index2.js";
+import { c as createEventDispatcher } from "../../../chunks/index-server2.js";
 import { a as listSubmissions } from "../../../chunks/api.js";
-import { b as showError } from "../../../chunks/stores.js";
+import { c as showError } from "../../../chunks/stores.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
 function SubmissionForm($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {

@@ -30,8 +30,8 @@
   <title>Iniciar sesión | Procto</title>
 </svelte:head>
 
-<div class="mx-auto max-w-md py-8">
-  <Card.Root class="rounded-xl shadow-sm">
+<div class="mx-auto w-full max-w-md">
+  <Card.Root class="rounded-xl border-border/80 shadow-sm">
     <Card.Header>
       <Card.Title class="text-xl">Iniciar sesión</Card.Title>
       <Card.Description>Accede a tu cuenta de Procto</Card.Description>

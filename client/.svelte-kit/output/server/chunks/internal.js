@@ -29,7 +29,21 @@ const options = {
   service_worker: false,
   service_worker_options: void 0,
   templates: {
-    app: ({ head, body, assets, nonce, env }) => '<!doctype html>\n<html lang="es">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" type="image/png" href="' + assets + '/roble_amarillo.png" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <meta name="theme-color" content="#f5f5f7" />\n    <title>Procto</title>\n    ' + head + '\n  </head>\n  <body data-sveltekit-preload-data="hover">\n    <div id="app">' + body + "</div>\n  </body>\n</html>\n",
+    app: ({ head, body, assets, nonce, env }) => `<!doctype html>\r
+<html lang="es">\r
+  <head>\r
+    <script>\r
+      (function () {\r
+        try {\r
+          var t = localStorage.getItem('procto_theme');\r
+          var dark =\r
+            t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);\r
+          if (dark) document.documentElement.classList.add('dark');\r
+        } catch (e) {}\r
+      })();\r
+    <\/script>\r
+    <meta charset="utf-8" />\r
+    <link rel="icon" type="image/png" href="` + assets + '/roble_amarillo.png" />\r\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\r\n    <meta name="theme-color" content="#f5f5f7" />\r\n    <link rel="preconnect" href="https://fonts.googleapis.com" />\r\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\r\n    <link\r\n      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"\r\n      rel="stylesheet"\r\n    />\r\n    <title>Procto</title>\r\n    ' + head + '\r\n  </head>\r\n  <body data-sveltekit-preload-data="hover">\r\n    <div id="app">' + body + "</div>\r\n  </body>\r\n</html>\r\n",
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -101,7 +115,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1lwt43e"
+  version_hash: "37xlpy"
 };
 async function get_hooks() {
   let handle;

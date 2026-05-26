@@ -249,7 +249,7 @@ class RiskScorer:
                 if anchor <= v.detected_at <= window_end
             ]
             if len(window_events) >= self._CLUSTER_MIN_VIOLATIONS:
-                types = list({v.violation_type.value for v in window_events})
+                types = list({v.violation_type.client_key for v in window_events})
                 clusters.append(SuspiciousCluster(
                     window_start=anchor,
                     window_end=window_events[-1].detected_at,

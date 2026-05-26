@@ -89,8 +89,8 @@
   <title>Registro | Procto</title>
 </svelte:head>
 
-<div class="mx-auto max-w-md py-8">
-  <Card.Root class="rounded-xl shadow-sm">
+<div class="mx-auto w-full max-w-md">
+  <Card.Root class="rounded-xl border-border/80 shadow-sm">
     <Card.Header>
       <Card.Title class="text-xl">Crear cuenta</Card.Title>
       <Card.Description>Regístrate como estudiante o profesor</Card.Description>

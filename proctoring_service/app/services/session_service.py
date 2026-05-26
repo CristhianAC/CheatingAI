@@ -23,12 +23,69 @@ from app.schemas.session import (
     SuspiciousClusterSchema,
 )
 from app.schemas.violation import ViolationWithSnapshot
+from app.config import get_settings
 from app.services.risk_scorer import RiskScorer
+
+_settings = get_settings()
 
 
 class SessionService:
     def __init__(self, db: Session) -> None:
         self.db = db
+
+    def _find_active(self, exam_id: str, student_id: str) -> ProctoringSession | None:
+        return (
+            self.db.query(ProctoringSession)
+            .filter(
+                ProctoringSession.exam_id == exam_id,
+                ProctoringSession.student_id == student_id,
+                ProctoringSession.status == SessionStatus.ACTIVE,
+            )
+            .order_by(ProctoringSession.started_at.desc())
+            .first()
+        )
+
+    def _find_latest_ended(self, exam_id: str, student_id: str) -> ProctoringSession | None:
+        return (
+            self.db.query(ProctoringSession)
+            .filter(
+                ProctoringSession.exam_id == exam_id,
+                ProctoringSession.student_id == student_id,
+                ProctoringSession.status == SessionStatus.ENDED,
+            )
+            .order_by(ProctoringSession.ended_at.desc())
+            .first()
+        )
+
+    def create_or_resume(self, payload: SessionCreate) -> tuple[ProctoringSession, bool]:
+        """
+        Una supervisión oficial por (exam_id, student_id):
+        - Reanuda ACTIVE reciente (< SESSION_RESUME_WINDOW_MINUTES).
+        - Rechaza si ya existe ENDED (409).
+        - Aborta ACTIVE expirada y crea nueva si aplica.
+        """
+        now = datetime.now(timezone.utc)
+        active = self._find_active(payload.exam_id, payload.student_id)
+        if active:
+            age_minutes = (now - active.started_at).total_seconds() / 60.0
+            if age_minutes <= _settings.SESSION_RESUME_WINDOW_MINUTES:
+                return active, True
+            active.status = SessionStatus.ABORTED
+            active.ended_at = now
+            self.db.commit()
+
+        ended = self._find_latest_ended(payload.exam_id, payload.student_id)
+        if ended:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "SESSION_ALREADY_COMPLETED",
+                    "message": "Ya completaste la supervisión de este examen.",
+                    "existing_session_id": ended.id if ended else None,
+                },
+            )
+
+        return self.create(payload), False
 
     def create(self, payload: SessionCreate) -> ProctoringSession:
         session = ProctoringSession(
@@ -83,7 +140,7 @@ class SessionService:
         total = len(violations)
         by_type: dict[str, int] = {}
         for v in violations:
-            key = v.violation_type.value
+            key = v.violation_type.client_key
             by_type[key] = by_type.get(key, 0) + 1
 
         return SessionSummaryResponse(
@@ -170,7 +227,7 @@ class SessionService:
         total = len(violations)
         by_type: dict[str, int] = {}
         for v in violations:
-            key = v.violation_type.value
+            key = v.violation_type.client_key
             by_type[key] = by_type.get(key, 0) + 1
 
         if session.ended_at:

@@ -4,6 +4,15 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
+  optimizeDeps: {
+    include: [
+      '@lucide/svelte/icons/moon',
+      '@lucide/svelte/icons/sun',
+      '@lucide/svelte/icons/x',
+      '@lucide/svelte/icons/chevron-down',
+      '@lucide/svelte/icons/chevron-up',
+    ],
+  },
   server: {
     port: 5173,
     proxy: {
@@ -15,6 +24,11 @@ export default defineConfig({
       '/api/v1/sessions': {
         target: 'http://localhost:8001',
         changeOrigin: true
+      },
+      '/proctoring-health': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        rewrite: () => '/health'
       },
       // Catch-all for main API (plagiarism detection)
       '/api': {

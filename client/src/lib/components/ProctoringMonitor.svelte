@@ -1,9 +1,27 @@
 <script>
   import { onDestroy, createEventDispatcher } from 'svelte';
-  import { startSession, endSession, analyzeFrame, getSessionStats, calibrateFrame, reportBrowserEvent, registerIdentity } from '$lib/proctoring-api.js';
+  import {
+    startSession,
+    endSession,
+    analyzeFrame,
+    getSessionStats,
+    calibrateFrame,
+    reportBrowserEvent,
+    registerIdentity,
+    proctoringHealthCheck,
+  } from '$lib/proctoring-api.js';
+  import { onMount } from 'svelte';
+  import { waitForVideoReady } from '$lib/camera-ready.js';
   import { showToast, showError } from '$lib/stores.js';
   import { Button } from '$lib/components/ui/button';
-  import { Badge } from '$lib/components/ui/badge';
+  import * as Card from '$lib/components/ui/card';
+  import * as Alert from '$lib/components/ui/alert';
+  import {
+    studentViolationLabel,
+    studentViolationHint,
+    IDENTITY_STEP_MESSAGES,
+    identityMessageForReason,
+  } from '$lib/proctoring-student-copy.js';
 
   export let examId = '';
   export let studentId = '';
@@ -19,139 +37,222 @@
   let intervalHandle = null;
   let calibMode = false;     // toggle: show raw calibration view
 
-  // ── Identity state ─────────────────────────────────────────────────────────
-  // 'none' | 'pending' | 'registered' | 'failed'
+  // ── Identity & startup ─────────────────────────────────────────────────────
+  // identityStatus: 'none' | 'pending' | 'registered' | 'failed' | 'skipped'
   let identityStatus = 'none';
   let identityError = '';
   let identityRegistering = false;
-  /** Registro automático de identidad ~2.5 s tras iniciar (si no hay violaciones graves). */
-  const IDENTITY_AUTO_DELAY_MS = 2500;
-  /** Un segundo intento automático si el primero se pospuso por señales bloqueantes. */
-  const IDENTITY_DEFERRED_RETRY_MS = 4000;
-  let identityAutoTimerId = null;
-  let identityDeferredRetryId = null;
-  /** Cuántas veces se pospuso por bloqueo (máx. 1 reintento diferido). */
-  let identityAutoDeferCount = 0;
-  /** Evita un segundo disparo tras captura exitosa; el manual sigue disponible. */
-  let identityAutoAttempted = false;
+  let identityFailureCount = 0;
+  let identityAutoAttemptsDone = 0;
+  let sessionBlocked = false;
+  let startingProctoring = false;
+  /** Mensaje del paso actual (cámara / rostro / identidad). */
+  let startupMessage = '';
+  /** Supervisión periódica solo tras identidad OK o skip. */
+  let monitoringStarted = false;
+  /** @type {'checking' | 'ok' | 'error' | null} */
+  let connectionStatus = null;
 
   const FRAME_INTERVAL_MS = 2000;
+  const MAX_STUDENT_SIGNALS = 5;
+  const IDENTITY_AUTO_MAX_ATTEMPTS = 3;
+  const IDENTITY_MAX_FAILURES_BEFORE_SKIP = 5;
+  const IDENTITY_AUTO_RETRY_DELAY_MS = 2000;
+  const FACE_PRECHECK_ATTEMPTS = 3;
+  const FACE_PRECHECK_DELAY_MS = 500;
+  const CAMERA_CONSTRAINTS = {
+    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    audio: false,
+  };
 
-  /** Tipos que impiden un registro facial fiable en ese momento. */
-  const BLOCKING_VIOLATION_TYPES = new Set([
-    'multiple_persons',
-    'no_person',
-    'phone_detected',
-    'identity_mismatch',
-  ]);
-
-  function clearIdentityDeferredRetry() {
-    if (identityDeferredRetryId != null) {
-      clearTimeout(identityDeferredRetryId);
-      identityDeferredRetryId = null;
-    }
+  function beginMonitoring() {
+    if (monitoringStarted || !sessionId) return;
+    monitoringStarted = true;
+    startupMessage = '';
+    intervalHandle = setInterval(sendFrame, FRAME_INTERVAL_MS);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onWindowBlur);
   }
 
-  function clearIdentityAutoTimer() {
-    if (identityAutoTimerId != null) {
-      clearTimeout(identityAutoTimerId);
-      identityAutoTimerId = null;
-    }
-    clearIdentityDeferredRetry();
+  function onIdentitySuccess() {
+    identityStatus = 'registered';
+    identityError = '';
+    beginMonitoring();
   }
 
-  function hasBlockingViolationsForIdentity() {
-    return recentViolations.some((v) => BLOCKING_VIOLATION_TYPES.has(v.violation_type));
+  function maybeSkipIdentityAfterFailures() {
+    if (identityFailureCount >= IDENTITY_MAX_FAILURES_BEFORE_SKIP) {
+      identityStatus = 'skipped';
+      identityError = '';
+      showToast('Continuando la supervisión sin verificación facial');
+      beginMonitoring();
+      return true;
+    }
+    return false;
   }
 
-  async function attemptAutoIdentityRegistration() {
-    identityAutoTimerId = null;
-    identityDeferredRetryId = null;
-    if (!isActive || !sessionId || identityStatus !== 'pending' || identityRegistering || identityAutoAttempted) {
-      return;
-    }
-    if (hasBlockingViolationsForIdentity()) {
-      if (identityAutoDeferCount < 1) {
-        identityAutoDeferCount += 1;
-        identityDeferredRetryId = setTimeout(() => {
-          identityDeferredRetryId = null;
-          void attemptAutoIdentityRegistration();
-        }, IDENTITY_DEFERRED_RETRY_MS);
+  async function waitForSingleFaceInFrame() {
+    startupMessage = IDENTITY_STEP_MESSAGES.finding_face;
+    for (let i = 0; i < FACE_PRECHECK_ATTEMPTS; i += 1) {
+      await waitForVideoReady(videoEl);
+      const preview = await analyzeFrame(videoEl, null, 0.75);
+      if (preview.person_count === 1) return true;
+      if (i < FACE_PRECHECK_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, FACE_PRECHECK_DELAY_MS));
       }
-      return;
     }
-    identityAutoAttempted = true;
-    await captureIdentity();
+    return false;
+  }
+
+  async function runAutoIdentityRegistration() {
+    identityStatus = 'pending';
+    identityAutoAttemptsDone = 0;
+    startupMessage = IDENTITY_STEP_MESSAGES.verifying;
+
+    for (let attempt = 0; attempt < IDENTITY_AUTO_MAX_ATTEMPTS; attempt += 1) {
+      if (!isActive || !sessionId || identityStatus === 'registered' || identityStatus === 'skipped') {
+        return;
+      }
+      identityAutoAttemptsDone = attempt + 1;
+      if (attempt > 0) {
+        startupMessage = IDENTITY_STEP_MESSAGES.verifying_slow;
+        await new Promise((r) => setTimeout(r, IDENTITY_AUTO_RETRY_DELAY_MS));
+      }
+      const ok = await captureIdentity({ isAuto: true });
+      if (ok) return;
+      if (maybeSkipIdentityAfterFailures()) return;
+    }
+
+    identityStatus = 'failed';
   }
 
   // ── Browser focus / visibility detection ──────────────────────────────────
   // Tracks whether a blur was caused by a tab switch (so we don't double-report)
   let _tabSwitchPending = false;
 
-  function onVisibilityChange() {
+  function pushConfirmedViolations(violations) {
+    if (!violations?.length) return;
+    const mapped = violations.map((v) => ({
+      violation_type: v.violation_type,
+      description: v.description || studentViolationLabel(v.violation_type),
+    }));
+    recentViolations = [...mapped, ...recentViolations].slice(0, MAX_STUDENT_SIGNALS);
+    dispatch('violation', { violations: mapped });
+  }
+
+  async function onVisibilityChange() {
     if (!isActive || !sessionId) return;
     if (document.hidden) {
       _tabSwitchPending = true;
-      const violation = { violation_type: 'tab_switch', confidence: 1.0, description: 'Cambio de pestaña del navegador' };
-      recentViolations = [violation, ...recentViolations].slice(0, 20);
-      dispatch('violation', { violations: [violation] });
-      reportBrowserEvent(sessionId, 'tab_switch').catch(() => {});
+      try {
+        const res = await reportBrowserEvent(sessionId, 'tab_switch');
+        if (res?.recorded) {
+          pushConfirmedViolations([
+            { violation_type: 'tab_switch', description: studentViolationLabel('tab_switch') },
+          ]);
+        }
+      } catch (err) {
+        console.warn('[proctoring] No se pudo registrar cambio de pestaña:', err);
+        showToast('No se pudo registrar el cambio de pestaña', 'warning');
+      }
     } else {
       _tabSwitchPending = false;
     }
   }
 
-  function onWindowBlur() {
+  async function onWindowBlur() {
     if (!isActive || !sessionId) return;
-    // If visibility also changed, it's a tab switch — already reported above
     if (_tabSwitchPending) return;
-    const violation = { violation_type: 'window_blur', confidence: 1.0, description: 'Pérdida de foco: otra ventana o aplicación activa' };
-    recentViolations = [violation, ...recentViolations].slice(0, 20);
-    dispatch('violation', { violations: [violation] });
-    reportBrowserEvent(sessionId, 'window_blur').catch(() => {});
+    try {
+      const res = await reportBrowserEvent(sessionId, 'window_blur');
+      if (res?.recorded) {
+        pushConfirmedViolations([
+          { violation_type: 'window_blur', description: studentViolationLabel('window_blur') },
+        ]);
+      }
+    } catch (err) {
+      console.warn('[proctoring] No se pudo registrar pérdida de foco:', err);
+      showToast('No se pudo registrar el cambio de ventana', 'warning');
+    }
   }
 
   async function startProctoring() {
+    if (startingProctoring) return;
+    startingProctoring = true;
+    startupMessage = IDENTITY_STEP_MESSAGES.preparing_camera;
+    identityFailureCount = 0;
+    identityAutoAttemptsDone = 0;
+    monitoringStarted = false;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia(CAMERA_CONSTRAINTS);
       videoEl.srcObject = stream;
       await videoEl.play();
+      await waitForVideoReady(videoEl);
 
       const session = await startSession(examId, studentId);
       sessionId = session.id;
       isActive = true;
+      sessionBlocked = false;
 
-      intervalHandle = setInterval(sendFrame, FRAME_INTERVAL_MS);
+      if (session.resumed) {
+        showToast('Reanudando tu supervisión en curso');
+      }
 
-      document.addEventListener('visibilitychange', onVisibilityChange);
-      window.addEventListener('blur', onWindowBlur);
-
-      identityStatus = 'pending';
-      clearIdentityAutoTimer();
-      identityAutoAttempted = false;
-      identityAutoDeferCount = 0;
-      identityAutoTimerId = setTimeout(() => {
-        void attemptAutoIdentityRegistration();
-      }, IDENTITY_AUTO_DELAY_MS);
-
-      showToast('Supervisión iniciada');
       dispatch('started', { sessionId });
+
+      if (session.identity_registered) {
+        identityStatus = 'registered';
+        showToast('Supervisión iniciada');
+        beginMonitoring();
+        return;
+      }
+
+      const faceOk = await waitForSingleFaceInFrame();
+      if (!faceOk) {
+        identityError =
+          'No detectamos un solo rostro. Centra tu cara, mejora la luz y asegúrate de estar solo.';
+      }
+
+      await runAutoIdentityRegistration();
+
+      if (identityStatus === 'registered' || identityStatus === 'skipped') {
+        showToast('Supervisión iniciada');
+      } else if (!monitoringStarted) {
+        showToast('Supervisión iniciada. Verifica tu identidad cuando puedas.');
+        beginMonitoring();
+      }
     } catch (e) {
+      if (e?.code === 'SESSION_ALREADY_COMPLETED') {
+        sessionBlocked = true;
+        dispatch('sessionCompleted', { sessionId: e.existingSessionId });
+        showError(e.message ?? 'Ya completaste la supervisión de este examen.');
+        return;
+      }
       showError(`No se pudo iniciar la supervisión: ${e.message}`);
+      if (videoEl?.srcObject) {
+        videoEl.srcObject.getTracks().forEach((t) => t.stop());
+      }
+      isActive = false;
+      sessionId = null;
+    } finally {
+      startingProctoring = false;
+      if (identityStatus !== 'pending' || monitoringStarted) {
+        startupMessage = '';
+      }
     }
   }
 
   async function sendFrame() {
-    if (!videoEl || !isActive) return;
+    if (!videoEl || !isActive || !monitoringStarted) return;
     try {
       if (calibMode) {
         calibData = await calibrateFrame(videoEl);
       } else {
         const result = await analyzeFrame(videoEl, sessionId, 0.7, studentId);
         latestResult = result;
-        if (result.violations.length > 0) {
-          recentViolations = [...result.violations, ...recentViolations].slice(0, 20);
-          dispatch('violation', { violations: result.violations });
+        if (result.violations?.length > 0) {
+          pushConfirmedViolations(result.violations);
         }
       }
     } catch (e) {
@@ -159,22 +260,40 @@
     }
   }
 
-  async function captureIdentity() {
-    if (!videoEl || !sessionId) return;
-    clearIdentityAutoTimer();
+  /**
+   * @param {{ isAuto?: boolean }} [opts]
+   * @returns {Promise<boolean>} true si registró identidad
+   */
+  async function captureIdentity(opts = {}) {
+    if (!videoEl || !sessionId || identityRegistering) return false;
     identityRegistering = true;
+    if (!opts.isAuto) {
+      identityStatus = 'pending';
+      startupMessage = IDENTITY_STEP_MESSAGES.verifying;
+    }
     identityError = '';
     try {
+      await waitForVideoReady(videoEl);
       const res = await registerIdentity(videoEl, sessionId);
       if (res.registered) {
-        identityStatus = 'registered';
-      } else {
-        identityStatus = 'failed';
-        identityError = res.message;
+        onIdentitySuccess();
+        return true;
       }
+      identityFailureCount += 1;
+      identityError = identityMessageForReason(res.reason_code, res.message);
+      if (!opts.isAuto) {
+        identityStatus = 'failed';
+        maybeSkipIdentityAfterFailures();
+      }
+      return false;
     } catch (e) {
-      identityStatus = 'failed';
-      identityError = e.message;
+      identityFailureCount += 1;
+      identityError = e.message ?? identityMessageForReason('default');
+      if (!opts.isAuto) {
+        identityStatus = 'failed';
+        maybeSkipIdentityAfterFailures();
+      }
+      return false;
     } finally {
       identityRegistering = false;
     }
@@ -182,9 +301,10 @@
 
   async function stopProctoring() {
     clearInterval(intervalHandle);
-    clearIdentityAutoTimer();
-    identityAutoAttempted = false;
-    identityAutoDeferCount = 0;
+    monitoringStarted = false;
+    startupMessage = '';
+    identityFailureCount = 0;
+    identityAutoAttemptsDone = 0;
     isActive = false;
     identityStatus = 'none';
 
@@ -211,19 +331,7 @@
     sessionId = null;
   }
 
-  function violationLabel(type) {
-    return {
-      multiple_persons: 'Varias personas',
-      no_person: 'Participante ausente',
-      looking_away: 'Mirando a otro lado',
-      phone_detected: 'Uso de teléfono',
-      tab_switch: 'Cambio de pestaña',
-      window_blur: 'Cambio de ventana/app',
-      identity_mismatch: 'Posible sustitución de persona',
-    }[type] ?? type;
-  }
-
-  // Maps a gaze value [-0.4, 0.4] to a bar percentage [0, 100]
+  // Maps a gaze value [-0.4, 0.4] to a bar percentage [0, 100] (solo modo calibración)
   function yawToPercent(v) {
     return Math.round(Math.min(Math.max(((v + 0.4) / 0.8) * 100, 0), 100));
   }
@@ -232,8 +340,21 @@
     return Math.round(Math.min(Math.max(((v + 0.3) / 0.6) * 100, 0), 100));
   }
 
+  async function checkProctoringConnection() {
+    connectionStatus = 'checking';
+    try {
+      await proctoringHealthCheck();
+      connectionStatus = 'ok';
+    } catch {
+      connectionStatus = 'error';
+    }
+  }
+
+  onMount(() => {
+    if (!isActive) void checkProctoringConnection();
+  });
+
   onDestroy(() => {
-    clearIdentityAutoTimer();
     if (isActive) stopProctoring();
   });
 </script>
@@ -252,46 +373,117 @@
   <!-- svelte-ignore a11y-media-has-caption -->
   <video bind:this={videoEl} class="webcam mb-4 aspect-video w-full rounded-lg bg-zinc-900 object-cover" muted playsinline></video>
 
+  {#if !isActive && connectionStatus}
+    <Card.Root class="mb-4 rounded-lg border border-border bg-muted/30">
+      <Card.Content class="flex items-center justify-between gap-3 py-3">
+        <div>
+          <p class="text-sm font-medium text-foreground">Conexión con supervisión</p>
+          <p class="text-xs text-muted-foreground">
+            {#if connectionStatus === 'checking'}
+              Comprobando servicio…
+            {:else if connectionStatus === 'ok'}
+              Servicio disponible. Puedes iniciar cuando estés listo.
+            {:else}
+              No se pudo contactar el servicio. Revisa tu red o avisa al profesor.
+            {/if}
+          </p>
+        </div>
+        {#if connectionStatus === 'error'}
+          <Button variant="outline" size="sm" onclick={checkProctoringConnection}>Reintentar</Button>
+        {/if}
+      </Card.Content>
+    </Card.Root>
+  {/if}
+
   <div class="controls mb-4 flex gap-2">
-    {#if !isActive}
-      <Button onclick={startProctoring} disabled={!examId || !studentId}>Iniciar supervisión</Button>
+    {#if sessionBlocked}
+      <p class="text-sm text-muted-foreground">Ya completaste la supervisión de este examen.</p>
+    {:else if !isActive}
+      <Button onclick={startProctoring} disabled={!examId || !studentId || startingProctoring}>
+        {startingProctoring ? 'Preparando…' : 'Iniciar supervisión'}
+      </Button>
     {:else}
       <Button variant="destructive" onclick={stopProctoring}>Detener supervisión</Button>
     {/if}
   </div>
 
-  {#if isActive && sessionId}
-    <p class="session-id">Sesión: <code>{sessionId}</code></p>
+  {#if isActive && startupMessage}
+    <p class="mb-3 text-sm text-muted-foreground" role="status">{startupMessage}</p>
   {/if}
 
-  <!-- ── Identity registration banner ── -->
-  {#if isActive && identityStatus === 'pending'}
-    <div class="identity-banner identity-banner--pending">
-      <span class="identity-banner__icon">🪪</span>
-      <span>
-        Se intentará el registro automático en unos segundos si la imagen es válida.
-        También puedes capturar ahora.
-      </span>
-      <button class="btn btn--primary btn--sm" on:click={captureIdentity} disabled={identityRegistering}>
-        {identityRegistering ? 'Capturando…' : 'Capturar foto'}
-      </button>
-    </div>
+  {#if isActive && monitoringStarted}
+    <Alert.Root class="mb-4 border-border bg-muted/40">
+      <Alert.Title class="text-sm font-medium">Supervisión activa</Alert.Title>
+      <Alert.Description class="text-sm text-muted-foreground">
+        Solo se registran señales de integridad (mirada, rostro, dispositivos). Mantén la cámara
+        encendida hasta finalizar el examen.
+      </Alert.Description>
+    </Alert.Root>
+  {/if}
+
+  {#if isActive && (identityStatus === 'pending' || (identityStatus === 'failed' && !monitoringStarted))}
+    <Alert.Root class="mb-4 border-amber-500/40 bg-amber-500/10">
+      <Alert.Title class="text-sm font-semibold">
+        {identityRegistering ? 'Verificando tu identidad…' : 'Verificación de identidad'}
+      </Alert.Title>
+      <Alert.Description class="text-sm">
+        {#if identityRegistering}
+          {IDENTITY_STEP_MESSAGES.verifying_slow}
+        {:else if identityError}
+          {identityError}
+        {:else}
+          Centra tu rostro en la cámara con buena luz. Debes estar solo en imagen.
+        {/if}
+        {#if identityAutoAttemptsDone > 0 && identityStatus === 'pending'}
+          <span class="mt-1 block text-xs text-muted-foreground">
+            Intento automático {identityAutoAttemptsDone} de {IDENTITY_AUTO_MAX_ATTEMPTS}
+          </span>
+        {/if}
+      </Alert.Description>
+      <div class="mt-3">
+        <Button size="sm" onclick={() => captureIdentity()} disabled={identityRegistering}>
+          {identityRegistering ? 'Verificando…' : 'Verificar ahora'}
+        </Button>
+      </div>
+    </Alert.Root>
+  {:else if isActive && identityStatus === 'skipped'}
+    <Alert.Root class="mb-4 border-amber-500/40 bg-amber-500/10">
+      <Alert.Title class="text-sm font-semibold">Identidad no verificada</Alert.Title>
+      <Alert.Description class="text-sm text-muted-foreground">
+        No pudimos confirmar tu identidad. Puedes continuar la supervisión; tu profesor verá el
+        intento en el informe.
+        <div class="mt-3">
+          <Button size="sm" variant="outline" onclick={() => captureIdentity()} disabled={identityRegistering}>
+            Reintentar verificación
+          </Button>
+        </div>
+      </Alert.Description>
+    </Alert.Root>
   {:else if isActive && identityStatus === 'registered'}
-    <div class="identity-banner identity-banner--ok">
-      <span class="identity-banner__icon">✓</span>
-      <span>Identidad registrada — verificando cada 30 s</span>
-    </div>
+    <Alert.Root class="mb-4 border-emerald-500/40 bg-emerald-500/10">
+      <Alert.Title class="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+        Identidad verificada
+      </Alert.Title>
+      <Alert.Description class="text-sm text-muted-foreground">
+        Puedes continuar con el examen con normalidad.
+      </Alert.Description>
+    </Alert.Root>
   {:else if isActive && identityStatus === 'failed'}
-    <div class="identity-banner identity-banner--error">
-      <span class="identity-banner__icon">✗</span>
-      <span>
-        No se pudo registrar la identidad.
-        {#if identityError}<br><small>{identityError}</small>{/if}
-      </span>
-      <button class="btn btn--primary btn--sm" on:click={captureIdentity} disabled={identityRegistering}>
-        Reintentar
-      </button>
-    </div>
+    <Alert.Root variant="destructive" class="mb-4">
+      <Alert.Title class="text-sm font-semibold">No se pudo verificar tu identidad</Alert.Title>
+      <Alert.Description class="text-sm">
+        {#if identityError}
+          {identityError}
+        {:else}
+          Centra tu rostro, mejora la iluminación y asegúrate de estar solo en cámara.
+        {/if}
+      </Alert.Description>
+      <div class="mt-3">
+        <Button size="sm" variant="outline" onclick={() => captureIdentity()} disabled={identityRegistering}>
+          Reintentar
+        </Button>
+      </div>
+    </Alert.Root>
   {/if}
 
   <!-- ── Calibration view ── -->
@@ -334,43 +526,29 @@
       </p>
     </div>
 
-  <!-- ── Normal detection view ── -->
-  {:else if latestResult && !calibMode}
-    <div class="status-grid">
-      <div class="stat">
-        <span class="stat__label">Personas</span>
-        <span class="stat__value" class:stat__value--warn={latestResult.person_count !== 1}>
-          {latestResult.person_count}
-        </span>
-      </div>
-      {#if latestResult.gaze_yaw !== null}
-        <div class="stat">
-          <span class="stat__label">Yaw (H)</span>
-          <span class="stat__value">{latestResult.gaze_yaw.toFixed(3)}</span>
-        </div>
-        <div class="stat">
-          <span class="stat__label">Pitch (V)</span>
-          <span class="stat__value">{latestResult.gaze_pitch.toFixed(3)}</span>
-        </div>
-      {/if}
-      <div class="stat">
-        <span class="stat__label">Tiempo</span>
-        <span class="stat__value">{latestResult.processing_time_ms.toFixed(0)}ms</span>
-      </div>
-    </div>
   {/if}
 
-  {#if recentViolations.length > 0 && !calibMode}
-    <div class="violations space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-      <h3 class="violations__title mb-2 text-sm font-semibold">Señales recientes</h3>
-      {#each recentViolations.slice(0, 8) as v}
-        <div class="violation violation--{v.violation_type} rounded-lg border border-border bg-card p-3 text-sm">
-          <strong class="violation__type">{violationLabel(v.violation_type)}</strong>
-          <span class="violation__conf">{(v.confidence * 100).toFixed(0)}% confianza</span>
-          <span class="violation__desc">{v.description}</span>
-        </div>
-      {/each}
-    </div>
+  {#if isActive && !calibMode}
+    {#if recentViolations.length > 0}
+      <div class="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
+        <h3 class="text-sm font-semibold">Señales registradas</h3>
+        <p class="text-xs text-muted-foreground">
+          Solo se muestran avisos confirmados durante esta sesión.
+        </p>
+        {#each recentViolations as v}
+          <div
+            class="rounded-lg border border-border bg-card p-3 text-sm violation--{String(v.violation_type).toLowerCase()}"
+          >
+            <p class="font-medium text-foreground">{studentViolationLabel(v.violation_type)}</p>
+            <p class="mt-1 text-muted-foreground">{studentViolationHint(v.violation_type)}</p>
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <p class="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-center text-sm text-muted-foreground">
+        Todo en orden. Mantén la cámara activa y mira la pantalla del examen.
+      </p>
+    {/if}
   {/if}
 </div>
 

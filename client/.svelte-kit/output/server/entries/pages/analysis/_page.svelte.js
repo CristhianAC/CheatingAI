@@ -1,6 +1,6 @@
-import { h as ensure_array_like, s as store_get, e as escape_html, i as attr, u as unsubscribe_stores, d as attr_class, j as head } from "../../../chunks/index2.js";
+import { e as ensure_array_like, m as store_get, i as escape_html, b as attr, u as unsubscribe_stores, a as attr_class, o as head } from "../../../chunks/index2.js";
 import { s as submissions, a as activeJob } from "../../../chunks/stores.js";
-import { o as onDestroy } from "../../../chunks/index-server.js";
+import { o as onDestroy } from "../../../chunks/index-server2.js";
 import { P as PageHeader } from "../../../chunks/PageHeader.js";
 import "@sveltejs/kit/internal";
 import "../../../chunks/exports.js";
