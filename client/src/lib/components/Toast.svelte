@@ -4,7 +4,8 @@
   import { cn } from '$lib/utils';
 
   const variantClass = {
-    success: 'border-emerald-500/40 bg-emerald-50 text-emerald-900',
+    success:
+      'border-emerald-500/40 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/50 dark:text-emerald-100',
     error: 'border-destructive/40 bg-destructive/10 text-destructive',
     info: 'border-primary/30 bg-primary/5 text-foreground',
   };

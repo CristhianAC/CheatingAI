@@ -1,15 +1,14 @@
-import { j as head, e as escape_html } from "../../../chunks/index2.js";
+import { o as head, i as escape_html } from "../../../chunks/index2.js";
 import "@sveltejs/kit/internal";
 import "../../../chunks/exports.js";
 import "../../../chunks/utils.js";
 import "@sveltejs/kit/internal/server";
 import "../../../chunks/root.js";
 import "../../../chunks/state.svelte.js";
-import { C as Card, a as Card_content } from "../../../chunks/card-content.js";
+import { C as Card, a as Card_content, L as Label, I as Input } from "../../../chunks/label.js";
 import { C as Card_header, a as Card_title, b as Card_description, c as Card_footer } from "../../../chunks/card-title.js";
 import "clsx";
 import { B as Button } from "../../../chunks/button.js";
-import { L as Label, I as Input } from "../../../chunks/label.js";
 import "../../../chunks/alert.js";
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -24,9 +23,9 @@ function _page($$renderer, $$props) {
           $$renderer5.push(`<title>Iniciar sesión | Procto</title>`);
         });
       });
-      $$renderer3.push(`<div class="mx-auto max-w-md py-8">`);
+      $$renderer3.push(`<div class="mx-auto w-full max-w-md">`);
       Card($$renderer3, {
-        class: "rounded-xl shadow-sm",
+        class: "rounded-xl border-border/80 shadow-sm",
         children: ($$renderer4) => {
           Card_header($$renderer4, {
             children: ($$renderer5) => {

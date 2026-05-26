@@ -21,10 +21,15 @@ class IdentityVerifier:
     so they don't slow down the service startup if identity features are unused.
     """
 
-    def extract_embedding(self, frame_bgr: np.ndarray) -> Optional[list[float]]:
+    def extract_embedding(
+        self,
+        frame_bgr: np.ndarray,
+        *,
+        enforce_detection: bool = False,
+    ) -> Optional[list[float]]:
         """
-        Extract a face embedding from a BGR frame.
-        Returns None if no face is detected or extraction fails.
+        Extract a face embedding from a BGR frame (ideally a MediaPipe crop).
+        Returns None if extraction fails.
         """
         try:
             from deepface import DeepFace  # lazy import — heavy dependency
@@ -32,14 +37,23 @@ class IdentityVerifier:
             results = DeepFace.represent(
                 img_path=frame_bgr,
                 model_name=_MODEL_NAME,
-                enforce_detection=True,
-                detector_backend="opencv",
+                enforce_detection=enforce_detection,
+                detector_backend="skip" if not enforce_detection else "opencv",
                 align=True,
             )
             return results[0]["embedding"]
         except Exception as exc:
             logger.debug("Identity embedding extraction failed: %s", exc)
             return None
+
+    def warmup(self, frame_bgr: np.ndarray | None = None) -> None:
+        """Carga DeepFace/Facenet una vez al arranque del servicio."""
+        import numpy as np
+
+        img = frame_bgr
+        if img is None:
+            img = np.full((64, 64, 3), 128, dtype=np.uint8)
+        self.extract_embedding(img, enforce_detection=False)
 
     def compare(
         self,

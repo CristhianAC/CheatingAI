@@ -18,8 +18,9 @@
   --procto-success: #16a34a;
   --procto-radius: 0.75rem;
   --procto-radius-sm: 0.5rem;
-  --procto-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --procto-header-h: 4.5rem;
+  --procto-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --procto-header-h: 5rem;
 
   /* shadcn zinc + Procto primary */
   --background: hsl(240 5% 96%);
@@ -45,6 +46,13 @@
 }
 
 .dark {
+  --procto-bg: #18181b;
+  --procto-surface: #27272a;
+  --procto-text: #fafafa;
+  --procto-text-secondary: #a1a1aa;
+  --procto-border: rgba(255, 255, 255, 0.08);
+  --procto-border-strong: rgba(255, 255, 255, 0.14);
+  --procto-accent-muted: rgba(0, 113, 227, 0.2);
   --background: hsl(240 10% 3.9%);
   --foreground: hsl(0 0% 98%);
   --muted: hsl(240 3.7% 15.9%);

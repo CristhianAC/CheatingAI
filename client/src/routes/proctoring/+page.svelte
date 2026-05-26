@@ -6,9 +6,12 @@
   import ProctoringMonitor from '$lib/components/ProctoringMonitor.svelte';
   import ExamCountdown from '$lib/components/ExamCountdown.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import * as Card from '$lib/components/ui/card';
+  import { Badge } from '$lib/components/ui/badge';
   import { authStore } from '$lib/auth.js';
   import { examStore } from '$lib/exam-store.js';
   import { endSession, getExamsSummary, getSessionsByExam } from '$lib/proctoring-api.js';
+  import { studentViolationLabel, studentViolationHint } from '$lib/proctoring-student-copy.js';
 
   // Guard síncrono pre-render (evita flash antes de onMount)
   if (browser) {
@@ -19,7 +22,7 @@
       goto('/exams');
     } else if (auth.role === 'STUDENT') {
       const exam = get(examStore);
-      if (!exam?.id) goto('/join-exam');
+      if (!exam?.id || exam.joinable === false) goto('/join-exam');
     }
   }
 
@@ -32,6 +35,9 @@
   let sessionId = null;
   let hasExpired = false;
   let expiredAt = null;
+  /** Supervisión ya finalizada para este examen (409 SESSION_ALREADY_COMPLETED). */
+  let supervisionCompleted = false;
+  let completedSessionId = null;
 
   // Tabs on the right panel: 'monitor' | 'activities'
   let activeTab = 'monitor';
@@ -46,6 +52,8 @@
   let sessionsLoading = false;
   let sessionsError = '';
   $: isProfessor = $authStore?.role === 'PROFESSOR';
+  $: participantDisplay = $authStore?.user?.full_name?.trim() || 'Estudiante';
+  $: recentViolations = violationLog.slice(0, 5);
 
   let pollHandle = null;
 
@@ -68,6 +76,14 @@
 
   function handleStarted(event) {
     sessionId = event.detail.sessionId;
+  }
+
+  function handleSessionCompleted(event) {
+    supervisionCompleted = true;
+    completedSessionId = event.detail.sessionId ?? null;
+    examStore.set(null);
+    selectedExam = null;
+    examId = '';
   }
 
   async function handleExpired() {
@@ -210,70 +226,73 @@
 </svelte:head>
 
 {#if !resolving}
-  <div class="page space-y-6">
+  <div class="page mx-auto max-w-6xl space-y-6 px-4 pb-8 sm:px-6">
     <PageHeader
       focus="Supervisión"
       title="Examen supervisado"
-      subtitle="Activa la cámara para esta sesión y revisa las señales mientras dura la prueba."
-    />
+      subtitle={hasExpired
+        ? 'Tu sesión de supervisión ha finalizado.'
+        : 'Mantén la cámara activa y permanece frente a la pantalla durante la prueba.'}
+    >
+      <svelte:fragment slot="actions">
+        {#if !isProfessor && selectedExam?.ends_at && !hasExpired}
+          <ExamCountdown endsAt={selectedExam.ends_at} onExpired={handleExpired} />
+        {/if}
+      </svelte:fragment>
+    </PageHeader>
 
-    {#if !isProfessor && selectedExam?.ends_at}
-      <div class="countdown-wrap" aria-label="Tiempo restante">
-        <ExamCountdown endsAt={selectedExam.ends_at} onExpired={handleExpired} />
-      </div>
-    {/if}
-
-    <div class="layout grid gap-6 lg:grid-cols-[1fr_340px]">
-      <!-- Left: Config + Monitor -->
-      <div class="layout__left space-y-4">
-        <div class="config-card rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 class="config-card__title">Configuración de sesión</h2>
-          {#if isProfessor}
-            <label class="field">
-              <span class="field__label">Código de examen</span>
-              <input
-                class="field__input"
-                type="text"
-                bind:value={examId}
-                placeholder="ej. ABC123"
-              />
-            </label>
-            <label class="field">
-              <span class="field__label">Identificador del participante</span>
-              <input
-                class="field__input"
-                type="text"
-                bind:value={studentId}
-                placeholder="Tu nombre o email"
-              />
-            </label>
-          {:else}
-            <div class="field">
-              <span class="field__label">Examen seleccionado</span>
-              <p class="field__readonly">
-                {selectedExam?.name ?? 'Sin examen'} · Código {selectedExam?.code ?? '—'}
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+      <div class="space-y-4">
+        {#if !isProfessor}
+          <Card.Root class="rounded-xl">
+            <Card.Header class="pb-2">
+              <Card.Title class="text-lg">{selectedExam?.name ?? 'Examen'}</Card.Title>
+              <Card.Description>
+                Código <Badge variant="outline" class="font-mono tracking-wider">{selectedExam?.code ?? '—'}</Badge>
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <p class="text-sm text-muted-foreground">
+                Participante: <span class="font-medium text-foreground">{participantDisplay}</span>
               </p>
-            </div>
-            <div class="field">
-              <span class="field__label">Participante</span>
-              <p class="field__readonly">{studentId || 'No identificado'}</p>
-            </div>
-          {/if}
-        </div>
+            </Card.Content>
+          </Card.Root>
+        {/if}
 
-        {#if hasExpired}
-          <section class="card finished-card">
-            <h2 class="card__title">Examen finalizado</h2>
-            <p class="finished-card__meta">
-              <strong>{selectedExam?.name ?? 'Examen'}</strong>
-              {#if expiredAt}
-                · Finalizado: {new Date(expiredAt).toLocaleString()}
+        {#if supervisionCompleted}
+          <Card.Root class="rounded-xl border-border">
+            <Card.Header>
+              <Card.Title>Supervisión ya realizada</Card.Title>
+            </Card.Header>
+            <Card.Content class="space-y-3 text-sm text-muted-foreground">
+              <p>
+                Ya completaste la supervisión de este examen. No es necesario iniciarla de nuevo.
+              </p>
+              {#if completedSessionId}
+                <p>
+                  Si tu profesor te compartió un enlace al informe, puedes consultarlo desde su panel.
+                </p>
               {/if}
-            </p>
-            <p class="finished-card__hint">
-              El tiempo de la prueba se agotó. Esta sesión quedó cerrada y ya no es posible continuar.
-            </p>
-          </section>
+              <a href="/join-exam" class="inline-block text-sm font-medium text-primary hover:underline">
+                Volver a unirse a un examen
+              </a>
+            </Card.Content>
+          </Card.Root>
+        {:else if hasExpired}
+          <Card.Root class="rounded-xl border-border">
+            <Card.Header>
+              <Card.Title>Examen finalizado</Card.Title>
+            </Card.Header>
+            <Card.Content class="space-y-2 text-sm text-muted-foreground">
+              <p>
+                <strong class="text-foreground">{selectedExam?.name ?? 'Examen'}</strong>
+                {#if expiredAt}
+                  · {new Date(expiredAt).toLocaleString('es')}
+                {/if}
+              </p>
+              <p>El tiempo de la prueba se agotó. Ya no es posible continuar la supervisión.</p>
+            </Card.Content>
+          </Card.Root>
         {:else}
           <ProctoringMonitor
             {examId}
@@ -281,12 +300,12 @@
             on:started={handleStarted}
             on:violation={handleViolation}
             on:ended={handleEnded}
+            on:sessionCompleted={handleSessionCompleted}
           />
         {/if}
       </div>
 
-    <!-- Right: Monitor / Activities -->
-    <div class="layout__right space-y-4">
+    <div class="space-y-4">
       {#if isProfessor}
         <div class="tabs flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
           <button
@@ -488,41 +507,46 @@
           </div>
         {/if}
       {:else}
-        {#if sessionStats}
-          <div class="stats-card">
-            <h2 class="stats-card__title">Resumen de sesión</h2>
-            <p class="stat-row">
-              <span>Total violaciones:</span>
-              <strong>{sessionStats.total_violations}</strong>
-            </p>
-            {#each Object.entries(sessionStats.violations_by_type) as [type, count]}
-              <p class="stat-row">
-                <span>{violationLabel(type)}:</span>
-                <strong>{count}</strong>
+        <Card.Root class="rounded-xl">
+          <Card.Header class="pb-2">
+            <Card.Title class="text-base">Estado de supervisión</Card.Title>
+          </Card.Header>
+          <Card.Content class="space-y-4">
+            {#if !sessionId}
+              <p class="text-sm text-muted-foreground">
+                Cuando inicies la supervisión desde el panel de la cámara, aquí verás un resumen breve
+                de las señales detectadas.
               </p>
-            {/each}
-          </div>
-        {/if}
+            {:else if recentViolations.length === 0}
+              <p class="text-sm leading-relaxed text-muted-foreground">
+                Todo en orden. Las señales confirmadas aparecen en el panel de la cámara.
+              </p>
+            {:else}
+              <p class="text-xs text-muted-foreground">Resumen breve (detalle en el panel de la cámara):</p>
+              <ul class="space-y-2">
+                {#each recentViolations as entry}
+                  <li class="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
+                    <p class="font-medium text-foreground">
+                      {studentViolationLabel(entry.violation_type)}
+                    </p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                      {studentViolationHint(entry.violation_type)}
+                    </p>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </Card.Content>
+        </Card.Root>
 
-        {#if violationLog.length > 0}
-          <div class="log-card">
-            <h2 class="log-card__title">Registro de violaciones</h2>
-            <div class="log-list">
-              {#each violationLog as entry}
-                <div class="log-entry log-entry--{entry.violation_type}">
-                  <span class="log-entry__time">{entry.timestamp}</span>
-                  <span class="log-entry__type">{violationLabel(entry.violation_type)}</span>
-                  <span class="log-entry__conf">{(entry.confidence * 100).toFixed(0)}%</span>
-                </div>
-              {/each}
-            </div>
-          </div>
-        {:else}
-          <div class="empty-log">
-            <p>No se han detectado violaciones aún.</p>
-            <p class="empty-log__hint">Inicia la supervisión para comenzar el monitoreo.</p>
-          </div>
-        {/if}
+        <Card.Root class="rounded-xl border-primary/20 bg-primary/5 dark:bg-primary/10">
+          <Card.Content class="pt-6 text-sm text-muted-foreground">
+            <p class="leading-relaxed">
+              La supervisión ayuda a tu profesor a verificar el entorno del examen. No necesitas hacer
+              nada más que mantener la cámara encendida y concentrarte en la prueba.
+            </p>
+          </Card.Content>
+        </Card.Root>
       {/if}
     </div>
     </div>
@@ -569,52 +593,59 @@
     border: 1px solid var(--procto-border, rgba(0, 0, 0, 0.08));
     margin-bottom: 1.25rem;
   }
-  .config-card__title { font-size: 1rem; font-weight: 700; margin: 0 0 1rem; color: #374151; }
+  .config-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+    color: var(--foreground);
+  }
 
   .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.85rem; }
-  .field__label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+  .field__label { font-size: 0.82rem; font-weight: 600; color: var(--foreground); }
   .field__input {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border);
     border-radius: 7px;
     font-size: 0.9rem;
     outline: none;
+    background: var(--background);
+    color: var(--foreground);
     transition: border-color 0.15s;
   }
-  .field__input:focus { border-color: var(--procto-accent, #0071e3); }
+  .field__input:focus { border-color: var(--ring); }
   .field__readonly {
     margin: 0;
     padding: 0.55rem 0.75rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 7px;
     font-size: 0.9rem;
-    background: #f9fafb;
-    color: #374151;
+    background: var(--muted);
+    color: var(--foreground);
   }
 
   .stats-card, .log-card {
-    background: var(--procto-surface, #fff);
+    background: var(--card);
     border-radius: var(--procto-radius, 12px);
     padding: 1.25rem 1.5rem;
     box-shadow: var(--procto-shadow-card);
-    border: 1px solid var(--procto-border);
+    border: 1px solid var(--border);
     margin-bottom: 1.25rem;
   }
   .stats-card__title, .log-card__title {
     font-size: 1rem;
     font-weight: 700;
     margin: 0 0 1rem;
-    color: #374151;
+    color: var(--foreground);
   }
 
   .stat-row {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    color: #374151;
+    color: var(--foreground);
     margin: 0.4rem 0;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--border);
   }
 
   .log-list { max-height: 420px; overflow-y: auto; }
@@ -629,21 +660,25 @@
     margin-bottom: 0.3rem;
     font-size: 0.82rem;
   }
-  .log-entry--multiple_persons { background: #fef3c7; }
-  .log-entry--no_person        { background: #fee2e2; }
-  .log-entry--looking_away     { background: #fef9c3; }
-  .log-entry--phone_detected   { background: #fce7f3; }
+  .log-entry--multiple_persons { background: rgb(254 243 199 / 0.5); }
+  .log-entry--no_person        { background: rgb(254 226 226 / 0.5); }
+  .log-entry--looking_away     { background: rgb(254 249 195 / 0.5); }
+  .log-entry--phone_detected   { background: rgb(252 231 243 / 0.5); }
+  :global(.dark) .log-entry--multiple_persons { background: rgb(113 63 18 / 0.35); }
+  :global(.dark) .log-entry--no_person        { background: rgb(127 29 29 / 0.35); }
+  :global(.dark) .log-entry--looking_away     { background: rgb(113 63 18 / 0.25); }
+  :global(.dark) .log-entry--phone_detected   { background: rgb(131 24 67 / 0.3); }
 
-  .log-entry__time { color: #9ca3af; font-size: 0.75rem; white-space: nowrap; }
-  .log-entry__type { font-weight: 600; color: #111827; }
-  .log-entry__conf { color: #6b7280; font-size: 0.75rem; white-space: nowrap; }
+  .log-entry__time { color: var(--muted-foreground); font-size: 0.75rem; white-space: nowrap; }
+  .log-entry__type { font-weight: 600; color: var(--foreground); }
+  .log-entry__conf { color: var(--muted-foreground); font-size: 0.75rem; white-space: nowrap; }
 
   .empty-log {
-    background: #f9fafb;
+    background: var(--muted);
     border-radius: 12px;
     padding: 2rem;
     text-align: center;
-    color: #6b7280;
+    color: var(--muted-foreground);
   }
   .empty-log p { margin: 0.25rem 0; }
   .empty-log__hint { font-size: 0.83rem; }
@@ -651,7 +686,7 @@
   /* Tabs right panel */
   .tabs {
     display: inline-flex;
-    background: #e5e7eb;
+    background: var(--muted);
     border-radius: 999px;
     padding: 0.18rem;
     margin-bottom: 1rem;
@@ -663,14 +698,14 @@
     padding: 0.32rem 0.9rem;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--muted-foreground);
     cursor: pointer;
     transition: all 0.15s;
   }
   .tabs__tab--active {
-    background: #fff;
-    color: var(--procto-accent, #0071e3);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    background: var(--card);
+    color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 
   /* Activities panel */
@@ -693,34 +728,34 @@
   .activities__title {
     font-size: 0.98rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--foreground);
     margin: 0 0 0.1rem;
   }
   .activities__subtitle {
     font-size: 0.82rem;
-    color: #6b7280;
+    color: var(--muted-foreground);
     margin: 0;
   }
   .activities__info {
     font-size: 0.84rem;
-    color: #6b7280;
+    color: var(--muted-foreground);
   }
   .activities__error {
     font-size: 0.84rem;
-    color: #b91c1c;
+    color: var(--destructive);
   }
 
   /* Reusable table styles */
   .table {
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     overflow: hidden;
-    background: #fff;
+    background: var(--card);
   }
   .table__head {
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--muted);
+    border-bottom: 1px solid var(--border);
   }
   .table__row {
     display: grid;
@@ -734,7 +769,7 @@
     grid-template-columns: 1.5fr 1.7fr 1.7fr 1fr;
   }
   .table__row:nth-child(even) .table__cell:not(.table__cell--header) {
-    background: #fcfcff;
+    background: color-mix(in srgb, var(--muted) 45%, transparent);
   }
   .table__row--clickable {
     border: none;
@@ -752,7 +787,7 @@
   .table__cell--header {
     font-size: 0.78rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -769,7 +804,7 @@
 
   .row-arrow {
     font-size: 0.9rem;
-    color: #9ca3af;
+    color: var(--muted-foreground);
   }
 
   .badge {

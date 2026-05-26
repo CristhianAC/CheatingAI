@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.database import Base, engine
 from app.routers import proctoring, sessions
 from app.services.vision.detector import VisionDetector
+from app.services.vision.identity_verifier import IdentityVerifier
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,20 @@ async def lifespan(app: FastAPI):
 
     # Inicializar VisionDetector una sola vez (carga de modelos MediaPipe es costosa)
     app.state.detector = VisionDetector()
+    app.state.identity_verifier = IdentityVerifier()
+
+    if settings.IDENTITY_WARMUP_ON_STARTUP:
+        import time
+
+        t0 = time.perf_counter()
+        try:
+            app.state.identity_verifier.warmup()
+            logger.info(
+                "Identity model warmup completed in %.1f s",
+                time.perf_counter() - t0,
+            )
+        except Exception as exc:
+            logger.warning("Identity warmup skipped: %s", exc)
 
     yield
 

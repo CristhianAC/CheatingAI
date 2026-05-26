@@ -1,4 +1,4 @@
-import { a as attributes, c as clsx$1, b as bind_props } from "./index2.js";
+import { l as attributes, c as clsx$1, p as bind_props } from "./index2.js";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { tv } from "tailwind-variants";

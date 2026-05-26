@@ -32,7 +32,17 @@ def require_auth(authorization: str | None = Header(default=None)) -> str:
     summary="Start a new proctoring session",
 )
 def create_session(payload: SessionCreate, db: Session = Depends(get_db)):
-    return SessionService(db).create(payload)
+    session, resumed = SessionService(db).create_or_resume(payload)
+    return SessionResponse(
+        id=session.id,
+        exam_id=session.exam_id,
+        student_id=session.student_id,
+        status=session.status,
+        started_at=session.started_at,
+        ended_at=session.ended_at,
+        resumed=resumed,
+        identity_registered=bool(session.reference_embedding),
+    )
 
 
 @router.get(

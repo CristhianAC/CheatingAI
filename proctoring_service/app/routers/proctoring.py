@@ -9,10 +9,11 @@ from app.config import get_settings
 from app.dependencies import get_db
 from app.models.violation import ViolationType
 from app.schemas.frame import DetectedViolation, FrameAnalysisRequest, FrameAnalysisResponse
-from app.services.frame_persistence import persist_frame_analysis, reset_absent_streak
+from app.services.frame_persistence import persist_frame_analysis, record_browser_violation, reset_absent_streak
+from app.services.violation_messages import student_violation_description
 from app.services.session_service import SessionService
 from app.services.storage import upload_identity_violation_capture
-from app.services.vision.identity_verifier import IdentityVerifier
+from app.services.identity_registration_service import register_identity_from_frame
 from app.services.violation_service import ViolationService
 
 router = APIRouter(prefix="/proctoring", tags=["Proctoring"])
@@ -64,22 +65,11 @@ def analyze_frame(
                 DetectedViolation(
                     violation_type=v.violation_type,
                     confidence=v.confidence,
-                    description=v.description,
+                    description=student_violation_description(v.violation_type),
                 )
                 for v in persisted
             ]
             violations_persisted = len(persisted) > 0
-
-    if not response_violations:
-        response_violations = [
-            DetectedViolation(
-                violation_type=v.violation_type,
-                confidence=v.confidence,
-                description=v.description,
-            )
-            for v in result.violations
-            if v.violation_type.value != "no_person"
-        ]
 
     return FrameAnalysisResponse(
         person_count=result.person_count,
@@ -137,23 +127,20 @@ def report_browser_event(
     if session.status.value != "active":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_ERR_SESSION_NOT_ACTIVE)
 
-    ViolationService(db).record(
-        session_id=payload.session_id,
-        violation_type=violation_type,
-        confidence=1.0,
-        frame_snapshot=None,
-    )
+    recorded = record_browser_violation(db, payload.session_id, violation_type, 1.0)
 
     return BrowserEventResponse(
-        recorded=True,
-        violation_type=violation_type.value,
-        message=_BROWSER_EVENT_DESCRIPTIONS[payload.event_type],
+        recorded=recorded,
+        violation_type=violation_type.client_key,
+        message=_BROWSER_EVENT_DESCRIPTIONS[payload.event_type]
+        if recorded
+        else "Evento ya registrado recientemente",
     )
 
 
 # ── Identity verification endpoints ──────────────────────────────────────────
-
-_identity_verifier = IdentityVerifier()
+# Diagnóstico histórico: frame con videoWidth=0, cold start DeepFace en 1.er request,
+# carrera con analyze-frame, y opencv vs MediaPipe — ver identity_registration_service.
 
 
 class IdentityRequest(BaseModel):
@@ -170,6 +157,8 @@ class IdentityRequest(BaseModel):
 class RegisterIdentityResponse(BaseModel):
     registered: bool
     message: str
+    reason_code: str | None = None
+    face_count: int | None = None
 
 
 class CheckIdentityResponse(BaseModel):
@@ -200,6 +189,7 @@ def _decode_frame_to_bgr(frame_base64: str):
 )
 def register_identity(
     payload: IdentityRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     session = SessionService(db).get_by_id(payload.session_id)
@@ -209,12 +199,19 @@ def register_identity(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_ERR_SESSION_NOT_ACTIVE)
 
     frame_bgr = _decode_frame_to_bgr(payload.frame_base64)
-    embedding = _identity_verifier.extract_embedding(frame_bgr)
+    face_detector = request.app.state.detector.face_detector
+    verifier = request.app.state.identity_verifier
 
-    if embedding is None:
+    registered, message, reason_code, face_count, embedding = register_identity_from_frame(
+        frame_bgr, face_detector, verifier
+    )
+
+    if not registered or embedding is None:
         return RegisterIdentityResponse(
             registered=False,
-            message="No se detectó ningún rostro. Asegúrate de estar frente a la cámara.",
+            message=message,
+            reason_code=reason_code,
+            face_count=face_count,
         )
 
     session.reference_embedding = json.dumps(embedding)
@@ -222,7 +219,9 @@ def register_identity(
 
     return RegisterIdentityResponse(
         registered=True,
-        message="Identidad registrada correctamente.",
+        message=message,
+        reason_code=reason_code,
+        face_count=face_count,
     )
 
 
@@ -233,6 +232,7 @@ def register_identity(
 )
 def check_identity(
     payload: IdentityRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     session = SessionService(db).get_by_id(payload.session_id)
@@ -248,7 +248,11 @@ def check_identity(
 
     reference = json.loads(session.reference_embedding)
     frame_bgr = _decode_frame_to_bgr(payload.frame_base64)
-    current_embedding = _identity_verifier.extract_embedding(frame_bgr)
+    face_detector = request.app.state.detector.face_detector
+    verifier = request.app.state.identity_verifier
+    _ok, _msg, _code, _fc, current_embedding = register_identity_from_frame(
+        frame_bgr, face_detector, verifier
+    )
 
     if current_embedding is None:
         return CheckIdentityResponse(
@@ -258,7 +262,7 @@ def check_identity(
             message="No se detectó ningún rostro en el frame actual.",
         )
 
-    is_same, similarity = _identity_verifier.compare(reference, current_embedding)
+    is_same, similarity = verifier.compare(reference, current_embedding)
     violation_recorded = False
 
     if not is_same:

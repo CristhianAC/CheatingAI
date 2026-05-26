@@ -3,11 +3,17 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { get } from 'svelte/store';
-  import Toast from '$lib/components/Toast.svelte';
+  import { Toaster } from '$lib/components/ui/sonner';
   import { Button } from '$lib/components/ui/button';
   import { authStore, initAuth, logout } from '$lib/auth.js';
+  import { initTheme, resolveDark, themePreference, toggleTheme } from '$lib/theme.js';
   import { page } from '$app/stores';
   import { cn } from '$lib/utils';
+  import Moon from '@lucide/svelte/icons/moon';
+  import Sun from '@lucide/svelte/icons/sun';
+  /* Pre-bundle accordion icons to avoid Vite full reload on first report visit */
+  import '@lucide/svelte/icons/chevron-down';
+  import '@lucide/svelte/icons/chevron-up';
 
   function isPublicAuthPath(pathname) {
     return pathname === '/login' || pathname === '/register';
@@ -30,8 +36,11 @@
   $: isAuthPage = $page.url.pathname === '/login' || $page.url.pathname === '/register';
   $: path = $page.url.pathname;
 
+  $: isDark = resolveDark($themePreference);
+
   onMount(() => {
     initAuth();
+    const cleanupTheme = initTheme();
 
     const currentPath = $page.url.pathname;
     const currentToken = get(authStore)?.token ?? null;
@@ -48,32 +57,87 @@
 
     enforceAuth(get(authStore)?.token ?? null);
     const unsubscribe = authStore.subscribe((value) => enforceAuth(value?.token ?? null));
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      cleanupTheme?.();
+    };
   });
 </script>
 
 <div class="min-h-screen bg-background">
+  {#if isAuthPage}
+    <div class="relative min-h-screen">
+      <div class="absolute right-4 top-4 z-10">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onclick={toggleTheme}
+          aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+        >
+          {#if isDark}
+            <Sun class="size-4" />
+          {:else}
+            <Moon class="size-4" />
+          {/if}
+        </Button>
+      </div>
+      <div class="mx-auto grid min-h-screen max-w-6xl lg:grid-cols-2">
+        <div
+          class="hidden min-h-screen flex-col items-center justify-center border-r border-border bg-muted/30 px-10 py-16 text-center lg:flex lg:px-14"
+        >
+          <img
+            src="/roble_amarillo.png"
+            alt=""
+            width="256"
+            height="256"
+            class="mx-auto mb-3 w-full max-w-[min(460px,82%)] aspect-square object-contain drop-shadow-md"
+            decoding="async"
+          />
+          <h1 class="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Procto</h1>
+          <p class="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
+            Plataforma de evidencia e integridad académica. Supervisión remota y revisión por tu
+            profesor.
+          </p>
+        </div>
+        <main class="flex flex-col justify-center px-6 py-12 sm:px-10">
+          <div class="mb-10 flex flex-col items-center text-center lg:hidden">
+            <img
+              src="/roble_amarillo.png"
+              alt=""
+              class="size-36 object-contain drop-shadow-sm"
+              width="144"
+              height="144"
+            />
+            <p class="mt-2 text-2xl font-semibold tracking-tight">Procto</p>
+            <p class="mt-1 text-sm text-muted-foreground">Evidencia e integridad académica</p>
+          </div>
+          <slot />
+        </main>
+      </div>
+    </div>
+  {:else}
   <header
     class="sticky top-0 z-50 border-b border-border/80 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/70"
   >
     <div class="mx-auto flex h-[var(--procto-header-h)] max-w-6xl items-center gap-4 px-4 sm:px-6">
       <a
         href="/"
-        class="flex shrink-0 items-center gap-3 border-r border-border pr-4"
+        class="flex shrink-0 items-center gap-1.5 border-r border-border pr-4 max-sm:gap-1 max-sm:pr-3"
         aria-label="Procto, inicio"
       >
         <img
           src="/roble_amarillo.png"
           alt=""
-          width="48"
-          height="48"
-          class="size-12 object-contain"
+          width="68"
+          height="68"
+          class="h-[4.25rem] w-auto max-h-[calc(var(--procto-header-h)-0.5rem)] shrink-0 object-contain drop-shadow-sm"
           decoding="async"
         />
-        <span class="text-2xl font-bold tracking-tight text-foreground">Procto</span>
+        <span class="text-xl font-bold leading-none tracking-tight text-foreground max-sm:hidden sm:inline"
+          >Procto</span
+        >
       </a>
 
-      {#if !isAuthPage}
         <nav class="flex flex-1 flex-wrap items-center justify-center gap-1 overflow-x-auto max-sm:justify-start max-sm:pb-1" aria-label="Principal">
           {#if $authStore?.role === 'PROFESSOR'}
             <a href="/exams" class={navClass(path.startsWith('/exams'))}>Exámenes</a>
@@ -90,21 +154,34 @@
 
         {#if $authStore?.user}
           <div class="ml-auto flex shrink-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onclick={toggleTheme}
+              aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+              title={isDark ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {#if isDark}
+                <Sun class="size-4" />
+              {:else}
+                <Moon class="size-4" />
+              {/if}
+            </Button>
             <Button variant="ghost" size="sm" href="/profile" class="max-w-[10rem] truncate font-medium">
               {$authStore.user.full_name}
             </Button>
             <Button variant="outline" size="sm" onclick={handleLogout}>Salir</Button>
           </div>
         {/if}
-      {/if}
     </div>
   </header>
 
   <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
     <slot />
   </main>
+  {/if}
 
-  <Toast />
+  <Toaster richColors closeButton position="bottom-right" />
 </div>
 
 <style>

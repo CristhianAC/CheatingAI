@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, get_db
 from app.models.exam import Exam
 from app.schemas.exam import ExamCodeCheck, ExamCreate, ExamResponse, ExamStatusUpdate
+from app.services.exam_access import is_exam_joinable
 
 router = APIRouter(prefix="/exams", tags=["Exams"])
 
@@ -153,6 +154,18 @@ def verify_exam_code(
     if ends_at is not None:
         if ends_at <= now:
             raise HTTPException(status_code=410, detail="EXAM_FINISHED")
+
+    joinable, _ui_status = is_exam_joinable(exam, now)
+    if not joinable:
+        scheduled_at = getattr(exam, "scheduled_at", None)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "EXAM_NOT_STARTED",
+                "message": "Este examen aún no ha comenzado.",
+                "scheduled_at": scheduled_at.isoformat() if scheduled_at else None,
+            },
+        )
 
     return _to_exam_response(exam)
 

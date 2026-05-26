@@ -1,15 +1,50 @@
 // Proctoring service (port 8001) proxied via Vite dev server
+
+import { captureVideoFrameBase64 } from '$lib/camera-ready.js';
+
+
+
 const SESSION_BASE = '/api/v1/sessions';
+
 const PROCTOR_BASE = '/api/v1/proctoring';
 
+
+
 function _getToken() {
+
   if (typeof window === 'undefined') return null;
+
   try {
+
     const raw = sessionStorage.getItem('procto_auth');
+
     return raw ? JSON.parse(raw)?.token ?? null : null;
+
   } catch {
+
     return null;
+
   }
+
+}
+
+
+
+function _parseJsonBody(text) {
+  if (!text?.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function _httpErrorMessage(res, text) {
+  if (res.status >= 500) {
+    return 'El servicio de supervisión tuvo un error interno. Intenta de nuevo en unos segundos.';
+  }
+  const snippet = text?.trim().slice(0, 120);
+  return snippet ? `Error ${res.status}: ${snippet}` : `Error ${res.status}`;
 }
 
 async function request(method, url, body = null) {
@@ -22,130 +57,199 @@ async function request(method, url, body = null) {
   const res = await fetch(url, opts);
   if (res.status === 204) return null;
 
-  const data = await res.json();
+  const text = await res.text();
+  const data = _parseJsonBody(text);
+
   if (!res.ok) {
-    const msg = data?.detail || `Error ${res.status}`;
-    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    if (data === undefined) {
+      const err = new Error(_httpErrorMessage(res, text));
+      err.status = res.status;
+      throw err;
+    }
+    const detail = data?.detail;
+    if (detail && typeof detail === 'object' && detail.message) {
+      const err = new Error(detail.message);
+      err.code = detail.code;
+      err.existingSessionId = detail.existing_session_id;
+      err.status = res.status;
+      throw err;
+    }
+    const msg = detail || `Error ${res.status}`;
+    const err = new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    err.status = res.status;
+    throw err;
   }
+
   return data;
 }
 
+
+
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
+
+
 export function startSession(examId, studentId) {
+
   return request('POST', `${SESSION_BASE}/`, { exam_id: examId, student_id: studentId });
+
 }
+
+
 
 export function getSessionStats(sessionId) {
+
   return request('GET', `${SESSION_BASE}/${sessionId}`);
+
 }
 
+
+
 export function endSession(sessionId) {
+
   return request('PUT', `${SESSION_BASE}/${sessionId}/end`);
+
 }
+
+
 
 // ── Teacher / reporting views ──────────────────────────────────────────────────
 
-// Summary of exams with number of students and last activity
+
+
 export function getExamsSummary() {
+
   return request('GET', `${SESSION_BASE}/exams-summary`);
+
 }
 
-// List of sessions for a given exam
+
+
 export function getSessionsByExam(examId) {
+
   return request('GET', `${SESSION_BASE}/by-exam/${encodeURIComponent(examId)}`);
+
 }
 
-// Detailed report for a finished session (used in next step)
+
+
 export function getSessionReport(sessionId) {
+
   return request('GET', `${SESSION_BASE}/${sessionId}/report`);
+
 }
+
+
 
 // ── Browser events ────────────────────────────────────────────────────────────
 
-/**
- * Report a browser focus/visibility event as a proctoring violation.
- * @param {string} sessionId - Active session ID
- * @param {'tab_switch'|'window_blur'} eventType
- */
+
+
 export function reportBrowserEvent(sessionId, eventType) {
+
   return request('POST', `${PROCTOR_BASE}/browser-event`, {
+
     session_id: sessionId,
+
     event_type: eventType,
+
   });
+
 }
+
+
 
 // ── Identity verification ─────────────────────────────────────────────────────
 
-function _captureBase64(videoEl, quality = 0.85) {
-  const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth || 640;
-  canvas.height = videoEl.videoHeight || 480;
-  canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', quality).split(',')[1];
-}
+
 
 /**
- * Capture a reference face embedding at session start.
+
  * @param {HTMLVideoElement} videoEl
+
  * @param {string} sessionId
+
  */
-export function registerIdentity(videoEl, sessionId) {
+
+export async function registerIdentity(videoEl, sessionId) {
+
+  const frame_base64 = await captureVideoFrameBase64(videoEl, 0.9);
+
   return request('POST', `${PROCTOR_BASE}/register-identity`, {
+
     session_id: sessionId,
-    frame_base64: _captureBase64(videoEl),
+
+    frame_base64,
+
   });
+
 }
 
-/**
- * Compare the current face against the registered identity.
- * Records a violation automatically if mismatch is detected.
- * @param {HTMLVideoElement} videoEl
- * @param {string} sessionId
- */
-export function checkIdentity(videoEl, sessionId) {
+
+
+export async function checkIdentity(videoEl, sessionId) {
+
+  const frame_base64 = await captureVideoFrameBase64(videoEl, 0.9);
+
   return request('POST', `${PROCTOR_BASE}/check-identity`, {
+
     session_id: sessionId,
-    frame_base64: _captureBase64(videoEl),
+
+    frame_base64,
+
   });
+
 }
+
+
 
 // ── Frame Analysis ────────────────────────────────────────────────────────────
 
-/**
- * Capture a frame from a <video> element and send it for analysis.
- * @param {HTMLVideoElement} videoEl - The live webcam video element
- * @param {string|null} sessionId - Active session ID or null (no persistence)
- * @param {number} quality - JPEG quality 0.0-1.0 (default 0.7)
- */
-export async function analyzeFrame(videoEl, sessionId = null, quality = 0.7, studentId = null) {
-  const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth || 640;
-  canvas.height = videoEl.videoHeight || 480;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
-  // canvas.toDataURL returns "data:image/jpeg;base64,<data>"
-  // The field_validator in FrameAnalysisRequest strips the prefix automatically
-  const dataUrl = canvas.toDataURL('image/jpeg', quality);
-  const base64 = dataUrl.split(',')[1];
+
+/**
+
+ * @param {HTMLVideoElement} videoEl
+
+ * @param {string|null} sessionId
+
+ * @param {number} quality
+
+ * @param {string|null} studentId
+
+ */
+
+export async function analyzeFrame(videoEl, sessionId = null, quality = 0.7, studentId = null) {
+
+  const frame_base64 = await captureVideoFrameBase64(videoEl, quality);
 
   return request('POST', `${PROCTOR_BASE}/analyze-frame`, {
+
     session_id: sessionId,
+
     student_id: studentId || null,
-    frame_base64: base64,
+
+    frame_base64,
+
   });
+
 }
 
-/**
- * Calibration call: returns raw gaze values without violation logic.
- * @param {HTMLVideoElement} videoEl
- */
+
+
 export async function calibrateFrame(videoEl) {
-  const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth || 640;
-  canvas.height = videoEl.videoHeight || 480;
-  canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-  return request('POST', `${PROCTOR_BASE}/calibrate`, { frame_base64: base64 });
+
+  const frame_base64 = await captureVideoFrameBase64(videoEl, 0.7);
+
+  return request('POST', `${PROCTOR_BASE}/calibrate`, { frame_base64 });
+
 }
+
+/** Comprueba disponibilidad del servicio de supervisión (proxied en dev). */
+export async function proctoringHealthCheck() {
+  const res = await fetch('/proctoring-health', { method: 'GET' });
+  if (!res.ok) throw new Error('Servicio de supervisión no disponible');
+  return res.json();
+}
+
+

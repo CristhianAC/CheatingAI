@@ -259,7 +259,7 @@ Pull request con descripción, capturas si es UI, confirmación de build y prueb
 
 ### 9.2 Requisitos de acceso
 
-- Proyecto Supabase con buckets `profile-photos` y `violation-captures` (o nombres en `.env`).
+- Proyecto Supabase con buckets `profile-photos` y `proctoring-violations` (`SUPABASE_VIOLATION_CAPTURES_BUCKET` puede apuntar al mismo bucket).
 - `service_role` key para subidas desde backend.
 - Cámara y HTTPS/localhost para pruebas de `getUserMedia`.
 

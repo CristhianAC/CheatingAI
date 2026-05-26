@@ -1,4 +1,4 @@
-import { t as hydration_mismatch, H as HYDRATION_ERROR, C as COMMENT_NODE, v as HYDRATION_END, w as HYDRATION_START, x as HYDRATION_START_ELSE, y as get_next_sibling, z as effect_tracking, B as get, D as render_effect, E as source, F as untrack, G as increment, I as queue_micro_task, J as active_effect, K as BOUNDARY_EFFECT, L as block, M as branch, N as create_text, O as pause_effect, P as current_batch, Q as move_effect, R as defer_effect, S as set_active_effect, T as set_active_reaction, U as set_component_context, V as Batch, W as handle_error, X as active_reaction, Y as component_context, Z as internal_set, _ as destroy_effect, $ as invoke_error_boundary, a0 as svelte_boundary_reset_onerror, a1 as HYDRATION_START_FAILED, a2 as svelte_boundary_reset_noop, a3 as EFFECT_TRANSPARENT, a4 as EFFECT_PRESERVED, a5 as define_property, a6 as init_operations, a7 as get_first_child, a8 as hydration_failed, a9 as clear_text_content, aa as component_root, ab as array_from, ac as is_passive_event, ad as push, ae as pop, af as set, ag as LEGACY_PROPS, ah as flushSync, ai as mutable_source, aj as render, ak as setContext, n as derived } from "./index2.js";
+import { y as hydration_mismatch, H as HYDRATION_ERROR, C as COMMENT_NODE, z as HYDRATION_END, B as HYDRATION_START, D as HYDRATION_START_ELSE, E as get_next_sibling, F as effect_tracking, G as get, I as render_effect, J as source, K as untrack, L as increment, M as queue_micro_task, N as active_effect, O as BOUNDARY_EFFECT, P as block, Q as branch, R as create_text, S as pause_effect, T as current_batch, U as move_effect, V as defer_effect, W as set_active_effect, X as set_active_reaction, Y as set_component_context, Z as Batch, _ as handle_error, $ as active_reaction, a0 as component_context, a1 as internal_set, a2 as destroy_effect, a3 as invoke_error_boundary, a4 as svelte_boundary_reset_onerror, a5 as HYDRATION_START_FAILED, a6 as svelte_boundary_reset_noop, a7 as EFFECT_TRANSPARENT, a8 as EFFECT_PRESERVED, a9 as without_reactive_context, aa as define_property, ab as init_operations, ac as get_first_child, ad as hydration_failed, ae as clear_text_content, af as component_root, ag as array_from, ah as is_passive_event, ai as push, aj as pop, ak as set, al as LEGACY_PROPS, am as flushSync, an as mutable_source, ao as render, s as setContext, j as derived } from "./index2.js";
 let hydrating = false;
 function set_hydrating(value) {
   hydrating = value;
@@ -473,6 +473,32 @@ class Boundary {
 const event_symbol = Symbol("events");
 const all_registered_events = /* @__PURE__ */ new Set();
 const root_event_handles = /* @__PURE__ */ new Set();
+function create_event(event_name, dom, handler, options = {}) {
+  function target_handler(event) {
+    if (!options.capture) {
+      handle_event_propagation.call(dom, event);
+    }
+    if (!event.cancelBubble) {
+      return without_reactive_context(() => {
+        return handler?.call(this, event);
+      });
+    }
+  }
+  if (event_name.startsWith("pointer") || event_name.startsWith("touch") || event_name === "wheel") {
+    queue_micro_task(() => {
+      dom.addEventListener(event_name, target_handler, options);
+    });
+  } else {
+    dom.addEventListener(event_name, target_handler, options);
+  }
+  return target_handler;
+}
+function on(element, type, handler, options = {}) {
+  var target_handler = create_event(type, element, handler, options);
+  return () => {
+    element.removeEventListener(type, target_handler, options);
+  };
+}
 let last_propagated_event = null;
 function handle_event_propagation(event) {
   var handler_element = this;
@@ -935,5 +961,6 @@ function Root($$renderer, $$props) {
 }
 const root = asClassComponent(Root);
 export {
+  on as o,
   root as r
 };

@@ -9,13 +9,20 @@ from app.database import Base
 
 
 class ViolationType(str, enum.Enum):
-    MULTIPLE_PERSONS = "multiple_persons"
-    NO_PERSON = "no_person"
-    LOOKING_AWAY = "looking_away"
-    PHONE_DETECTED = "phone_detected"
-    TAB_SWITCH = "tab_switch"
-    WINDOW_BLUR = "window_blur"
-    IDENTITY_MISMATCH = "identity_mismatch"
+    """Valores alineados con el enum Postgres `violationtype` (MAYÚSCULAS)."""
+
+    MULTIPLE_PERSONS = "MULTIPLE_PERSONS"
+    NO_PERSON = "NO_PERSON"
+    LOOKING_AWAY = "LOOKING_AWAY"
+    PHONE_DETECTED = "PHONE_DETECTED"
+    TAB_SWITCH = "TAB_SWITCH"
+    WINDOW_BLUR = "WINDOW_BLUR"
+    IDENTITY_MISMATCH = "IDENTITY_MISMATCH"
+
+    @property
+    def client_key(self) -> str:
+        """Clave snake_case para API/UI (p. ej. rutas Storage bajo violations/.../)."""
+        return self.value.lower()
 
 
 class ViolationEvent(Base):
@@ -33,7 +40,16 @@ class ViolationEvent(Base):
         nullable=False,
         index=True,
     )
-    violation_type = Column(SAEnum(ViolationType), nullable=False, index=True)
+    violation_type = Column(
+        SAEnum(
+            ViolationType,
+            name="violationtype",
+            native_enum=True,
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        index=True,
+    )
     confidence = Column(Float, nullable=False)
     frame_snapshot = Column(Text, nullable=True)
     detected_at = Column(

@@ -1,4 +1,4 @@
-import { ao as sanitize_slots, k as fallback, e as escape_html, f as slot, b as bind_props } from "./index2.js";
+import { ar as sanitize_slots, q as fallback, i as escape_html, n as slot, p as bind_props } from "./index2.js";
 function PageHeader($$renderer, $$props) {
   const $$slots = sanitize_slots($$props);
   let title = fallback($$props["title"], "");

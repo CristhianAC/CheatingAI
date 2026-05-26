@@ -1,4 +1,4 @@
-import { al as element, b as bind_props, a as attributes, c as clsx } from "./index2.js";
+import { w as element, l as attributes, c as clsx, p as bind_props } from "./index2.js";
 import { c as cn } from "./button.js";
 import { tv } from "tailwind-variants";
 const badgeVariants = tv({
